@@ -271,6 +271,10 @@
   <div class="controls">
     <div class="chip-row" id="productChips"></div>
     <div class="spacer"></div>
+    <div class="seg" id="loanSeg">
+      <button data-loan="pi" class="active">P&amp;I</button>
+      <button data-loan="io">Investor IO</button>
+    </div>
     <div class="seg" id="viewSeg">
       <button data-mode="rate" class="active">Rate</button>
       <button data-mode="apr">Comp. Rate</button>
@@ -289,7 +293,7 @@
   </div>
 
   <p class="assumptions">
-    Assumes a $600,000 loan amount, 80% LVR, owner-occupier, principal &amp; interest. Comparison rate based on a $150,000 loan over 25 years — warning: this comparison rate is true only for this example and may not include all fees and charges. Rate and comparison rate shown are illustrative sample values, not quotes.
+    Assumes a $600,000 loan amount, 80% LVR. Comparison rate based on a $150,000 loan over 25 years — warning: this comparison rate is true only for this example and may not include all fees and charges. Interest-only figures show the rate during the IO period; repayments typically rise when the loan reverts to P&amp;I. Rate and comparison rate shown are illustrative sample values, not quotes.
   </p>
 
   <footer>
@@ -301,30 +305,93 @@
 <script>
   // Edit this array to update what the board shows — each row is one lender × product.
   // MVP2 will let network agents update this through a form instead of editing code.
-  const BANKS = ["CBA", "Westpac", "NAB", "ANZ", "Macquarie"];
-
-  const PRODUCTS = [
-    { key: "variable", label: "Variable", sub: "owner-occupier, P&I" },
-    { key: "fixed1", label: "1-Year Fixed", sub: "owner-occupier, P&I" },
-    { key: "fixed2", label: "2-Year Fixed", sub: "owner-occupier, P&I" },
-    { key: "fixed3", label: "3-Year Fixed", sub: "owner-occupier, P&I" },
+  const BANKS = [
+    "CBA", "Westpac", "NAB", "ANZ", "Macquarie", "ING", "Bankwest", "Suncorp",
+    "BOQ", "St.George", "Bendigo Bank", "AMP Bank", "HSBC", "ME Bank",
+    "People First Bank", "UBank", "Unloan", "Athena Home Loans", "Pepper Money",
+    "Liberty Financial", "loans.com.au", "Virgin Money", "RAMS", "Tic:Toc",
   ];
 
-  // rate / comparison rate as percentages. Sample values only.
-  const RATES = {
-    "variable": { "CBA": [6.420,6.740], "Westpac": [6.390,6.700], "NAB": [6.450,6.760], "ANZ": [6.410,6.720], "Macquarie": [6.290,6.590] },
-    "fixed1":   { "CBA": [6.090,6.580], "Westpac": [6.140,6.620], "NAB": [6.110,6.600], "ANZ": [6.080,6.560], "Macquarie": [5.990,6.470] },
-    "fixed2":   { "CBA": [5.890,6.420], "Westpac": [5.940,6.460], "NAB": [5.910,6.440], "ANZ": [5.870,6.400], "Macquarie": [5.790,6.330] },
-    "fixed3":   { "CBA": [5.840,6.350], "Westpac": [5.900,6.400], "NAB": [5.860,6.370], "ANZ": [5.830,6.340], "Macquarie": [5.750,6.280] },
+  const PRODUCTS = [
+    { key: "variable", label: "Variable" },
+    { key: "fixed1", label: "1-Year Fixed" },
+    { key: "fixed2", label: "2-Year Fixed" },
+    { key: "fixed3", label: "3-Year Fixed" },
+  ];
+
+  // Anchor rate + comparison-rate spread per product, owner-occupier P&I. Sample values only.
+  const PRODUCT_BASE = {
+    variable: { rate: 6.420, spread: 0.320 },
+    fixed1:   { rate: 6.090, spread: 0.490 },
+    fixed2:   { rate: 5.890, spread: 0.530 },
+    fixed3:   { rate: 5.840, spread: 0.510 },
   };
 
-  let activeProduct = "30yr";
+  // Investor interest-only runs higher than owner-occupier P&I on both the rate and the spread.
+  const IO_ADJUST = {
+    variable: { rate: 0.40, spread: 0.10 },
+    fixed1:   { rate: 0.45, spread: 0.10 },
+    fixed2:   { rate: 0.45, spread: 0.10 },
+    fixed3:   { rate: 0.45, spread: 0.10 },
+  };
+
+  // Rough positioning of each lender relative to the anchor rate (digital/challenger lenders undercut; specialist non-bank lenders run higher).
+  const LENDER_TIER = {
+    "UBank": -0.15, "Unloan": -0.18, "Athena Home Loans": -0.15, "loans.com.au": -0.14,
+    "Tic:Toc": -0.13, "Virgin Money": -0.10,
+    "Pepper Money": 0.28, "Liberty Financial": 0.25,
+  };
+
+  function hashStr(s){
+    let h = 0;
+    for (let i = 0; i < s.length; i++){ h = (Math.imul(31, h) + s.charCodeAt(i)) | 0; }
+    return h >>> 0;
+  }
+  function seededRand(seed){
+    let s = seed;
+    return function(){
+      s = (s + 0x6D2B79F5) | 0;
+      let t = Math.imul(s ^ (s >>> 15), 1 | s);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  // Generates deterministic sample rate + comparison-rate pairs per lender × product × loan type.
+  function buildRates(){
+    const result = { pi: {}, io: {} };
+    for (const { key: productKey } of PRODUCTS){
+      result.pi[productKey] = {};
+      result.io[productKey] = {};
+      for (const bank of BANKS){
+        const tier = LENDER_TIER[bank] || 0;
+        for (const loanType of ["pi", "io"]){
+          const base = PRODUCT_BASE[productKey];
+          const adjust = loanType === "io" ? IO_ADJUST[productKey] : { rate: 0, spread: 0 };
+          const wobble = (seededRand(hashStr(bank + "|" + productKey + "|" + loanType))() - 0.5) * 0.24;
+          const rate = base.rate + adjust.rate + tier + wobble;
+          const comp = rate + base.spread + adjust.spread;
+          result[loanType][productKey][bank] = [Number(rate.toFixed(3)), Number(comp.toFixed(3))];
+        }
+      }
+    }
+    return result;
+  }
+
+  const RATES = buildRates();
+
+  let activeProduct = "variable";
   let mode = "rate";
+  let loanType = "pi";
 
   function fmt(n){ return n.toFixed(3) + "%"; }
 
+  function subLabel(){
+    return loanType === "pi" ? "owner-occupier, P&I" : "investor, interest-only";
+  }
+
   function bestBank(productKey){
-    const col = RATES[productKey];
+    const col = RATES[loanType][productKey];
     let best = null, bestVal = Infinity;
     for (const bank of BANKS){
       const v = col[bank][mode === "rate" ? 0 : 1];
@@ -354,9 +421,9 @@
     PRODUCTS.forEach(p => {
       const tr = document.createElement("tr");
       const best = bestBank(p.key);
-      let rowHtml = `<th scope="row">${p.label}<span class="sub">${p.sub}</span></th>`;
+      let rowHtml = `<th scope="row">${p.label}<span class="sub">${subLabel()}</span></th>`;
       BANKS.forEach(bank => {
-        const [rate, apr] = RATES[p.key][bank];
+        const [rate, apr] = RATES[loanType][p.key][bank];
         const isBest = bank === best;
         const shown = mode === "rate" ? rate : apr;
         const secondary = mode === "rate" ? apr : rate;
@@ -381,6 +448,14 @@
     if (!btn) return;
     mode = btn.dataset.mode;
     document.querySelectorAll("#viewSeg button").forEach(b => b.classList.toggle("active", b === btn));
+    renderTable();
+  });
+
+  document.getElementById("loanSeg").addEventListener("click", (e) => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    loanType = btn.dataset.loan;
+    document.querySelectorAll("#loanSeg button").forEach(b => b.classList.toggle("active", b === btn));
     renderTable();
   });
 
