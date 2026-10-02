@@ -113,6 +113,13 @@
     align-items:center;
     margin-bottom:18px;
   }
+  .filter-summary{
+    margin:0 0 10px;
+    font-size:12.5px;
+    font-weight:500;
+    color:var(--ink-faint);
+  }
+
   .seg{
     display:flex;
     background:var(--surface);
@@ -174,7 +181,6 @@
     white-space:nowrap;
     z-index:1;
   }
-  tbody th .sub{display:block;font-size:11.5px;font-weight:500;color:var(--ink-faint);margin-top:2px;}
   tbody td{
     padding:14px 16px;
     border-bottom:1px solid var(--line);
@@ -260,6 +266,8 @@
       <button data-mode="apr">Comp. Rate</button>
     </div>
   </div>
+
+  <p class="filter-summary" id="filterSummary"></p>
 
   <div class="table-shell">
     <div class="table-scroll">
@@ -395,16 +403,20 @@
   function renderTable(){
     const head = document.getElementById("headRow");
     const body = document.getElementById("bodyRows");
-    head.innerHTML = '<th scope="col">Product</th>' + BANKS.map(b => `<th scope="col">${b}</th>`).join("");
+    const summary = document.getElementById("filterSummary");
+    summary.textContent = "Showing " + subLabel() + " rates.";
+    head.innerHTML = '<th scope="col">Lender</th>' + PRODUCTS.map(p => `<th scope="col">${p.label}</th>`).join("");
+
+    const bestByProduct = {};
+    PRODUCTS.forEach(p => { bestByProduct[p.key] = bestBank(p.key); });
 
     body.innerHTML = "";
-    PRODUCTS.forEach(p => {
+    BANKS.forEach(bank => {
       const tr = document.createElement("tr");
-      const best = bestBank(p.key);
-      let rowHtml = `<th scope="row">${p.label}<span class="sub">${subLabel()}</span></th>`;
-      BANKS.forEach(bank => {
+      let rowHtml = `<th scope="row">${bank}</th>`;
+      PRODUCTS.forEach(p => {
         const [rate, apr] = RATES[purpose][repay][p.key][bank];
-        const isBest = bank === best;
+        const isBest = bank === bestByProduct[p.key];
         const shown = mode === "rate" ? rate : apr;
         const secondary = mode === "rate" ? apr : rate;
         const secondaryLabel = mode === "rate" ? "Comp. rate" : "Rate";
