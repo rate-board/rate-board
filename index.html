@@ -261,6 +261,11 @@
       <button data-repay="pi" class="active">P&amp;I</button>
       <button data-repay="io">Interest Only</button>
     </div>
+    <div class="seg" id="lvrSeg">
+      <button data-lvr="60">≤60% LVR</button>
+      <button data-lvr="80" class="active">60–80% LVR</button>
+      <button data-lvr="90">80–90% LVR</button>
+    </div>
     <div class="seg" id="viewSeg">
       <button data-mode="rate" class="active">Rate</button>
       <button data-mode="apr">Comp. Rate</button>
@@ -281,7 +286,7 @@
   </div>
 
   <p class="assumptions">
-    Assumes a $600,000 loan amount, 80% LVR. Comparison rate based on a $150,000 loan over 25 years — warning: this comparison rate is true only for this example and may not include all fees and charges. Interest-only figures show the rate during the IO period; repayments typically rise when the loan reverts to P&amp;I. Rate and comparison rate shown are illustrative sample values, not quotes.
+    Assumes a $600,000 loan amount at the selected LVR band. Comparison rate based on a $150,000 loan over 25 years — warning: this comparison rate is true only for this example and may not include all fees and charges. Lenders Mortgage Insurance (LMI) typically applies above 80% LVR and isn't reflected in the rate shown. Interest-only figures show the rate during the IO period; repayments typically rise when the loan reverts to P&amp;I. Rate and comparison rate shown are illustrative sample values, not quotes.
   </p>
 
   <footer>
@@ -331,6 +336,13 @@
     fixed3:   { rate: 0.20, spread: 0.03 },
   };
 
+  // Lower LVR (more equity/deposit) prices better; above 80% typically attracts LMI and a bigger premium.
+  const LVR_ADJUST = {
+    "60": { rate: -0.10, spread: -0.02 },
+    "80": { rate: 0, spread: 0 },
+    "90": { rate: 0.35, spread: 0.05 },
+  };
+
   // Rough positioning of each lender relative to the anchor rate (digital/challenger lenders undercut; specialist non-bank lenders run higher).
   const LENDER_TIER = {
     "UBank": -0.15, "Unloan": -0.18, "Athena Home Loans": -0.15, "loans.com.au": -0.14,
@@ -353,24 +365,28 @@
     };
   }
 
-  // Generates deterministic sample rate + comparison-rate pairs per lender × product × purpose × repayment type.
+  // Generates deterministic sample rate + comparison-rate pairs per lender × product × purpose × repayment type × LVR band.
   function buildRates(){
     const result = {};
     for (const purpose of ["owner", "investor"]){
       result[purpose] = {};
       for (const repay of ["pi", "io"]){
         result[purpose][repay] = {};
-        for (const { key: productKey } of PRODUCTS){
-          result[purpose][repay][productKey] = {};
-          const base = PRODUCT_BASE[productKey];
-          const repayAdjust = repay === "io" ? REPAY_ADJUST[productKey] : { rate: 0, spread: 0 };
-          const purposeAdjust = purpose === "investor" ? PURPOSE_ADJUST[productKey] : { rate: 0, spread: 0 };
-          for (const bank of BANKS){
-            const tier = LENDER_TIER[bank] || 0;
-            const wobble = (seededRand(hashStr(bank + "|" + productKey + "|" + purpose + "|" + repay))() - 0.5) * 0.24;
-            const rate = base.rate + repayAdjust.rate + purposeAdjust.rate + tier + wobble;
-            const comp = rate + base.spread + repayAdjust.spread + purposeAdjust.spread;
-            result[purpose][repay][productKey][bank] = [Number(rate.toFixed(3)), Number(comp.toFixed(3))];
+        for (const lvr of ["60", "80", "90"]){
+          result[purpose][repay][lvr] = {};
+          for (const { key: productKey } of PRODUCTS){
+            result[purpose][repay][lvr][productKey] = {};
+            const base = PRODUCT_BASE[productKey];
+            const repayAdjust = repay === "io" ? REPAY_ADJUST[productKey] : { rate: 0, spread: 0 };
+            const purposeAdjust = purpose === "investor" ? PURPOSE_ADJUST[productKey] : { rate: 0, spread: 0 };
+            const lvrAdjust = LVR_ADJUST[lvr];
+            for (const bank of BANKS){
+              const tier = LENDER_TIER[bank] || 0;
+              const wobble = (seededRand(hashStr(bank + "|" + productKey + "|" + purpose + "|" + repay + "|" + lvr))() - 0.5) * 0.24;
+              const rate = base.rate + repayAdjust.rate + purposeAdjust.rate + lvrAdjust.rate + tier + wobble;
+              const comp = rate + base.spread + repayAdjust.spread + purposeAdjust.spread + lvrAdjust.spread;
+              result[purpose][repay][lvr][productKey][bank] = [Number(rate.toFixed(3)), Number(comp.toFixed(3))];
+            }
           }
         }
       }
@@ -383,15 +399,18 @@
   let mode = "rate";
   let purpose = "owner";
   let repay = "pi";
+  let lvr = "80";
+
+  const LVR_LABEL = { "60": "≤60% LVR", "80": "60–80% LVR", "90": "80–90% LVR" };
 
   function fmt(n){ return n.toFixed(3) + "%"; }
 
   function subLabel(){
-    return (purpose === "owner" ? "owner-occupier" : "investor") + ", " + (repay === "pi" ? "P&I" : "interest-only");
+    return (purpose === "owner" ? "owner-occupier" : "investor") + ", " + (repay === "pi" ? "P&I" : "interest-only") + ", " + LVR_LABEL[lvr];
   }
 
   function bestBank(productKey){
-    const col = RATES[purpose][repay][productKey];
+    const col = RATES[purpose][repay][lvr][productKey];
     let best = null, bestVal = Infinity;
     for (const bank of BANKS){
       const v = col[bank][mode === "rate" ? 0 : 1];
@@ -404,7 +423,7 @@
     const head = document.getElementById("headRow");
     const body = document.getElementById("bodyRows");
     const summary = document.getElementById("filterSummary");
-    summary.textContent = "Showing " + subLabel() + " rates.";
+    summary.textContent = "Showing " + subLabel() + " rates." + (lvr === "90" ? " LMI typically applies above 80% LVR." : "");
     head.innerHTML = '<th scope="col">Lender</th>' + PRODUCTS.map(p => `<th scope="col">${p.label}</th>`).join("");
 
     const bestByProduct = {};
@@ -415,7 +434,7 @@
       const tr = document.createElement("tr");
       let rowHtml = `<th scope="row">${bank}</th>`;
       PRODUCTS.forEach(p => {
-        const [rate, apr] = RATES[purpose][repay][p.key][bank];
+        const [rate, apr] = RATES[purpose][repay][lvr][p.key][bank];
         const isBest = bank === bestByProduct[p.key];
         const shown = mode === "rate" ? rate : apr;
         const secondary = mode === "rate" ? apr : rate;
@@ -451,6 +470,14 @@
     if (!btn) return;
     repay = btn.dataset.repay;
     document.querySelectorAll("#repaySeg button").forEach(b => b.classList.toggle("active", b === btn));
+    renderTable();
+  });
+
+  document.getElementById("lvrSeg").addEventListener("click", (e) => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    lvr = btn.dataset.lvr;
+    document.querySelectorAll("#lvrSeg button").forEach(b => b.classList.toggle("active", b === btn));
     renderTable();
   });
 
