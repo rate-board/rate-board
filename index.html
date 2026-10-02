@@ -428,7 +428,7 @@
 
   const LVR_LABEL = { "60": "≤60% LVR", "80": "60–80% LVR", "90": "80–90% LVR" };
 
-  function fmt(n){ return n.toFixed(3) + "%"; }
+  function fmt(n){ return n.toFixed(2) + "%"; }
 
   function subLabel(){
     const isBase = purpose === "owner" && repay === "pi" && lvr === "80";
