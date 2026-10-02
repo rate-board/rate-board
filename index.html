@@ -119,6 +119,15 @@
     font-weight:500;
     color:var(--ink-faint);
   }
+  .status-line{
+    font-size:13px;
+    color:var(--ink-muted);
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:12px 14px;
+    margin:0 0 18px;
+  }
 
   .seg{
     display:flex;
@@ -225,6 +234,81 @@
   }
   td.unavailable .rate{color:var(--ink-faint);font-weight:500;}
 
+  .edit-btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:18px;
+    height:18px;
+    margin-left:6px;
+    border:none;
+    border-radius:5px;
+    background:var(--accent-soft);
+    color:var(--accent);
+    font-size:11px;
+    cursor:pointer;
+    vertical-align:middle;
+  }
+  .edit-btn:hover{background:var(--accent);color:#fff;}
+  .edit-btn:focus-visible{outline:2px solid var(--focus);outline-offset:2px;}
+
+  dialog#editDialog{
+    border:none;
+    border-radius:14px;
+    padding:0;
+    background:var(--surface);
+    color:var(--ink);
+    box-shadow:var(--shadow);
+    max-width:420px;
+    width:calc(100% - 32px);
+  }
+  dialog#editDialog::backdrop{background:rgba(20,24,32,.45);}
+  dialog#editDialog form{padding:22px;display:flex;flex-direction:column;gap:14px;}
+  dialog#editDialog h2{margin:0;font-size:18px;font-weight:600;}
+  .field{display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:600;color:var(--ink-muted);}
+  .field input, .field textarea{
+    font:14px 'Inter',sans-serif;
+    font-weight:400;
+    color:var(--ink);
+    background:var(--bg);
+    border:1px solid var(--line-strong);
+    border-radius:7px;
+    padding:8px 10px;
+    resize:vertical;
+  }
+  .field input:focus-visible, .field textarea:focus-visible{outline:2px solid var(--focus);outline-offset:1px;}
+  .product-row{
+    display:grid;
+    grid-template-columns:auto 1fr 1fr;
+    gap:8px;
+    align-items:center;
+    font-size:12.5px;
+  }
+  .product-row .plabel{font-weight:600;color:var(--ink-muted);}
+  .product-row input[type="number"]{
+    font:13px 'IBM Plex Mono',monospace;
+    color:var(--ink);
+    background:var(--bg);
+    border:1px solid var(--line-strong);
+    border-radius:6px;
+    padding:6px 8px;
+    width:100%;
+  }
+  .product-row input:disabled{opacity:.4;}
+  .product-row label.offered{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink-faint);grid-column:1 / -1;}
+  .edit-error{margin:0;font-size:12.5px;color:#B3261E;}
+  .dialog-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:4px;}
+  .btn-ghost, .btn-primary{
+    font:13px 'Inter',sans-serif;
+    font-weight:600;
+    border-radius:7px;
+    padding:8px 16px;
+    cursor:pointer;
+  }
+  .btn-ghost{background:none;border:1px solid var(--line-strong);color:var(--ink-muted);}
+  .btn-primary{background:var(--accent);border:1px solid var(--accent);color:#fff;}
+  .btn-ghost:focus-visible, .btn-primary:focus-visible{outline:2px solid var(--focus);outline-offset:2px;}
+
   .rate{font-size:16px;font-weight:600;color:var(--ink);}
   .apr{display:block;font-size:11.5px;color:var(--ink-faint);margin-top:2px;font-weight:400;}
   td.best .rate{color:var(--accent);}
@@ -283,8 +367,10 @@
 
   <div class="sample-banner">
     <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8.5" stroke="currentColor" stroke-width="1.6"/><path d="M10 6.2v4.6M10 13.6h.01" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-    This is a static public snapshot, frozen 2 Oct 2026 — it does not update live and has no sign-in or editing. The default view (Owner Occupied, P&amp;I, 60–80% LVR) shows each lender's officially published rate as of that date; other filter combinations are estimated from it using typical market spreads and are not independently sourced.
+    The default view (Owner Occupied, P&amp;I, 60–80% LVR) shows each lender's officially published rate — click a lender's name for its source page. Other filter combinations are estimated from that published rate using typical market spreads and are not independently sourced. Sign in to view live data; Contributors can edit a lender's rates directly.
   </div>
+
+  <p class="status-line" id="statusLine" hidden></p>
 
   <div class="controls">
     <div class="seg" id="purposeSeg">
@@ -329,9 +415,33 @@
   </footer>
 </div>
 
+<dialog id="editDialog">
+  <form id="editForm" method="dialog">
+    <h2 id="editTitle">Edit lender</h2>
+    <label class="field">
+      <span>Source URL</span>
+      <input type="url" id="f-source" required>
+    </label>
+    <label class="field">
+      <span>As of</span>
+      <input type="text" id="f-asof" placeholder="e.g. 2 Oct 2026">
+    </label>
+    <label class="field">
+      <span>Note (optional)</span>
+      <textarea id="f-note" rows="2"></textarea>
+    </label>
+    <div id="editProducts"></div>
+    <p class="edit-error" id="editError" hidden></p>
+    <div class="dialog-actions">
+      <button type="button" class="btn-ghost" id="editCancel">Cancel</button>
+      <button type="submit" class="btn-primary" id="editSave">Save</button>
+    </div>
+  </form>
+</dialog>
+
 <script>
-  // Edit this array to update what the board shows — each row is one lender × product.
-  // MVP2 will let network agents update this through a form instead of editing code.
+  // Edit this array to add/remove lenders — each row is one lender × product.
+  // Rate data itself now lives in the artifact's shared db (collection "rates", one doc per BANK_SLUG), not here.
   const BANKS = [
     "CBA", "Westpac", "NAB", "ANZ", "Macquarie", "ING", "Bankwest", "Suncorp",
     "BOQ", "St.George", "Bendigo Bank", "AMP Bank", "HSBC", "ME Bank",
@@ -346,34 +456,29 @@
     { key: "fixed3", label: "3-Year Fixed" },
   ];
 
-  // Real published rates, Owner Occupier / P&I / 60–80% LVR (each lender's basic/no-frills product where one exists),
-  // sourced live from each lender's official site on 2 Oct 2026. [rate, comparison rate]; null = not offered/published.
-  const REAL_RATES = {
-    "CBA":                { source: "https://www.commbank.com.au/home-loans/standard-variable-rate.html", variable: [6.49, 6.87], fixed1: [6.78, 8.31], fixed2: [6.82, 8.19], fixed3: [6.89, 8.09] },
-    "Westpac":            { source: "https://www.westpac.com.au/personal-banking/home-loans/all-interest-rates/", variable: [6.54, 6.55], fixed1: [7.04, 8.76], fixed2: [7.04, 8.58], fixed3: [7.24, 8.48] },
-    "NAB":                { source: "https://www.nab.com.au/personal/interest-rates-fees-and-charges/home-loan-interest-rates", variable: [6.44, 6.44], fixed1: [6.79, 7.09], fixed2: [6.81, 7.08], fixed3: [6.92, 7.09], note: "Variable and fixed figures come from two different NAB loan products — no direct basic-to-basic match." },
-    "ANZ":                { source: "https://www.anz.com.au/personal/home-loans/standard-variable-rate/", variable: [7.24, 7.24], fixed1: [6.49, 7.16], fixed2: [6.49, 7.09], fixed3: [6.64, 7.07] },
-    "Macquarie":          { source: "https://www.macquarie.com.au/home-loans/home-loan-rates.html", variable: [6.09, 6.11], fixed1: [6.54, 6.16], fixed2: [6.64, 6.22], fixed3: [6.64, 6.27] },
-    "ING":                { source: "https://www.ing.com.au/rates-and-fees/home-loan-rates.html", variable: [6.09, 6.12], fixed1: [6.74, 6.19], fixed2: [6.69, 6.24], fixed3: [6.84, 6.33] },
-    "Bankwest":           { source: "https://www.bankwest.com.au/rates/home-loan-rates", variable: [6.24, 6.27], fixed1: [6.49, 8.78], fixed2: [6.59, 8.55], fixed3: [6.69, 8.37] },
-    "Suncorp":            { source: "https://www.suncorpbank.com.au/home-loans/variable.html", variable: [6.18, 6.53], fixed1: [6.29, 6.54], fixed2: [6.24, 6.54], fixed3: [6.44, 6.61] },
-    "BOQ":                { source: "https://www.boq.com.au/personal/help-and-support/rates-and-fees/home-loan-rates-owner-occupier", variable: [6.33, 6.47], fixed1: null, fixed2: [6.79, 6.59], fixed3: [6.84, 6.64], note: "No 1-year fixed term offered." },
-    "St.George":          { source: "https://www.stgeorge.com.au/personal/home-loans/home-loan-interest-rates/table", variable: [6.39, 6.40], fixed1: [7.04, 8.75], fixed2: [7.04, 8.56], fixed3: [7.24, 8.46] },
-    "Bendigo Bank":       { source: "https://www.bendigobank.com.au/personal/home-loans/rates/", variable: [6.13, 6.15], fixed1: [6.39, 6.18], fixed2: [6.44, 6.21], fixed3: [6.39, 6.22] },
-    "AMP Bank":           { source: "https://www.amp.com.au/home-loans/interest-rates-fees", variable: [6.54, 6.95], fixed1: [6.39, 7.52], fixed2: [6.39, 7.40], fixed3: [6.49, 7.33] },
-    "HSBC":               { source: "https://www.hsbc.com.au/home-loans/products/rates/", variable: [6.09, 6.10], fixed1: [7.09, 7.57], fixed2: [7.09, 7.52], fixed3: [7.14, 7.50], note: "HSBC Australia is no longer accepting new home loan applications." },
-    "ME Bank":            { source: "https://www.mebank.com.au/home-loans/rates/owner-occupier/", variable: [6.04, 6.06], fixed1: [6.54, 6.11], fixed2: [6.24, 6.10], fixed3: [6.29, 6.13] },
-    "People First Bank":  { source: "https://www.peoplefirstbank.com.au/rates/home-loan-rates", variable: [6.09, 6.10], fixed1: [6.49, 6.14], fixed2: [6.54, 6.18], fixed3: [6.54, 6.22] },
-    "UBank":              { source: "https://www.ubank.com.au/home-loans/interest-rates-and-fees", variable: [6.14, 6.16], fixed1: [6.74, 6.44], fixed2: [6.79, 6.51], fixed3: [6.84, 6.58], note: "Rates stated are scheduled to rise 0.25% p.a. from 8 Oct 2026." },
-    "Unloan":             { source: "https://www.unloan.com.au/home-loan", variable: [5.89, 5.80], fixed1: null, fixed2: null, fixed3: null, note: "Variable-only lender — no fixed-rate option." },
-    "Athena Home Loans":  { source: "https://www.athena.com.au/home-loans/rates-no-fees", variable: [6.39, 6.35], fixed1: [6.84, 6.39], fixed2: [6.89, 6.45], fixed3: [6.94, 6.51] },
-    "Pepper Money":       { source: "https://www.peppermoney.com.au/lending/home-loans/variable", variable: [7.09, 7.27], fixed1: null, fixed2: [7.24, 7.02], fixed3: [7.34, 7.10], note: "Specialist risk-based lender — figures are the lowest advertised rate, actual pricing varies by credit profile. No 1-year fixed term." },
-    "Liberty Financial":  { source: "https://www.liberty.com.au/home-loans/low-rate-home-loans", variable: [6.49, 6.57], fixed1: null, fixed2: null, fixed3: null, note: "Fixed-rate pricing isn't published as a rate card — only available via Liberty's personalised quote tool." },
-    "loans.com.au":       { source: "https://www.loans.com.au/home-loans/variable-rate/", variable: [5.94, 5.98], fixed1: [6.89, 6.16], fixed2: [6.89, 6.25], fixed3: [6.89, 6.32] },
-    "Virgin Money":       { source: "https://www.virginmoney.com.au/home-loans/lite", variable: [5.84, 5.86], fixed1: [6.49, 5.92], fixed2: [6.24, 5.93], fixed3: [6.29, 5.98] },
-    "RAMS":               { source: "https://www.rams.com.au/", variable: null, fixed1: null, fixed2: null, fixed3: null, note: "Closed to new home loan customers since Aug 2024; loan book sold to a Pepper Money/KKR/PIMCO consortium." },
-    "Tic:Toc":            { source: "https://www.finder.com.au/home-loans/tiimely-home-own-home-loans", variable: [5.95, 5.96], fixed1: [6.39, 6.00], fixed2: [6.44, 6.05], fixed3: [6.39, 6.08], note: "Now branded Tiimely Home. Not published on its own site — figures via Finder/Canstar, unverified against an official source." },
+  const BANK_SLUG = {
+    "CBA": "cba", "Westpac": "westpac", "NAB": "nab", "ANZ": "anz", "Macquarie": "macquarie",
+    "ING": "ing", "Bankwest": "bankwest", "Suncorp": "suncorp", "BOQ": "boq", "St.George": "st-george",
+    "Bendigo Bank": "bendigo-bank", "AMP Bank": "amp-bank", "HSBC": "hsbc", "ME Bank": "me-bank",
+    "People First Bank": "people-first-bank", "UBank": "ubank", "Unloan": "unloan",
+    "Athena Home Loans": "athena-home-loans", "Pepper Money": "pepper-money",
+    "Liberty Financial": "liberty-financial", "loans.com.au": "loans-com-au",
+    "Virgin Money": "virgin-money", "RAMS": "rams", "Tic:Toc": "tic-toc",
   };
+
+  // Populated live from db; shape matches the old hardcoded table: { source, note, asOf, variable:[rate,comp]|null, ... }.
+  let REAL_RATES = {};
+  let loadState = "loading"; // loading | ready | signed-out | error
+  let canWrite = false;
+  let dbRef = null;
+  let editingBank = null;
+
+  function normalizeCell(v){
+    if (!Array.isArray(v) || v.length !== 2) return null;
+    const rate = Number(v[0]), comp = Number(v[1]);
+    if (!isFinite(rate) || !isFinite(comp)) return null;
+    return [rate, comp];
+  }
 
   // Interest-only runs higher than P&I on both the rate and the spread, independent of loan purpose.
   const REPAY_ADJUST = {
@@ -432,7 +537,8 @@
     return result;
   }
 
-  const RATES = buildRates();
+  let RATES = null;
+  function refreshRates(){ RATES = buildRates(); }
 
   let mode = "rate";
   let purpose = "owner";
@@ -496,6 +602,17 @@
     const head = document.getElementById("headRow");
     const body = document.getElementById("bodyRows");
     const summary = document.getElementById("filterSummary");
+
+    if (loadState !== "ready" || !RATES){
+      head.innerHTML = "";
+      const msg = loadState === "signed-out" ? "Sign in to view live rates."
+        : loadState === "error" ? "Couldn't load live rates — try reloading."
+        : "Loading live rates…";
+      body.innerHTML = `<tr><td style="padding:24px 16px;color:var(--ink-faint);">${msg}</td></tr>`;
+      summary.textContent = "";
+      return;
+    }
+
     summary.textContent = "Showing " + subLabel() + " rates." + (lvr === "90" ? " LMI typically applies above 80% LVR." : "");
     head.innerHTML = headCell("lender", "Lender") + PRODUCTS.map(p => headCell(p.key, p.label)).join("");
 
@@ -507,7 +624,11 @@
       const tr = document.createElement("tr");
       const info = REAL_RATES[bank];
       const noteHtml = info.note ? `<span class="lender-note" title="${escapeHtml(info.note)}">i</span>` : "";
-      let rowHtml = `<th scope="row"><a class="lender-link" href="${info.source}" target="_blank" rel="noopener">${bank}</a>${noteHtml}</th>`;
+      const editHtml = canWrite ? `<button type="button" class="edit-btn" data-edit="${bank}" title="Edit ${escapeHtml(bank)}">✎</button>` : "";
+      const sourceHtml = info.source
+        ? `<a class="lender-link" href="${info.source}" target="_blank" rel="noopener">${bank}</a>`
+        : `<span>${bank}</span>`;
+      let rowHtml = `<th scope="row">${sourceHtml}${noteHtml}${editHtml}</th>`;
       PRODUCTS.forEach(p => {
         const cell = RATES[purpose][repay][lvr][p.key][bank];
         if (!cell){
@@ -572,7 +693,140 @@
 
   const today = new Date();
   document.getElementById("updatedDate").textContent = today.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
-  document.getElementById("todayLine").textContent = "Generated " + today.toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" });
+  document.getElementById("todayLine").textContent = "Viewed " + today.toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" });
 
-  renderTable();
+  function openEditDialog(bank){
+    editingBank = bank;
+    const info = REAL_RATES[bank] || {};
+    document.getElementById("editTitle").textContent = "Edit " + bank;
+    document.getElementById("f-source").value = info.source || "";
+    document.getElementById("f-asof").value = info.asOf || "";
+    document.getElementById("f-note").value = info.note || "";
+    const container = document.getElementById("editProducts");
+    container.innerHTML = "";
+    PRODUCTS.forEach(p => {
+      const cell = info[p.key];
+      const offered = !!cell;
+      const row = document.createElement("div");
+      row.className = "product-row";
+      row.innerHTML = `
+        <span class="plabel">${p.label}</span>
+        <input type="number" step="0.01" min="0" max="20" id="f-${p.key}-rate" placeholder="Rate %" value="${offered ? cell[0] : ""}" ${offered ? "" : "disabled"}>
+        <input type="number" step="0.01" min="0" max="20" id="f-${p.key}-comp" placeholder="Comp. %" value="${offered ? cell[1] : ""}" ${offered ? "" : "disabled"}>
+        <label class="offered"><input type="checkbox" id="f-${p.key}-offered" ${offered ? "checked" : ""}> Offered</label>
+      `;
+      container.appendChild(row);
+    });
+    document.getElementById("editError").hidden = true;
+    document.getElementById("editDialog").showModal();
+  }
+
+  document.getElementById("bodyRows").addEventListener("click", (e) => {
+    const btn = e.target.closest(".edit-btn");
+    if (!btn) return;
+    openEditDialog(btn.dataset.edit);
+  });
+
+  document.getElementById("editProducts").addEventListener("change", (e) => {
+    if (!e.target.matches('input[type="checkbox"]')) return;
+    const key = e.target.id.replace("f-", "").replace("-offered", "");
+    document.getElementById(`f-${key}-rate`).disabled = !e.target.checked;
+    document.getElementById(`f-${key}-comp`).disabled = !e.target.checked;
+  });
+
+  document.getElementById("editCancel").addEventListener("click", () => {
+    document.getElementById("editDialog").close();
+  });
+
+  document.getElementById("editForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!editingBank || !dbRef) return;
+    const errorEl = document.getElementById("editError");
+    errorEl.hidden = true;
+
+    const update = {
+      source: document.getElementById("f-source").value.trim(),
+      asOf: document.getElementById("f-asof").value.trim(),
+      note: document.getElementById("f-note").value.trim(),
+    };
+    for (const p of PRODUCTS){
+      const offered = document.getElementById(`f-${p.key}-offered`).checked;
+      if (!offered){ update[p.key] = null; continue; }
+      const rate = parseFloat(document.getElementById(`f-${p.key}-rate`).value);
+      const comp = parseFloat(document.getElementById(`f-${p.key}-comp`).value);
+      if (!isFinite(rate) || !isFinite(comp) || rate < 0 || rate > 20 || comp < 0 || comp > 20){
+        errorEl.textContent = p.label + ": enter a valid rate and comparison rate (0–20%).";
+        errorEl.hidden = false;
+        return;
+      }
+      update[p.key] = [Number(rate.toFixed(3)), Number(comp.toFixed(3))];
+    }
+
+    const saveBtn = document.getElementById("editSave");
+    saveBtn.disabled = true;
+    try {
+      await dbRef.doc("rates/" + BANK_SLUG[editingBank]).update(update);
+      document.getElementById("editDialog").close();
+    } catch (err) {
+      if (err && err.code === "invalid_argument"){
+        canWrite = false;
+        renderTable();
+        errorEl.textContent = "You don't have edit access to this board.";
+      } else {
+        errorEl.textContent = "Couldn't save — try again.";
+      }
+      errorEl.hidden = false;
+    } finally {
+      saveBtn.disabled = false;
+    }
+  });
+
+  async function init(){
+    const [db, user] = await Promise.all([claude.use("db"), claude.use("user")]);
+    dbRef = db;
+
+    if (!db){
+      loadState = "signed-out";
+      const status = document.getElementById("statusLine");
+      status.hidden = false;
+      status.textContent = "Sign in to view live rates — this board's data is only visible to people the owner has shared it with.";
+      renderTable();
+      return;
+    }
+
+    if (user){
+      const writeAnswer = await user.can("data.write");
+      canWrite = writeAnswer !== false;
+    }
+
+    db.collection("rates").onSnapshot((snap) => {
+      const bySlug = {};
+      snap.docs.forEach(d => { if (d.exists) bySlug[d.id] = d.data(); });
+      const next = {};
+      BANKS.forEach(bank => {
+        const data = bySlug[BANK_SLUG[bank]];
+        next[bank] = {
+          source: (data && typeof data.source === "string") ? data.source : "",
+          asOf: (data && typeof data.asOf === "string") ? data.asOf : "",
+          note: (data && typeof data.note === "string") ? data.note : "",
+          variable: normalizeCell(data && data.variable),
+          fixed1: normalizeCell(data && data.fixed1),
+          fixed2: normalizeCell(data && data.fixed2),
+          fixed3: normalizeCell(data && data.fixed3),
+        };
+      });
+      REAL_RATES = next;
+      loadState = "ready";
+      refreshRates();
+      renderTable();
+    }, (err) => {
+      loadState = "error";
+      const status = document.getElementById("statusLine");
+      status.hidden = false;
+      status.textContent = "Couldn't load live rates (" + ((err && err.code) || "unknown error") + ").";
+      renderTable();
+    });
+  }
+
+  init();
 </script>
