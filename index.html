@@ -168,6 +168,19 @@
     white-space:nowrap;
   }
   thead th:first-child{position:sticky;left:0;z-index:2;}
+  .sort-btn{
+    font:inherit;
+    text-transform:inherit;
+    letter-spacing:inherit;
+    color:inherit;
+    background:none;
+    border:none;
+    padding:0;
+    margin:0;
+    cursor:pointer;
+  }
+  .sort-btn:hover{color:var(--accent);}
+  .sort-btn:focus-visible{outline:2px solid var(--focus);outline-offset:2px;}
   tbody th{
     position:sticky;
     left:0;
@@ -425,6 +438,8 @@
   let purpose = "owner";
   let repay = "pi";
   let lvr = "80";
+  let sortKey = null;
+  let sortDir = "asc";
 
   const LVR_LABEL = { "60": "≤60% LVR", "80": "60–80% LVR", "90": "80–90% LVR" };
 
@@ -452,18 +467,43 @@
     return s.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
   }
 
+  function sortedBanks(){
+    if (!sortKey) return BANKS;
+    const dir = sortDir === "asc" ? 1 : -1;
+    const banks = BANKS.slice();
+    if (sortKey === "lender"){
+      banks.sort((a, b) => a.localeCompare(b) * dir);
+      return banks;
+    }
+    const col = RATES[purpose][repay][lvr][sortKey];
+    banks.sort((a, b) => {
+      const av = col[a] ? col[a][mode === "rate" ? 0 : 1] : null;
+      const bv = col[b] ? col[b][mode === "rate" ? 0 : 1] : null;
+      if (av === null && bv === null) return 0;
+      if (av === null) return 1;
+      if (bv === null) return -1;
+      return (av - bv) * dir;
+    });
+    return banks;
+  }
+
+  function headCell(key, label){
+    const arrow = sortKey === key ? (sortDir === "asc" ? " ↑" : " ↓") : "";
+    return `<th scope="col"><button type="button" class="sort-btn" data-sort="${key}">${label}${arrow}</button></th>`;
+  }
+
   function renderTable(){
     const head = document.getElementById("headRow");
     const body = document.getElementById("bodyRows");
     const summary = document.getElementById("filterSummary");
     summary.textContent = "Showing " + subLabel() + " rates." + (lvr === "90" ? " LMI typically applies above 80% LVR." : "");
-    head.innerHTML = '<th scope="col">Lender</th>' + PRODUCTS.map(p => `<th scope="col">${p.label}</th>`).join("");
+    head.innerHTML = headCell("lender", "Lender") + PRODUCTS.map(p => headCell(p.key, p.label)).join("");
 
     const bestByProduct = {};
     PRODUCTS.forEach(p => { bestByProduct[p.key] = bestBank(p.key); });
 
     body.innerHTML = "";
-    BANKS.forEach(bank => {
+    sortedBanks().forEach(bank => {
       const tr = document.createElement("tr");
       const info = REAL_RATES[bank];
       const noteHtml = info.note ? `<span class="lender-note" title="${escapeHtml(info.note)}">i</span>` : "";
@@ -488,6 +528,15 @@
       body.appendChild(tr);
     });
   }
+
+  document.getElementById("headRow").addEventListener("click", (e) => {
+    const btn = e.target.closest(".sort-btn");
+    if (!btn) return;
+    const key = btn.dataset.sort;
+    sortDir = sortKey === key && sortDir === "asc" ? "desc" : "asc";
+    sortKey = key;
+    renderTable();
+  });
 
   document.getElementById("viewSeg").addEventListener("click", (e) => {
     const btn = e.target.closest("button");
