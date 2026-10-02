@@ -113,28 +113,6 @@
     align-items:center;
     margin-bottom:18px;
   }
-  .chip-row{display:flex;gap:6px;flex-wrap:wrap;}
-  .chip{
-    font-family:inherit;
-    font-size:13px;
-    font-weight:500;
-    color:var(--ink-muted);
-    background:var(--surface);
-    border:1px solid var(--line-strong);
-    border-radius:999px;
-    padding:6px 13px;
-    cursor:pointer;
-    transition:background .15s, color .15s, border-color .15s;
-  }
-  .chip:hover{border-color:var(--accent);}
-  .chip.active{
-    background:var(--accent);
-    border-color:var(--accent);
-    color:#fff;
-  }
-  .chip:focus-visible{outline:2px solid var(--focus);outline-offset:2px;}
-
-  .spacer{flex:1;}
   .seg{
     display:flex;
     background:var(--surface);
@@ -269,8 +247,6 @@
   </div>
 
   <div class="controls">
-    <div class="chip-row" id="productChips"></div>
-    <div class="spacer"></div>
     <div class="seg" id="purposeSeg">
       <button data-purpose="owner" class="active">Owner Occupied</button>
       <button data-purpose="investor">Investment</button>
@@ -396,7 +372,6 @@
 
   const RATES = buildRates();
 
-  let activeProduct = "variable";
   let mode = "rate";
   let purpose = "owner";
   let repay = "pi";
@@ -415,18 +390,6 @@
       if (v < bestVal){ bestVal = v; best = bank; }
     }
     return best;
-  }
-
-  function renderChips(){
-    const el = document.getElementById("productChips");
-    el.innerHTML = "";
-    PRODUCTS.forEach(p => {
-      const btn = document.createElement("button");
-      btn.className = "chip" + (p.key === activeProduct ? " active" : "");
-      btn.textContent = p.label;
-      btn.addEventListener("click", () => { activeProduct = p.key; render(); });
-      el.appendChild(btn);
-    });
   }
 
   function renderTable(){
@@ -453,11 +416,6 @@
       tr.innerHTML = rowHtml;
       body.appendChild(tr);
     });
-  }
-
-  function render(){
-    renderChips();
-    renderTable();
   }
 
   document.getElementById("viewSeg").addEventListener("click", (e) => {
@@ -488,5 +446,5 @@
   document.getElementById("updatedDate").textContent = today.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
   document.getElementById("todayLine").textContent = "Generated " + today.toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" });
 
-  render();
+  renderTable();
 </script>
