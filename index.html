@@ -1,0 +1,392 @@
+<title>Rate Board</title>
+<meta name="description" content="Compare today's mortgage rates across lenders and loan products at a glance.">
+<style>
+  :root{
+    --bg:#F6F7F9;
+    --surface:#FFFFFF;
+    --surface-raised:#FFFFFF;
+    --ink:#1B2430;
+    --ink-muted:#5B6572;
+    --ink-faint:#8A93A1;
+    --line:#E3E7EC;
+    --line-strong:#CBD2DB;
+    --accent:#1F6F54;
+    --accent-soft:#E6F0EC;
+    --gold:#9C7A2E;
+    --gold-soft:#F6EFDD;
+    --focus:#1F6F54;
+    --shadow: 0 1px 2px rgba(20,30,40,.04), 0 8px 24px rgba(20,30,40,.05);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#121620;
+      --surface:#191E29;
+      --surface-raised:#1E2430;
+      --ink:#EDEFF2;
+      --ink-muted:#A7AFBC;
+      --ink-faint:#6E7684;
+      --line:#2A313E;
+      --line-strong:#39414F;
+      --accent:#4FAE8A;
+      --accent-soft:#1B3B30;
+      --gold:#D4B461;
+      --gold-soft:#332A14;
+      --focus:#4FAE8A;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#121620;
+    --surface:#191E29;
+    --surface-raised:#1E2430;
+    --ink:#EDEFF2;
+    --ink-muted:#A7AFBC;
+    --ink-faint:#6E7684;
+    --line:#2A313E;
+    --line-strong:#39414F;
+    --accent:#4FAE8A;
+    --accent-soft:#1B3B30;
+    --gold:#D4B461;
+    --gold-soft:#332A14;
+    --focus:#4FAE8A;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',system-ui,-apple-system,Segoe UI,sans-serif;
+    padding:28px 16px 48px;
+  }
+  .wrap{max-width:980px;margin:0 auto;}
+
+  h1,h2{font-family:'Fraunces',Georgia,serif;}
+
+  header.page{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:space-between;
+    align-items:flex-end;
+    gap:16px;
+    margin-bottom:6px;
+  }
+  .title-block h1{
+    font-size:30px;
+    font-weight:600;
+    letter-spacing:-0.01em;
+    margin:0 0 4px;
+  }
+  .title-block p{
+    margin:0;
+    color:var(--ink-muted);
+    font-size:14px;
+  }
+  .updated{
+    text-align:right;
+    font-size:12px;
+    color:var(--ink-faint);
+    line-height:1.5;
+  }
+  .updated strong{color:var(--ink-muted);font-weight:600;}
+
+  .sample-banner{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:var(--gold-soft);
+    color:var(--gold);
+    border:1px solid var(--gold);
+    border-radius:8px;
+    padding:9px 14px;
+    font-size:12.5px;
+    font-weight:600;
+    margin:18px 0 22px;
+  }
+  .sample-banner svg{flex:none;width:15px;height:15px;}
+
+  .controls{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    align-items:center;
+    margin-bottom:18px;
+  }
+  .chip-row{display:flex;gap:6px;flex-wrap:wrap;}
+  .chip{
+    font-family:inherit;
+    font-size:13px;
+    font-weight:500;
+    color:var(--ink-muted);
+    background:var(--surface);
+    border:1px solid var(--line-strong);
+    border-radius:999px;
+    padding:6px 13px;
+    cursor:pointer;
+    transition:background .15s, color .15s, border-color .15s;
+  }
+  .chip:hover{border-color:var(--accent);}
+  .chip.active{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#fff;
+  }
+  .chip:focus-visible{outline:2px solid var(--focus);outline-offset:2px;}
+
+  .spacer{flex:1;}
+  .seg{
+    display:flex;
+    background:var(--surface);
+    border:1px solid var(--line-strong);
+    border-radius:8px;
+    overflow:hidden;
+  }
+  .seg button{
+    font-family:inherit;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--ink-muted);
+    background:transparent;
+    border:none;
+    padding:7px 14px;
+    cursor:pointer;
+  }
+  .seg button.active{background:var(--accent-soft);color:var(--accent);}
+  .seg button:focus-visible{outline:2px solid var(--focus);outline-offset:2px;}
+
+  .table-shell{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:12px;
+    box-shadow:var(--shadow);
+    overflow:hidden;
+  }
+  .table-scroll{overflow-x:auto;}
+  table{
+    border-collapse:collapse;
+    width:100%;
+    min-width:640px;
+  }
+  thead th{
+    position:sticky;
+    top:0;
+    background:var(--surface-raised);
+    text-align:left;
+    font-size:11.5px;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--ink-faint);
+    font-weight:600;
+    padding:14px 16px 12px;
+    border-bottom:1px solid var(--line);
+    white-space:nowrap;
+  }
+  thead th:first-child{position:sticky;left:0;z-index:2;}
+  tbody th{
+    position:sticky;
+    left:0;
+    background:var(--surface);
+    text-align:left;
+    font-size:14px;
+    font-weight:600;
+    color:var(--ink);
+    padding:14px 16px;
+    border-bottom:1px solid var(--line);
+    white-space:nowrap;
+    z-index:1;
+  }
+  tbody th .sub{display:block;font-size:11.5px;font-weight:500;color:var(--ink-faint);margin-top:2px;}
+  tbody td{
+    padding:14px 16px;
+    border-bottom:1px solid var(--line);
+    font-family:'IBM Plex Mono',ui-monospace,Consolas,monospace;
+    font-variant-numeric:tabular-nums;
+    white-space:nowrap;
+  }
+  tbody tr:last-child th, tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover td, tbody tr:hover th{background:var(--accent-soft);}
+
+  .rate{font-size:16px;font-weight:600;color:var(--ink);}
+  .apr{display:block;font-size:11.5px;color:var(--ink-faint);margin-top:2px;font-weight:400;}
+  td.best .rate{color:var(--accent);}
+  .best-badge{
+    display:inline-block;
+    margin-left:7px;
+    font-family:'Inter',sans-serif;
+    font-size:10px;
+    font-weight:700;
+    letter-spacing:.03em;
+    color:var(--accent);
+    background:var(--accent-soft);
+    border-radius:5px;
+    padding:2px 6px;
+    vertical-align:middle;
+  }
+
+  .assumptions{
+    margin-top:16px;
+    font-size:12px;
+    color:var(--ink-faint);
+    line-height:1.6;
+  }
+
+  footer{
+    margin-top:28px;
+    padding-top:16px;
+    border-top:1px solid var(--line);
+    font-size:12px;
+    color:var(--ink-faint);
+    display:flex;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+
+  @media (max-width:560px){
+    .title-block h1{font-size:24px;}
+    header.page{flex-direction:column;align-items:flex-start;}
+    .updated{text-align:left;}
+  }
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500..600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<div class="wrap">
+  <header class="page">
+    <div class="title-block">
+      <h1>Rate Board</h1>
+      <p>Today's mortgage rates, side by side across lenders.</p>
+    </div>
+    <div class="updated">
+      <strong id="updatedDate">—</strong><br>
+      sample data · not live
+    </div>
+  </header>
+
+  <div class="sample-banner">
+    <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8.5" stroke="currentColor" stroke-width="1.6"/><path d="M10 6.2v4.6M10 13.6h.01" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    These are example rates for demo purposes — swap in real figures before sharing with clients.
+  </div>
+
+  <div class="controls">
+    <div class="chip-row" id="productChips"></div>
+    <div class="spacer"></div>
+    <div class="seg" id="viewSeg">
+      <button data-mode="rate" class="active">Rate</button>
+      <button data-mode="apr">Comp. Rate</button>
+    </div>
+  </div>
+
+  <div class="table-shell">
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr id="headRow"></tr>
+        </thead>
+        <tbody id="bodyRows"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <p class="assumptions">
+    Assumes a $600,000 loan amount, 80% LVR, owner-occupier, principal &amp; interest. Comparison rate based on a $150,000 loan over 25 years — warning: this comparison rate is true only for this example and may not include all fees and charges. Rate and comparison rate shown are illustrative sample values, not quotes.
+  </p>
+
+  <footer>
+    <span>Rate Board · internal comparison tool</span>
+    <span id="todayLine"></span>
+  </footer>
+</div>
+
+<script>
+  // Edit this array to update what the board shows — each row is one lender × product.
+  // MVP2 will let network agents update this through a form instead of editing code.
+  const BANKS = ["CBA", "Westpac", "NAB", "ANZ", "Macquarie"];
+
+  const PRODUCTS = [
+    { key: "variable", label: "Variable", sub: "owner-occupier, P&I" },
+    { key: "fixed1", label: "1-Year Fixed", sub: "owner-occupier, P&I" },
+    { key: "fixed2", label: "2-Year Fixed", sub: "owner-occupier, P&I" },
+    { key: "fixed3", label: "3-Year Fixed", sub: "owner-occupier, P&I" },
+  ];
+
+  // rate / comparison rate as percentages. Sample values only.
+  const RATES = {
+    "variable": { "CBA": [6.420,6.740], "Westpac": [6.390,6.700], "NAB": [6.450,6.760], "ANZ": [6.410,6.720], "Macquarie": [6.290,6.590] },
+    "fixed1":   { "CBA": [6.090,6.580], "Westpac": [6.140,6.620], "NAB": [6.110,6.600], "ANZ": [6.080,6.560], "Macquarie": [5.990,6.470] },
+    "fixed2":   { "CBA": [5.890,6.420], "Westpac": [5.940,6.460], "NAB": [5.910,6.440], "ANZ": [5.870,6.400], "Macquarie": [5.790,6.330] },
+    "fixed3":   { "CBA": [5.840,6.350], "Westpac": [5.900,6.400], "NAB": [5.860,6.370], "ANZ": [5.830,6.340], "Macquarie": [5.750,6.280] },
+  };
+
+  let activeProduct = "30yr";
+  let mode = "rate";
+
+  function fmt(n){ return n.toFixed(3) + "%"; }
+
+  function bestBank(productKey){
+    const col = RATES[productKey];
+    let best = null, bestVal = Infinity;
+    for (const bank of BANKS){
+      const v = col[bank][mode === "rate" ? 0 : 1];
+      if (v < bestVal){ bestVal = v; best = bank; }
+    }
+    return best;
+  }
+
+  function renderChips(){
+    const el = document.getElementById("productChips");
+    el.innerHTML = "";
+    PRODUCTS.forEach(p => {
+      const btn = document.createElement("button");
+      btn.className = "chip" + (p.key === activeProduct ? " active" : "");
+      btn.textContent = p.label;
+      btn.addEventListener("click", () => { activeProduct = p.key; render(); });
+      el.appendChild(btn);
+    });
+  }
+
+  function renderTable(){
+    const head = document.getElementById("headRow");
+    const body = document.getElementById("bodyRows");
+    head.innerHTML = '<th scope="col">Product</th>' + BANKS.map(b => `<th scope="col">${b}</th>`).join("");
+
+    body.innerHTML = "";
+    PRODUCTS.forEach(p => {
+      const tr = document.createElement("tr");
+      const best = bestBank(p.key);
+      let rowHtml = `<th scope="row">${p.label}<span class="sub">${p.sub}</span></th>`;
+      BANKS.forEach(bank => {
+        const [rate, apr] = RATES[p.key][bank];
+        const isBest = bank === best;
+        const shown = mode === "rate" ? rate : apr;
+        const secondary = mode === "rate" ? apr : rate;
+        const secondaryLabel = mode === "rate" ? "Comp. rate" : "Rate";
+        rowHtml += `<td class="${isBest ? "best" : ""}">
+            <span class="rate">${fmt(shown)}${isBest ? '<span class="best-badge">BEST</span>' : ""}</span>
+            <span class="apr">${secondaryLabel} ${fmt(secondary)}</span>
+          </td>`;
+      });
+      tr.innerHTML = rowHtml;
+      body.appendChild(tr);
+    });
+  }
+
+  function render(){
+    renderChips();
+    renderTable();
+  }
+
+  document.getElementById("viewSeg").addEventListener("click", (e) => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    mode = btn.dataset.mode;
+    document.querySelectorAll("#viewSeg button").forEach(b => b.classList.toggle("active", b === btn));
+    renderTable();
+  });
+
+  const today = new Date();
+  document.getElementById("updatedDate").textContent = today.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  document.getElementById("todayLine").textContent = "Generated " + today.toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" });
+
+  render();
+</script>
