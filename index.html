@@ -271,9 +271,13 @@
   <div class="controls">
     <div class="chip-row" id="productChips"></div>
     <div class="spacer"></div>
-    <div class="seg" id="loanSeg">
-      <button data-loan="pi" class="active">P&amp;I</button>
-      <button data-loan="io">Investor IO</button>
+    <div class="seg" id="purposeSeg">
+      <button data-purpose="owner" class="active">Owner Occupied</button>
+      <button data-purpose="investor">Investment</button>
+    </div>
+    <div class="seg" id="repaySeg">
+      <button data-repay="pi" class="active">P&amp;I</button>
+      <button data-repay="io">Interest Only</button>
     </div>
     <div class="seg" id="viewSeg">
       <button data-mode="rate" class="active">Rate</button>
@@ -327,12 +331,20 @@
     fixed3:   { rate: 5.840, spread: 0.510 },
   };
 
-  // Investor interest-only runs higher than owner-occupier P&I on both the rate and the spread.
-  const IO_ADJUST = {
+  // Interest-only runs higher than P&I on both the rate and the spread, independent of loan purpose.
+  const REPAY_ADJUST = {
     variable: { rate: 0.40, spread: 0.10 },
     fixed1:   { rate: 0.45, spread: 0.10 },
     fixed2:   { rate: 0.45, spread: 0.10 },
     fixed3:   { rate: 0.45, spread: 0.10 },
+  };
+
+  // Investment loans run higher than owner-occupier on both the rate and the spread, independent of repayment type.
+  const PURPOSE_ADJUST = {
+    variable: { rate: 0.15, spread: 0.03 },
+    fixed1:   { rate: 0.18, spread: 0.03 },
+    fixed2:   { rate: 0.20, spread: 0.03 },
+    fixed3:   { rate: 0.20, spread: 0.03 },
   };
 
   // Rough positioning of each lender relative to the anchor rate (digital/challenger lenders undercut; specialist non-bank lenders run higher).
@@ -357,21 +369,25 @@
     };
   }
 
-  // Generates deterministic sample rate + comparison-rate pairs per lender × product × loan type.
+  // Generates deterministic sample rate + comparison-rate pairs per lender × product × purpose × repayment type.
   function buildRates(){
-    const result = { pi: {}, io: {} };
-    for (const { key: productKey } of PRODUCTS){
-      result.pi[productKey] = {};
-      result.io[productKey] = {};
-      for (const bank of BANKS){
-        const tier = LENDER_TIER[bank] || 0;
-        for (const loanType of ["pi", "io"]){
+    const result = {};
+    for (const purpose of ["owner", "investor"]){
+      result[purpose] = {};
+      for (const repay of ["pi", "io"]){
+        result[purpose][repay] = {};
+        for (const { key: productKey } of PRODUCTS){
+          result[purpose][repay][productKey] = {};
           const base = PRODUCT_BASE[productKey];
-          const adjust = loanType === "io" ? IO_ADJUST[productKey] : { rate: 0, spread: 0 };
-          const wobble = (seededRand(hashStr(bank + "|" + productKey + "|" + loanType))() - 0.5) * 0.24;
-          const rate = base.rate + adjust.rate + tier + wobble;
-          const comp = rate + base.spread + adjust.spread;
-          result[loanType][productKey][bank] = [Number(rate.toFixed(3)), Number(comp.toFixed(3))];
+          const repayAdjust = repay === "io" ? REPAY_ADJUST[productKey] : { rate: 0, spread: 0 };
+          const purposeAdjust = purpose === "investor" ? PURPOSE_ADJUST[productKey] : { rate: 0, spread: 0 };
+          for (const bank of BANKS){
+            const tier = LENDER_TIER[bank] || 0;
+            const wobble = (seededRand(hashStr(bank + "|" + productKey + "|" + purpose + "|" + repay))() - 0.5) * 0.24;
+            const rate = base.rate + repayAdjust.rate + purposeAdjust.rate + tier + wobble;
+            const comp = rate + base.spread + repayAdjust.spread + purposeAdjust.spread;
+            result[purpose][repay][productKey][bank] = [Number(rate.toFixed(3)), Number(comp.toFixed(3))];
+          }
         }
       }
     }
@@ -382,16 +398,17 @@
 
   let activeProduct = "variable";
   let mode = "rate";
-  let loanType = "pi";
+  let purpose = "owner";
+  let repay = "pi";
 
   function fmt(n){ return n.toFixed(3) + "%"; }
 
   function subLabel(){
-    return loanType === "pi" ? "owner-occupier, P&I" : "investor, interest-only";
+    return (purpose === "owner" ? "owner-occupier" : "investor") + ", " + (repay === "pi" ? "P&I" : "interest-only");
   }
 
   function bestBank(productKey){
-    const col = RATES[loanType][productKey];
+    const col = RATES[purpose][repay][productKey];
     let best = null, bestVal = Infinity;
     for (const bank of BANKS){
       const v = col[bank][mode === "rate" ? 0 : 1];
@@ -423,7 +440,7 @@
       const best = bestBank(p.key);
       let rowHtml = `<th scope="row">${p.label}<span class="sub">${subLabel()}</span></th>`;
       BANKS.forEach(bank => {
-        const [rate, apr] = RATES[loanType][p.key][bank];
+        const [rate, apr] = RATES[purpose][repay][p.key][bank];
         const isBest = bank === best;
         const shown = mode === "rate" ? rate : apr;
         const secondary = mode === "rate" ? apr : rate;
@@ -451,11 +468,19 @@
     renderTable();
   });
 
-  document.getElementById("loanSeg").addEventListener("click", (e) => {
+  document.getElementById("purposeSeg").addEventListener("click", (e) => {
     const btn = e.target.closest("button");
     if (!btn) return;
-    loanType = btn.dataset.loan;
-    document.querySelectorAll("#loanSeg button").forEach(b => b.classList.toggle("active", b === btn));
+    purpose = btn.dataset.purpose;
+    document.querySelectorAll("#purposeSeg button").forEach(b => b.classList.toggle("active", b === btn));
+    renderTable();
+  });
+
+  document.getElementById("repaySeg").addEventListener("click", (e) => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    repay = btn.dataset.repay;
+    document.querySelectorAll("#repaySeg button").forEach(b => b.classList.toggle("active", b === btn));
     renderTable();
   });
 
