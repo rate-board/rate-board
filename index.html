@@ -134,6 +134,34 @@
     margin:0 0 18px;
   }
 
+  .rates-area{position:relative;}
+  .rates-area.gated .gate-content{
+    filter:blur(6px);
+    opacity:.7;
+    user-select:none;
+    pointer-events:none;
+  }
+  .gate-overlay{
+    position:absolute;
+    inset:0;
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+    padding:64px 16px 0;
+  }
+  .gate-card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:14px;
+    box-shadow:var(--shadow);
+    padding:26px 24px;
+    max-width:400px;
+    text-align:center;
+  }
+  .gate-card h2{margin:0 0 8px;font-size:22px;font-weight:600;text-wrap:balance;}
+  .gate-card p{margin:0 0 18px;color:var(--ink-muted);font-size:14px;line-height:1.55;}
+  .gate-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+
   .controls{
     display:flex;
     flex-wrap:wrap;
@@ -413,6 +441,8 @@
 
   <p class="status-line" id="statusLine" hidden></p>
 
+  <section class="rates-area" id="ratesArea">
+  <div class="gate-content" id="gateContent">
   <div class="controls">
     <div class="seg" id="purposeSeg">
       <button data-purpose="owner" class="active">Owner Occupied</button>
@@ -445,6 +475,18 @@
       </table>
     </div>
   </div>
+  </div>
+  <div class="gate-overlay" id="gateOverlay" hidden>
+    <div class="gate-card">
+      <h2>Sign in to see today's rates</h2>
+      <p>Create a free account to compare live home loan rates from <span id="gateCount">Australia's leading</span> lenders, side by side.</p>
+      <div class="gate-actions">
+        <button type="button" class="btn-primary" data-auth="register">Create free account</button>
+        <button type="button" class="btn-ghost" data-auth="signin">Sign in</button>
+      </div>
+    </div>
+  </div>
+  </section>
 
   <p class="assumptions">
     Comparison rate based on a $150,000 loan over 25 years — warning: this comparison rate is true only for this example and may not include all fees and charges. Fixed-rate comparison rates assume reversion to the lender's standard variable rate at term end, which is why some fixed comparison rates sit well above the fixed rate itself — expected ASIC methodology, not an error. Lenders Mortgage Insurance (LMI) typically applies above 80% LVR and isn't reflected in the rate shown. Interest-only figures show the rate during the IO period; repayments typically rise when the loan reverts to P&amp;I. "—" means that lender doesn't publish that term. Rates sourced from each lender's own basic/no-frills product where one exists; package or offset products may price differently. Always confirm the current rate and your eligibility directly with the lender before relying on these figures.
@@ -620,11 +662,15 @@
     return result;
   }
 
+  // Rates are readable only by signed-in users (enforced by the database), so signed-out visitors get the lender
+  // list with masked figures behind a blur, like a news-site paywall.
   async function loadData(){
+    const gated = !session;
     const [lendersRes, productsRes, ratesRes] = await Promise.all([
       sb.from("lenders").select("id,name,source_url,note").eq("active", true).order("sort_order"),
       sb.from("products").select("key,label").order("sort_order"),
-      sb.from("rates").select("lender_id,product_key,rate,comparison_rate,as_of"),
+      gated ? Promise.resolve({ data: [], error: null })
+            : sb.from("rates").select("lender_id,product_key,rate,comparison_rate,as_of"),
     ]);
     const err = lendersRes.error || productsRes.error || ratesRes.error;
     if (err){
@@ -644,8 +690,18 @@
     RATES = buildRates();
     loadState = "ready";
     showStatus("");
-    $("updatedDate").textContent = latestAsOf ? "Rates as of " + formatIsoDate(latestAsOf) : "—";
+    $("updatedDate").textContent = gated ? "Sign in to see today's rates"
+      : latestAsOf ? "Rates as of " + formatIsoDate(latestAsOf) : "—";
+    $("gateCount").textContent = LENDERS.length;
+    setGated(gated);
     renderTable();
+  }
+
+  function setGated(gated){
+    $("ratesArea").classList.toggle("gated", gated);
+    $("gateContent").inert = gated;
+    $("gateContent").setAttribute("aria-hidden", gated ? "true" : "false");
+    $("gateOverlay").hidden = !gated;
   }
 
   function subLabel(){
@@ -722,6 +778,10 @@
       const editHtml = isAdmin ? `<button type="button" class="edit-btn" data-edit="${escapeHtml(lender.id)}" title="Edit ${name}">✎</button>` : "";
       let rowHtml = `<th scope="row">${nameHtml}${noteHtml}${editHtml}</th>`;
       PRODUCTS.forEach(p => {
+        if (!session){
+          rowHtml += `<td><span class="rate">•.••%</span><span class="apr">Comp. rate •.••%</span></td>`;
+          return;
+        }
         const cell = RATES[purpose][repay][lvr][p.key][lender.id];
         if (!cell){
           rowHtml += `<td class="unavailable"><span class="rate">—</span></td>`;
@@ -916,11 +976,24 @@
     renderTable();
   }
 
-  // Supabase advises against awaiting other client calls inside this callback, hence the setTimeout hand-offs.
+  // Fires INITIAL_SESSION on load, then on every sign-in/out. Reload data only when the user actually changes
+  // (token refreshes don't). Supabase advises against awaiting client calls inside this callback, hence setTimeout.
+  let lastUserId;
   sb.auth.onAuthStateChange((event, newSession) => {
     session = newSession;
     if (event === "PASSWORD_RECOVERY") setTimeout(() => openAuth("newpw"), 0);
-    setTimeout(refreshRole, 0);
+    const userId = newSession ? newSession.user.id : null;
+    if (userId !== lastUserId){
+      lastUserId = userId;
+      setTimeout(async () => { await refreshRole(); await loadData(); }, 0);
+    } else {
+      setTimeout(renderAccount, 0);
+    }
+  });
+
+  $("gateOverlay").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-auth]");
+    if (btn) openAuth(btn.dataset.auth);
   });
 
   // --- Admin editing ---------------------------------------------------------------
@@ -1023,5 +1096,4 @@
   $("todayLine").textContent = "Viewed " + new Date().toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" });
   renderAccount();
   renderTable();
-  loadData();
 </script>
