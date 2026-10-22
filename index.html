@@ -14,6 +14,7 @@
     --accent-soft:#E6F0EC;
     --gold:#9C7A2E;
     --gold-soft:#F6EFDD;
+    --danger:#B3261E;
     --focus:#1F6F54;
     --shadow: 0 1px 2px rgba(20,30,40,.04), 0 8px 24px rgba(20,30,40,.05);
   }
@@ -31,6 +32,7 @@
       --accent-soft:#1B3B30;
       --gold:#D4B461;
       --gold-soft:#332A14;
+      --danger:#F2B8B5;
       --focus:#4FAE8A;
       --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
     }
@@ -48,11 +50,13 @@
     --accent-soft:#1B3B30;
     --gold:#D4B461;
     --gold-soft:#332A14;
+    --danger:#F2B8B5;
     --focus:#4FAE8A;
     --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
   }
 
   *{box-sizing:border-box;}
+  [hidden]{display:none !important;}
   body{
     margin:0;
     background:var(--bg);
@@ -83,6 +87,7 @@
     color:var(--ink-muted);
     font-size:14px;
   }
+  .header-right{display:flex;flex-direction:column;align-items:flex-end;gap:10px;}
   .updated{
     text-align:right;
     font-size:12px;
@@ -90,6 +95,19 @@
     line-height:1.5;
   }
   .updated strong{color:var(--ink-muted);font-weight:600;}
+
+  .account{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;font-size:13px;color:var(--ink-muted);}
+  .account .who{font-weight:600;color:var(--ink);}
+  .role-chip{
+    font-size:10.5px;
+    font-weight:700;
+    letter-spacing:.04em;
+    text-transform:uppercase;
+    color:var(--accent);
+    background:var(--accent-soft);
+    border-radius:5px;
+    padding:2px 7px;
+  }
 
   .sample-banner{
     display:flex;
@@ -105,6 +123,16 @@
     margin:18px 0 22px;
   }
   .sample-banner svg{flex:none;width:15px;height:15px;}
+
+  .status-line{
+    font-size:13px;
+    color:var(--ink-muted);
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:12px 14px;
+    margin:0 0 18px;
+  }
 
   .controls{
     display:flex;
@@ -225,6 +253,24 @@
   }
   td.unavailable .rate{color:var(--ink-faint);font-weight:500;}
 
+  .edit-btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:18px;
+    height:18px;
+    margin-left:6px;
+    border:none;
+    border-radius:5px;
+    background:var(--accent-soft);
+    color:var(--accent);
+    font-size:11px;
+    cursor:pointer;
+    vertical-align:middle;
+  }
+  .edit-btn:hover{background:var(--accent);color:#fff;}
+  .edit-btn:focus-visible{outline:2px solid var(--focus);outline-offset:2px;}
+
   .rate{font-size:16px;font-weight:600;color:var(--ink);}
   .apr{display:block;font-size:11.5px;color:var(--ink-faint);margin-top:2px;font-weight:400;}
   td.best .rate{color:var(--accent);}
@@ -241,6 +287,79 @@
     padding:2px 6px;
     vertical-align:middle;
   }
+
+  dialog.modal{
+    border:none;
+    border-radius:14px;
+    padding:0;
+    background:var(--surface);
+    color:var(--ink);
+    box-shadow:var(--shadow);
+    max-width:420px;
+    width:calc(100% - 32px);
+  }
+  dialog.modal::backdrop{background:rgba(20,24,32,.45);}
+  dialog.modal form{padding:22px;display:flex;flex-direction:column;gap:14px;}
+  dialog.modal h2{margin:0;font-size:20px;font-weight:600;}
+  .field{display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:600;color:var(--ink-muted);}
+  .field input, .field textarea{
+    font:14px 'Inter',sans-serif;
+    font-weight:400;
+    color:var(--ink);
+    background:var(--bg);
+    border:1px solid var(--line-strong);
+    border-radius:7px;
+    padding:9px 10px;
+    resize:vertical;
+  }
+  .field input:focus-visible, .field textarea:focus-visible{outline:2px solid var(--focus);outline-offset:1px;}
+  .product-row{
+    display:grid;
+    grid-template-columns:auto 1fr 1fr;
+    gap:8px;
+    align-items:center;
+    font-size:12.5px;
+  }
+  .product-row .plabel{font-weight:600;color:var(--ink-muted);}
+  .product-row input[type="number"]{
+    font:13px 'IBM Plex Mono',monospace;
+    color:var(--ink);
+    background:var(--bg);
+    border:1px solid var(--line-strong);
+    border-radius:6px;
+    padding:6px 8px;
+    width:100%;
+  }
+  .product-row input:disabled{opacity:.4;}
+  .product-row label.offered{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink-faint);grid-column:1 / -1;}
+  .form-msg{margin:0;font-size:13px;line-height:1.5;}
+  .form-msg.error{color:var(--danger);}
+  .form-msg.ok{color:var(--accent);}
+  .form-links{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:12.5px;color:var(--ink-muted);}
+  .link-btn{
+    background:none;
+    border:none;
+    padding:0;
+    font:inherit;
+    color:var(--accent);
+    cursor:pointer;
+    text-decoration:underline;
+    text-underline-offset:2px;
+  }
+  .link-btn:focus-visible{outline:2px solid var(--focus);outline-offset:2px;}
+  .dialog-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:4px;}
+  .btn-ghost, .btn-primary{
+    font:13px 'Inter',sans-serif;
+    font-weight:600;
+    border-radius:7px;
+    padding:8px 16px;
+    cursor:pointer;
+  }
+  .btn-sm{padding:6px 12px;font-size:12.5px;}
+  .btn-ghost{background:none;border:1px solid var(--line-strong);color:var(--ink-muted);}
+  .btn-primary{background:var(--accent);border:1px solid var(--accent);color:#fff;}
+  .btn-primary:disabled{opacity:.6;cursor:wait;}
+  .btn-ghost:focus-visible, .btn-primary:focus-visible{outline:2px solid var(--focus);outline-offset:2px;}
 
   .assumptions{
     margin-top:16px;
@@ -264,10 +383,13 @@
   @media (max-width:560px){
     .title-block h1{font-size:24px;}
     header.page{flex-direction:column;align-items:flex-start;}
+    .header-right{align-items:flex-start;}
+    .account{justify-content:flex-start;}
     .updated{text-align:left;}
   }
 </style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500..600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
 
 <div class="wrap">
   <header class="page">
@@ -275,16 +397,21 @@
       <h1>Rate Board</h1>
       <p>Today's mortgage rates, side by side across lenders.</p>
     </div>
-    <div class="updated">
-      <strong id="updatedDate">—</strong><br>
-      live rates · sourced
+    <div class="header-right">
+      <div class="account" id="accountBar"></div>
+      <div class="updated">
+        <strong id="updatedDate">—</strong><br>
+        live from the lenders' published rates
+      </div>
     </div>
   </header>
 
   <div class="sample-banner">
     <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8.5" stroke="currentColor" stroke-width="1.6"/><path d="M10 6.2v4.6M10 13.6h.01" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-    This is a static public snapshot, frozen 2 Oct 2026 — it does not update live and has no sign-in or editing. The default view (Owner Occupied, P&amp;I, 60–80% LVR) shows each lender's officially published rate as of that date; other filter combinations are estimated from it using typical market spreads and are not independently sourced.
+    The default view (Owner Occupied, P&amp;I, 60–80% LVR) shows each lender's officially published rate as of the date shown — click a lender's name for its source page. Other filter combinations are estimated from that rate using typical market spreads and are not independently sourced.
   </div>
+
+  <p class="status-line" id="statusLine" hidden></p>
 
   <div class="controls">
     <div class="seg" id="purposeSeg">
@@ -324,56 +451,75 @@
   </p>
 
   <footer>
-    <span>Rate Board · internal comparison tool</span>
+    <span>Rate Board · indicative rates, not quotes</span>
     <span id="todayLine"></span>
   </footer>
 </div>
 
+<dialog id="authDialog" class="modal">
+  <form id="authForm" novalidate>
+    <h2 id="authTitle">Sign in</h2>
+    <label class="field" data-modes="register">
+      <span>Name</span>
+      <input type="text" id="a-name" autocomplete="name">
+    </label>
+    <label class="field" data-modes="signin register forgot">
+      <span>Email</span>
+      <input type="email" id="a-email" autocomplete="email" required>
+    </label>
+    <label class="field" data-modes="signin register newpw">
+      <span id="a-password-label">Password</span>
+      <input type="password" id="a-password" required>
+    </label>
+    <label class="field" data-modes="register newpw">
+      <span>Confirm password</span>
+      <input type="password" id="a-confirm" autocomplete="new-password" required>
+    </label>
+    <p class="form-msg" id="authMsg" role="status" hidden></p>
+    <div class="form-links" data-modes="signin">
+      <button type="button" class="link-btn" data-goto="forgot">Forgot password?</button>
+      <span>New here? <button type="button" class="link-btn" data-goto="register">Create an account</button></span>
+    </div>
+    <div class="form-links" data-modes="register forgot">
+      <span>Already have an account? <button type="button" class="link-btn" data-goto="signin">Sign in</button></span>
+    </div>
+    <div class="dialog-actions">
+      <button type="button" class="btn-ghost" id="authCancel">Cancel</button>
+      <button type="submit" class="btn-primary" id="authSubmit">Sign in</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="editDialog" class="modal">
+  <form id="editForm" novalidate>
+    <h2 id="editTitle">Edit lender</h2>
+    <label class="field">
+      <span>Source URL</span>
+      <input type="url" id="e-source" placeholder="https://">
+    </label>
+    <label class="field">
+      <span>Rates as of</span>
+      <input type="date" id="e-asof">
+    </label>
+    <label class="field">
+      <span>Note (optional)</span>
+      <textarea id="e-note" rows="2"></textarea>
+    </label>
+    <div id="editProducts"></div>
+    <p class="form-msg error" id="editError" hidden></p>
+    <div class="dialog-actions">
+      <button type="button" class="btn-ghost" id="editCancel">Cancel</button>
+      <button type="submit" class="btn-primary" id="editSave">Save</button>
+    </div>
+  </form>
+</dialog>
+
 <script>
-  // Edit this array to update what the board shows — each row is one lender × product.
-  // MVP2 will let network agents update this through a form instead of editing code.
-  const BANKS = [
-    "CBA", "Westpac", "NAB", "ANZ", "Macquarie", "ING", "Bankwest", "Suncorp",
-    "BOQ", "St.George", "Bendigo Bank", "AMP Bank", "HSBC", "ME Bank",
-    "People First Bank", "UBank", "Unloan", "Athena Home Loans", "Pepper Money",
-    "Liberty Financial", "loans.com.au", "Virgin Money", "RAMS", "Tic:Toc",
-  ];
-
-  const PRODUCTS = [
-    { key: "variable", label: "Variable" },
-    { key: "fixed1", label: "1-Year Fixed" },
-    { key: "fixed2", label: "2-Year Fixed" },
-    { key: "fixed3", label: "3-Year Fixed" },
-  ];
-
-  // Real published rates, Owner Occupier / P&I / 60–80% LVR (each lender's basic/no-frills product where one exists),
-  // sourced live from each lender's official site on 2 Oct 2026. [rate, comparison rate]; null = not offered/published.
-  const REAL_RATES = {
-    "CBA":                { source: "https://www.commbank.com.au/home-loans/standard-variable-rate.html", variable: [6.49, 6.87], fixed1: [6.78, 8.31], fixed2: [6.82, 8.19], fixed3: [6.89, 8.09] },
-    "Westpac":            { source: "https://www.westpac.com.au/personal-banking/home-loans/all-interest-rates/", variable: [6.54, 6.55], fixed1: [7.04, 8.76], fixed2: [7.04, 8.58], fixed3: [7.24, 8.48] },
-    "NAB":                { source: "https://www.nab.com.au/personal/interest-rates-fees-and-charges/home-loan-interest-rates", variable: [6.44, 6.44], fixed1: [6.79, 7.09], fixed2: [6.81, 7.08], fixed3: [6.92, 7.09], note: "Variable and fixed figures come from two different NAB loan products — no direct basic-to-basic match." },
-    "ANZ":                { source: "https://www.anz.com.au/personal/home-loans/standard-variable-rate/", variable: [7.24, 7.24], fixed1: [6.49, 7.16], fixed2: [6.49, 7.09], fixed3: [6.64, 7.07] },
-    "Macquarie":          { source: "https://www.macquarie.com.au/home-loans/home-loan-rates.html", variable: [6.09, 6.11], fixed1: [6.54, 6.16], fixed2: [6.64, 6.22], fixed3: [6.64, 6.27] },
-    "ING":                { source: "https://www.ing.com.au/rates-and-fees/home-loan-rates.html", variable: [6.09, 6.12], fixed1: [6.74, 6.19], fixed2: [6.69, 6.24], fixed3: [6.84, 6.33] },
-    "Bankwest":           { source: "https://www.bankwest.com.au/rates/home-loan-rates", variable: [6.24, 6.27], fixed1: [6.49, 8.78], fixed2: [6.59, 8.55], fixed3: [6.69, 8.37] },
-    "Suncorp":            { source: "https://www.suncorpbank.com.au/home-loans/variable.html", variable: [6.18, 6.53], fixed1: [6.29, 6.54], fixed2: [6.24, 6.54], fixed3: [6.44, 6.61] },
-    "BOQ":                { source: "https://www.boq.com.au/personal/help-and-support/rates-and-fees/home-loan-rates-owner-occupier", variable: [6.33, 6.47], fixed1: null, fixed2: [6.79, 6.59], fixed3: [6.84, 6.64], note: "No 1-year fixed term offered." },
-    "St.George":          { source: "https://www.stgeorge.com.au/personal/home-loans/home-loan-interest-rates/table", variable: [6.39, 6.40], fixed1: [7.04, 8.75], fixed2: [7.04, 8.56], fixed3: [7.24, 8.46] },
-    "Bendigo Bank":       { source: "https://www.bendigobank.com.au/personal/home-loans/rates/", variable: [6.13, 6.15], fixed1: [6.39, 6.18], fixed2: [6.44, 6.21], fixed3: [6.39, 6.22] },
-    "AMP Bank":           { source: "https://www.amp.com.au/home-loans/interest-rates-fees", variable: [6.54, 6.95], fixed1: [6.39, 7.52], fixed2: [6.39, 7.40], fixed3: [6.49, 7.33] },
-    "HSBC":               { source: "https://www.hsbc.com.au/home-loans/products/rates/", variable: [6.09, 6.10], fixed1: [7.09, 7.57], fixed2: [7.09, 7.52], fixed3: [7.14, 7.50], note: "HSBC Australia is no longer accepting new home loan applications." },
-    "ME Bank":            { source: "https://www.mebank.com.au/home-loans/rates/owner-occupier/", variable: [6.04, 6.06], fixed1: [6.54, 6.11], fixed2: [6.24, 6.10], fixed3: [6.29, 6.13] },
-    "People First Bank":  { source: "https://www.peoplefirstbank.com.au/rates/home-loan-rates", variable: [6.09, 6.10], fixed1: [6.49, 6.14], fixed2: [6.54, 6.18], fixed3: [6.54, 6.22] },
-    "UBank":              { source: "https://www.ubank.com.au/home-loans/interest-rates-and-fees", variable: [6.14, 6.16], fixed1: [6.74, 6.44], fixed2: [6.79, 6.51], fixed3: [6.84, 6.58], note: "Rates stated are scheduled to rise 0.25% p.a. from 8 Oct 2026." },
-    "Unloan":             { source: "https://www.unloan.com.au/home-loan", variable: [5.89, 5.80], fixed1: null, fixed2: null, fixed3: null, note: "Variable-only lender — no fixed-rate option." },
-    "Athena Home Loans":  { source: "https://www.athena.com.au/home-loans/rates-no-fees", variable: [6.39, 6.35], fixed1: [6.84, 6.39], fixed2: [6.89, 6.45], fixed3: [6.94, 6.51] },
-    "Pepper Money":       { source: "https://www.peppermoney.com.au/lending/home-loans/variable", variable: [7.09, 7.27], fixed1: null, fixed2: [7.24, 7.02], fixed3: [7.34, 7.10], note: "Specialist risk-based lender — figures are the lowest advertised rate, actual pricing varies by credit profile. No 1-year fixed term." },
-    "Liberty Financial":  { source: "https://www.liberty.com.au/home-loans/low-rate-home-loans", variable: [6.49, 6.57], fixed1: null, fixed2: null, fixed3: null, note: "Fixed-rate pricing isn't published as a rate card — only available via Liberty's personalised quote tool." },
-    "loans.com.au":       { source: "https://www.loans.com.au/home-loans/variable-rate/", variable: [5.94, 5.98], fixed1: [6.89, 6.16], fixed2: [6.89, 6.25], fixed3: [6.89, 6.32] },
-    "Virgin Money":       { source: "https://www.virginmoney.com.au/home-loans/lite", variable: [5.84, 5.86], fixed1: [6.49, 5.92], fixed2: [6.24, 5.93], fixed3: [6.29, 5.98] },
-    "RAMS":               { source: "https://www.rams.com.au/", variable: null, fixed1: null, fixed2: null, fixed3: null, note: "Closed to new home loan customers since Aug 2024; loan book sold to a Pepper Money/KKR/PIMCO consortium." },
-    "Tic:Toc":            { source: "https://www.finder.com.au/home-loans/tiimely-home-own-home-loans", variable: [5.95, 5.96], fixed1: [6.39, 6.00], fixed2: [6.44, 6.05], fixed3: [6.39, 6.08], note: "Now branded Tiimely Home. Not published on its own site — figures via Finder/Canstar, unverified against an official source." },
-  };
+  const SUPABASE_URL = "https://fwjiofgwolontlglwrog.supabase.co";
+  // Publishable key: designed to ship in browser code — row-level security in the database decides what it may do.
+  const SUPABASE_KEY = "sb_publishable_jxUPwSfv1hkMzND0qAWhcA_Cenv2DRz";
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const SITE_URL = location.origin + location.pathname;
 
   // Interest-only runs higher than P&I on both the rate and the spread, independent of loan purpose.
   const REPAY_ADJUST = {
@@ -397,42 +543,16 @@
     "80": { rate: 0, spread: 0 },
     "90": { rate: 0.35, spread: 0.05 },
   };
+  const ZERO = { rate: 0, spread: 0 };
 
-  // Builds every purpose × repayment × LVR combination from the real Owner-Occupier/P&I/60-80% LVR base above.
-  // Only that base combination is independently sourced; the rest are estimated by applying typical market spreads to it.
-  function buildRates(){
-    const result = {};
-    for (const purpose of ["owner", "investor"]){
-      result[purpose] = {};
-      for (const repay of ["pi", "io"]){
-        result[purpose][repay] = {};
-        for (const lvr of ["60", "80", "90"]){
-          result[purpose][repay][lvr] = {};
-          for (const { key: productKey } of PRODUCTS){
-            result[purpose][repay][lvr][productKey] = {};
-            const repayAdjust = repay === "io" ? REPAY_ADJUST[productKey] : { rate: 0, spread: 0 };
-            const purposeAdjust = purpose === "investor" ? PURPOSE_ADJUST[productKey] : { rate: 0, spread: 0 };
-            const lvrAdjust = LVR_ADJUST[lvr];
-            const shift = repayAdjust.rate + purposeAdjust.rate + lvrAdjust.rate;
-            const extraSpread = repayAdjust.spread + purposeAdjust.spread + lvrAdjust.spread;
-            for (const bank of BANKS){
-              const base = REAL_RATES[bank][productKey];
-              if (!base){
-                result[purpose][repay][lvr][productKey][bank] = null;
-                continue;
-              }
-              const rate = base[0] + shift;
-              const comp = base[1] + shift + extraSpread;
-              result[purpose][repay][lvr][productKey][bank] = [Number(rate.toFixed(3)), Number(comp.toFixed(3))];
-            }
-          }
-        }
-      }
-    }
-    return result;
-  }
-
-  const RATES = buildRates();
+  let LENDERS = [];   // [{ id, name, source_url, note }]
+  let PRODUCTS = [];  // [{ key, label }]
+  let BASE = {};      // lenderId -> productKey -> [rate, comparisonRate]
+  let RATES = null;
+  let loadState = "loading"; // loading | ready | error
+  let session = null;
+  let isAdmin = false;
+  let editingLender = null;
 
   let mode = "rate";
   let purpose = "owner";
@@ -443,7 +563,90 @@
 
   const LVR_LABEL = { "60": "≤60% LVR", "80": "60–80% LVR", "90": "80–90% LVR" };
 
+  const $ = (id) => document.getElementById(id);
+
   function fmt(n){ return n.toFixed(2) + "%"; }
+
+  function escapeHtml(s){
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  function safeUrl(u){
+    return typeof u === "string" && /^https:\/\//i.test(u) ? u : null;
+  }
+
+  function localIsoDate(d = new Date()){
+    const pad = (n) => String(n).padStart(2, "0");
+    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+  }
+
+  function formatIsoDate(iso){
+    const [y, m, d] = iso.split("-").map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
+  }
+
+  function showStatus(text){
+    const el = $("statusLine");
+    el.hidden = !text;
+    el.textContent = text || "";
+  }
+
+  // Only the owner-occupier / P&I / 60–80% LVR combination is sourced; the rest apply typical market spreads to it.
+  function buildRates(){
+    const result = {};
+    for (const pur of ["owner", "investor"]){
+      result[pur] = {};
+      for (const rep of ["pi", "io"]){
+        result[pur][rep] = {};
+        for (const band of ["60", "80", "90"]){
+          result[pur][rep][band] = {};
+          for (const p of PRODUCTS){
+            const col = result[pur][rep][band][p.key] = {};
+            const ra = rep === "io" ? (REPAY_ADJUST[p.key] || ZERO) : ZERO;
+            const pa = pur === "investor" ? (PURPOSE_ADJUST[p.key] || ZERO) : ZERO;
+            const la = LVR_ADJUST[band];
+            const shift = ra.rate + pa.rate + la.rate;
+            const extraSpread = ra.spread + pa.spread + la.spread;
+            for (const lender of LENDERS){
+              const base = BASE[lender.id] && BASE[lender.id][p.key];
+              col[lender.id] = base
+                ? [Number((base[0] + shift).toFixed(3)), Number((base[1] + shift + extraSpread).toFixed(3))]
+                : null;
+            }
+          }
+        }
+      }
+    }
+    return result;
+  }
+
+  async function loadData(){
+    const [lendersRes, productsRes, ratesRes] = await Promise.all([
+      sb.from("lenders").select("id,name,source_url,note").eq("active", true).order("sort_order"),
+      sb.from("products").select("key,label").order("sort_order"),
+      sb.from("rates").select("lender_id,product_key,rate,comparison_rate,as_of"),
+    ]);
+    const err = lendersRes.error || productsRes.error || ratesRes.error;
+    if (err){
+      loadState = "error";
+      showStatus("Couldn't load rates — try reloading the page. (" + err.message + ")");
+      renderTable();
+      return;
+    }
+    LENDERS = lendersRes.data;
+    PRODUCTS = productsRes.data;
+    BASE = {};
+    let latestAsOf = null;
+    for (const row of ratesRes.data){
+      (BASE[row.lender_id] ||= {})[row.product_key] = [Number(row.rate), Number(row.comparison_rate)];
+      if (!latestAsOf || row.as_of > latestAsOf) latestAsOf = row.as_of;
+    }
+    RATES = buildRates();
+    loadState = "ready";
+    showStatus("");
+    $("updatedDate").textContent = latestAsOf ? "Rates as of " + formatIsoDate(latestAsOf) : "—";
+    renderTable();
+  }
 
   function subLabel(){
     const isBase = purpose === "owner" && repay === "pi" && lvr === "80";
@@ -451,71 +654,81 @@
     return text + (isBase ? "" : " (estimated)");
   }
 
-  function bestBank(productKey){
+  function bestLender(productKey){
     const col = RATES[purpose][repay][lvr][productKey];
     let best = null, bestVal = Infinity;
-    for (const bank of BANKS){
-      const cell = col[bank];
+    for (const lender of LENDERS){
+      const cell = col[lender.id];
       if (!cell) continue;
       const v = cell[mode === "rate" ? 0 : 1];
-      if (v < bestVal){ bestVal = v; best = bank; }
+      if (v < bestVal){ bestVal = v; best = lender.id; }
     }
     return best;
   }
 
-  function escapeHtml(s){
-    return s.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
-  }
-
-  function sortedBanks(){
-    if (!sortKey) return BANKS;
+  function sortedLenders(){
+    if (!sortKey) return LENDERS;
     const dir = sortDir === "asc" ? 1 : -1;
-    const banks = BANKS.slice();
+    const list = LENDERS.slice();
     if (sortKey === "lender"){
-      banks.sort((a, b) => a.localeCompare(b) * dir);
-      return banks;
+      list.sort((a, b) => a.name.localeCompare(b.name) * dir);
+      return list;
     }
     const col = RATES[purpose][repay][lvr][sortKey];
-    banks.sort((a, b) => {
-      const av = col[a] ? col[a][mode === "rate" ? 0 : 1] : null;
-      const bv = col[b] ? col[b][mode === "rate" ? 0 : 1] : null;
+    list.sort((a, b) => {
+      const av = col[a.id] ? col[a.id][mode === "rate" ? 0 : 1] : null;
+      const bv = col[b.id] ? col[b.id][mode === "rate" ? 0 : 1] : null;
       if (av === null && bv === null) return 0;
       if (av === null) return 1;
       if (bv === null) return -1;
       return (av - bv) * dir;
     });
-    return banks;
+    return list;
   }
 
   function headCell(key, label){
     const arrow = sortKey === key ? (sortDir === "asc" ? " ↑" : " ↓") : "";
-    return `<th scope="col"><button type="button" class="sort-btn" data-sort="${key}">${label}${arrow}</button></th>`;
+    return `<th scope="col"><button type="button" class="sort-btn" data-sort="${escapeHtml(key)}">${escapeHtml(label)}${arrow}</button></th>`;
   }
 
   function renderTable(){
-    const head = document.getElementById("headRow");
-    const body = document.getElementById("bodyRows");
-    const summary = document.getElementById("filterSummary");
+    const head = $("headRow");
+    const body = $("bodyRows");
+    const summary = $("filterSummary");
+
+    if (loadState !== "ready"){
+      head.innerHTML = "";
+      const msg = loadState === "error" ? "Couldn't load rates." : "Loading live rates…";
+      body.innerHTML = `<tr><td style="padding:24px 16px;color:var(--ink-faint);">${msg}</td></tr>`;
+      summary.textContent = "";
+      return;
+    }
+
     summary.textContent = "Showing " + subLabel() + " rates." + (lvr === "90" ? " LMI typically applies above 80% LVR." : "");
     head.innerHTML = headCell("lender", "Lender") + PRODUCTS.map(p => headCell(p.key, p.label)).join("");
 
     const bestByProduct = {};
-    PRODUCTS.forEach(p => { bestByProduct[p.key] = bestBank(p.key); });
+    PRODUCTS.forEach(p => { bestByProduct[p.key] = bestLender(p.key); });
 
     body.innerHTML = "";
-    sortedBanks().forEach(bank => {
+    sortedLenders().forEach(lender => {
       const tr = document.createElement("tr");
-      const info = REAL_RATES[bank];
-      const noteHtml = info.note ? `<span class="lender-note" title="${escapeHtml(info.note)}">i</span>` : "";
-      let rowHtml = `<th scope="row"><a class="lender-link" href="${info.source}" target="_blank" rel="noopener">${bank}</a>${noteHtml}</th>`;
+      const name = escapeHtml(lender.name);
+      const href = safeUrl(lender.source_url);
+      const nameHtml = href
+        ? `<a class="lender-link" href="${escapeHtml(href)}" target="_blank" rel="noopener">${name}</a>`
+        : `<span>${name}</span>`;
+      const noteHtml = lender.note ? `<span class="lender-note" title="${escapeHtml(lender.note)}">i</span>` : "";
+      const editHtml = isAdmin ? `<button type="button" class="edit-btn" data-edit="${escapeHtml(lender.id)}" title="Edit ${name}">✎</button>` : "";
+      let rowHtml = `<th scope="row">${nameHtml}${noteHtml}${editHtml}</th>`;
       PRODUCTS.forEach(p => {
-        const cell = RATES[purpose][repay][lvr][p.key][bank];
+        const cell = RATES[purpose][repay][lvr][p.key][lender.id];
         if (!cell){
           rowHtml += `<td class="unavailable"><span class="rate">—</span></td>`;
           return;
         }
         const [rate, apr] = cell;
-        const isBest = bank === bestByProduct[p.key];
+        const isBest = lender.id === bestByProduct[p.key];
         const shown = mode === "rate" ? rate : apr;
         const secondary = mode === "rate" ? apr : rate;
         const secondaryLabel = mode === "rate" ? "Comp. rate" : "Rate";
@@ -529,7 +742,23 @@
     });
   }
 
-  document.getElementById("headRow").addEventListener("click", (e) => {
+  // --- Filters and sorting -----------------------------------------------------
+
+  function wireSeg(id, attr, apply){
+    $(id).addEventListener("click", (e) => {
+      const btn = e.target.closest("button");
+      if (!btn) return;
+      apply(btn.dataset[attr]);
+      document.querySelectorAll("#" + id + " button").forEach(b => b.classList.toggle("active", b === btn));
+      renderTable();
+    });
+  }
+  wireSeg("viewSeg", "mode", v => { mode = v; });
+  wireSeg("purposeSeg", "purpose", v => { purpose = v; });
+  wireSeg("repaySeg", "repay", v => { repay = v; });
+  wireSeg("lvrSeg", "lvr", v => { lvr = v; });
+
+  $("headRow").addEventListener("click", (e) => {
     const btn = e.target.closest(".sort-btn");
     if (!btn) return;
     const key = btn.dataset.sort;
@@ -538,41 +767,261 @@
     renderTable();
   });
 
-  document.getElementById("viewSeg").addEventListener("click", (e) => {
-    const btn = e.target.closest("button");
-    if (!btn) return;
-    mode = btn.dataset.mode;
-    document.querySelectorAll("#viewSeg button").forEach(b => b.classList.toggle("active", b === btn));
-    renderTable();
+  // --- Accounts ------------------------------------------------------------------
+
+  const AUTH_COPY = {
+    signin:   { title: "Sign in",               submit: "Sign in",           pwAuto: "current-password", pwLabel: "Password" },
+    register: { title: "Create your account",   submit: "Create account",    pwAuto: "new-password",     pwLabel: "Password (8+ characters)" },
+    forgot:   { title: "Reset your password",   submit: "Send reset link",   pwAuto: "off",              pwLabel: "Password" },
+    newpw:    { title: "Choose a new password", submit: "Save new password", pwAuto: "new-password",     pwLabel: "New password (8+ characters)" },
+  };
+  let authMode = "signin";
+
+  function authMsg(text, kind){
+    const el = $("authMsg");
+    el.hidden = !text;
+    el.textContent = text || "";
+    el.className = "form-msg" + (kind ? " " + kind : "");
+  }
+
+  function setAuthMode(next){
+    authMode = next;
+    const copy = AUTH_COPY[next];
+    $("authTitle").textContent = copy.title;
+    $("authSubmit").textContent = copy.submit;
+    $("a-password").autocomplete = copy.pwAuto;
+    $("a-password-label").textContent = copy.pwLabel;
+    document.querySelectorAll("#authForm [data-modes]").forEach(el => {
+      const visible = el.dataset.modes.split(" ").includes(next);
+      el.hidden = !visible;
+      el.querySelectorAll("input").forEach(input => { input.disabled = !visible; });
+    });
+    authMsg("");
+  }
+
+  function openAuth(next){
+    setAuthMode(next);
+    if (!$("authDialog").open) $("authDialog").showModal();
+  }
+
+  function friendlyAuthError(err){
+    const m = (err && err.message) || "";
+    if (/invalid login credentials/i.test(m)) return "That email and password don't match an account.";
+    if (/email not confirmed/i.test(m)) return "Please confirm your email first — check your inbox for the link we sent.";
+    if (/already registered/i.test(m)) return "An account with this email already exists — sign in instead.";
+    if (/rate limit/i.test(m)) return "Too many emails sent recently. Wait a few minutes and try again.";
+    if (/same.*password|different from the old/i.test(m)) return "Choose a password different from your current one.";
+    return m || "Something went wrong — please try again.";
+  }
+
+  $("authForm").addEventListener("click", (e) => {
+    const link = e.target.closest("[data-goto]");
+    if (link) setAuthMode(link.dataset.goto);
   });
 
-  document.getElementById("purposeSeg").addEventListener("click", (e) => {
-    const btn = e.target.closest("button");
-    if (!btn) return;
-    purpose = btn.dataset.purpose;
-    document.querySelectorAll("#purposeSeg button").forEach(b => b.classList.toggle("active", b === btn));
-    renderTable();
+  $("authCancel").addEventListener("click", () => $("authDialog").close());
+
+  $("authForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = $("a-email").value.trim();
+    const password = $("a-password").value;
+    const confirm = $("a-confirm").value;
+    const name = $("a-name").value.trim();
+
+    if (["signin", "register", "forgot"].includes(authMode) && !/^\S+@\S+\.\S+$/.test(email)){
+      authMsg("Enter a valid email address.", "error");
+      return;
+    }
+    if (authMode === "signin" && !password){
+      authMsg("Enter your password.", "error");
+      return;
+    }
+    if (authMode === "register" || authMode === "newpw"){
+      if (password.length < 8){ authMsg("Use at least 8 characters for your password.", "error"); return; }
+      if (password !== confirm){ authMsg("Passwords don't match.", "error"); return; }
+    }
+
+    const submit = $("authSubmit");
+    submit.disabled = true;
+    try {
+      if (authMode === "signin"){
+        const { error } = await sb.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        $("authDialog").close();
+      } else if (authMode === "register"){
+        const { data, error } = await sb.auth.signUp({
+          email,
+          password,
+          options: { data: { display_name: name }, emailRedirectTo: SITE_URL },
+        });
+        if (error) throw error;
+        if (data.session) $("authDialog").close();
+        else authMsg("Almost there — we've emailed a confirmation link to " + email + ". Click it, then sign in.", "ok");
+      } else if (authMode === "forgot"){
+        const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: SITE_URL });
+        if (error) throw error;
+        authMsg("If an account exists for " + email + ", a password reset link is on its way.", "ok");
+      } else if (authMode === "newpw"){
+        const { error } = await sb.auth.updateUser({ password });
+        if (error) throw error;
+        authMsg("Password updated — you're signed in.", "ok");
+        setTimeout(() => $("authDialog").close(), 1500);
+      }
+    } catch (err){
+      authMsg(friendlyAuthError(err), "error");
+    } finally {
+      submit.disabled = false;
+    }
   });
 
-  document.getElementById("repaySeg").addEventListener("click", (e) => {
-    const btn = e.target.closest("button");
-    if (!btn) return;
-    repay = btn.dataset.repay;
-    document.querySelectorAll("#repaySeg button").forEach(b => b.classList.toggle("active", b === btn));
+  function renderAccount(){
+    const bar = $("accountBar");
+    bar.textContent = "";
+    const button = (label, cls, onClick) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = cls + " btn-sm";
+      b.textContent = label;
+      b.addEventListener("click", onClick);
+      return b;
+    };
+    if (!session){
+      bar.append(
+        button("Sign in", "btn-ghost", () => openAuth("signin")),
+        button("Create account", "btn-primary", () => openAuth("register")),
+      );
+      return;
+    }
+    const meta = session.user.user_metadata || {};
+    const who = document.createElement("span");
+    who.className = "who";
+    who.textContent = meta.display_name || session.user.email;
+    bar.append(who);
+    if (isAdmin){
+      const chip = document.createElement("span");
+      chip.className = "role-chip";
+      chip.textContent = "Admin";
+      bar.append(chip);
+    }
+    bar.append(button("Sign out", "btn-ghost", async () => { await sb.auth.signOut(); }));
+  }
+
+  async function refreshRole(){
+    isAdmin = false;
+    if (session){
+      const { data } = await sb.from("profiles").select("role").eq("id", session.user.id).maybeSingle();
+      isAdmin = !!data && data.role === "admin";
+    }
+    renderAccount();
     renderTable();
+  }
+
+  // Supabase advises against awaiting other client calls inside this callback, hence the setTimeout hand-offs.
+  sb.auth.onAuthStateChange((event, newSession) => {
+    session = newSession;
+    if (event === "PASSWORD_RECOVERY") setTimeout(() => openAuth("newpw"), 0);
+    setTimeout(refreshRole, 0);
   });
 
-  document.getElementById("lvrSeg").addEventListener("click", (e) => {
-    const btn = e.target.closest("button");
-    if (!btn) return;
-    lvr = btn.dataset.lvr;
-    document.querySelectorAll("#lvrSeg button").forEach(b => b.classList.toggle("active", b === btn));
-    renderTable();
+  // --- Admin editing ---------------------------------------------------------------
+
+  function openEditDialog(lenderId){
+    editingLender = LENDERS.find(l => l.id === lenderId);
+    if (!editingLender) return;
+    $("editTitle").textContent = "Edit " + editingLender.name;
+    $("e-source").value = editingLender.source_url || "";
+    $("e-note").value = editingLender.note || "";
+    $("e-asof").value = localIsoDate();
+    const container = $("editProducts");
+    container.innerHTML = "";
+    PRODUCTS.forEach(p => {
+      const cell = BASE[editingLender.id] && BASE[editingLender.id][p.key];
+      const offered = !!cell;
+      const row = document.createElement("div");
+      row.className = "product-row";
+      row.innerHTML = `
+        <span class="plabel">${escapeHtml(p.label)}</span>
+        <input type="number" step="0.01" min="0" max="20" id="e-${p.key}-rate" placeholder="Rate %" value="${offered ? cell[0] : ""}" ${offered ? "" : "disabled"}>
+        <input type="number" step="0.01" min="0" max="20" id="e-${p.key}-comp" placeholder="Comp. %" value="${offered ? cell[1] : ""}" ${offered ? "" : "disabled"}>
+        <label class="offered"><input type="checkbox" id="e-${p.key}-offered" ${offered ? "checked" : ""}> Offered</label>
+      `;
+      container.appendChild(row);
+    });
+    $("editError").hidden = true;
+    $("editDialog").showModal();
+  }
+
+  $("bodyRows").addEventListener("click", (e) => {
+    const btn = e.target.closest(".edit-btn");
+    if (btn) openEditDialog(btn.dataset.edit);
   });
 
-  const today = new Date();
-  document.getElementById("updatedDate").textContent = today.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
-  document.getElementById("todayLine").textContent = "Generated " + today.toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" });
+  $("editProducts").addEventListener("change", (e) => {
+    if (!e.target.matches('input[type="checkbox"]')) return;
+    const key = e.target.id.slice(2, -"-offered".length);
+    $(`e-${key}-rate`).disabled = !e.target.checked;
+    $(`e-${key}-comp`).disabled = !e.target.checked;
+  });
 
+  $("editCancel").addEventListener("click", () => $("editDialog").close());
+
+  $("editForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!editingLender) return;
+    const errorEl = $("editError");
+    const fail = (text) => { errorEl.textContent = text; errorEl.hidden = false; };
+    errorEl.hidden = true;
+
+    const lenderId = editingLender.id;
+    const source = $("e-source").value.trim();
+    const note = $("e-note").value.trim();
+    const asOf = $("e-asof").value || localIsoDate();
+    if (source && !safeUrl(source)){ fail("Source URL must start with https://"); return; }
+
+    const upserts = [];
+    const removals = [];
+    for (const p of PRODUCTS){
+      if (!$(`e-${p.key}-offered`).checked){
+        if (BASE[lenderId] && BASE[lenderId][p.key]) removals.push(p.key);
+        continue;
+      }
+      const rate = parseFloat($(`e-${p.key}-rate`).value);
+      const comp = parseFloat($(`e-${p.key}-comp`).value);
+      if (!isFinite(rate) || !isFinite(comp) || rate <= 0 || rate >= 25 || comp <= 0 || comp >= 25){
+        fail(p.label + ": enter a valid rate and comparison rate.");
+        return;
+      }
+      upserts.push({ lender_id: lenderId, product_key: p.key, rate, comparison_rate: comp, as_of: asOf });
+    }
+
+    const save = $("editSave");
+    save.disabled = true;
+    try {
+      // RLS silently filters updates a non-admin may not make, so check a row actually changed.
+      const lenderRes = await sb.from("lenders").update({ source_url: source || null, note: note || null }).eq("id", lenderId).select("id");
+      if (lenderRes.error) throw lenderRes.error;
+      if (!lenderRes.data.length) throw new Error("Your account doesn't have permission to edit rates.");
+      if (upserts.length){
+        const { error } = await sb.from("rates").upsert(upserts);
+        if (error) throw error;
+      }
+      if (removals.length){
+        const { error } = await sb.from("rates").delete().eq("lender_id", lenderId).in("product_key", removals);
+        if (error) throw error;
+      }
+      $("editDialog").close();
+      await loadData();
+    } catch (err){
+      fail((err && err.message) || "Couldn't save — try again.");
+    } finally {
+      save.disabled = false;
+    }
+  });
+
+  // --- Start ---------------------------------------------------------------------
+
+  $("todayLine").textContent = "Viewed " + new Date().toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" });
+  renderAccount();
   renderTable();
+  loadData();
 </script>
