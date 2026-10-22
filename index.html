@@ -314,6 +314,24 @@
     resize:vertical;
   }
   .field input:focus-visible, .field textarea:focus-visible{outline:2px solid var(--focus);outline-offset:1px;}
+  .pw-wrap{position:relative;display:flex;}
+  .pw-wrap input{flex:1;padding-right:64px;}
+  .pw-toggle{
+    position:absolute;
+    right:6px;
+    top:50%;
+    transform:translateY(-50%);
+    font:12px 'Inter',sans-serif;
+    font-weight:600;
+    color:var(--accent);
+    background:none;
+    border:none;
+    border-radius:5px;
+    padding:5px 8px;
+    cursor:pointer;
+  }
+  .pw-toggle:hover{background:var(--accent-soft);}
+  .pw-toggle:focus-visible{outline:2px solid var(--focus);outline-offset:1px;}
   .product-row{
     display:grid;
     grid-template-columns:auto 1fr 1fr;
@@ -463,22 +481,17 @@
 <dialog id="authDialog" class="modal">
   <form id="authForm" novalidate>
     <h2 id="authTitle">Sign in</h2>
-    <label class="field" data-modes="register">
-      <span>Name</span>
-      <input type="text" id="a-name" autocomplete="name">
-    </label>
     <label class="field" data-modes="signin register forgot">
       <span>Email</span>
       <input type="email" id="a-email" autocomplete="email" required>
     </label>
-    <label class="field" data-modes="signin register newpw">
-      <span id="a-password-label">Password</span>
-      <input type="password" id="a-password" required>
-    </label>
-    <label class="field" data-modes="register newpw">
-      <span>Confirm password</span>
-      <input type="password" id="a-confirm" autocomplete="new-password" required>
-    </label>
+    <div class="field" data-modes="signin register newpw">
+      <label for="a-password" id="a-password-label">Password</label>
+      <div class="pw-wrap">
+        <input type="password" id="a-password" required>
+        <button type="button" class="pw-toggle" id="pwToggle" aria-controls="a-password" aria-pressed="false">Show</button>
+      </div>
+    </div>
     <p class="form-msg" id="authMsg" role="status" hidden></p>
     <div class="form-links" data-modes="signin">
       <button type="button" class="link-btn" data-goto="forgot">Forgot password?</button>
@@ -809,8 +822,21 @@
       el.hidden = !visible;
       el.querySelectorAll("input").forEach(input => { input.disabled = !visible; });
     });
+    setPasswordVisible(false);
     authMsg("");
   }
+
+  function setPasswordVisible(visible){
+    $("a-password").type = visible ? "text" : "password";
+    $("pwToggle").textContent = visible ? "Hide" : "Show";
+    $("pwToggle").setAttribute("aria-pressed", String(visible));
+    $("pwToggle").setAttribute("aria-label", visible ? "Hide password" : "Show password");
+  }
+
+  $("pwToggle").addEventListener("click", () => {
+    setPasswordVisible($("a-password").type === "password");
+    $("a-password").focus();
+  });
 
   function openAuth(next){
     setAuthMode(next);
@@ -838,8 +864,6 @@
     e.preventDefault();
     const email = $("a-email").value.trim();
     const password = $("a-password").value;
-    const confirm = $("a-confirm").value;
-    const name = $("a-name").value.trim();
 
     if (["signin", "register", "forgot"].includes(authMode) && !/^\S+@\S+\.\S+$/.test(email)){
       authMsg("Enter a valid email address.", "error");
@@ -849,9 +873,9 @@
       authMsg("Enter your password.", "error");
       return;
     }
-    if (authMode === "register" || authMode === "newpw"){
-      if (password.length < 8){ authMsg("Use at least 8 characters for your password.", "error"); return; }
-      if (password !== confirm){ authMsg("Passwords don't match.", "error"); return; }
+    if ((authMode === "register" || authMode === "newpw") && password.length < 8){
+      authMsg("Use at least 8 characters for your password.", "error");
+      return;
     }
 
     const submit = $("authSubmit");
@@ -865,7 +889,7 @@
         const { data, error } = await sb.auth.signUp({
           email,
           password,
-          options: { data: { display_name: name }, emailRedirectTo: SITE_URL },
+          options: { emailRedirectTo: SITE_URL },
         });
         if (error) throw error;
         if (data.session) $("authDialog").close();
@@ -905,10 +929,9 @@
       );
       return;
     }
-    const meta = session.user.user_metadata || {};
     const who = document.createElement("span");
     who.className = "who";
-    who.textContent = meta.display_name || session.user.email;
+    who.textContent = session.user.email;
     bar.append(who);
     if (isAdmin){
       const chip = document.createElement("span");
