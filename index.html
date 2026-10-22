@@ -1,4 +1,4 @@
-<title>Rate Board</title>
+<title>Home Loan Interest Rates</title>
 <meta name="description" content="Compare today's mortgage rates across lenders and loan products at a glance.">
 <style>
   :root{
@@ -72,29 +72,17 @@
     display:flex;
     flex-wrap:wrap;
     justify-content:space-between;
-    align-items:flex-end;
+    align-items:center;
     gap:16px;
-    margin-bottom:6px;
+    margin-bottom:24px;
   }
   .title-block h1{
     font-size:30px;
     font-weight:600;
     letter-spacing:-0.01em;
-    margin:0 0 4px;
-  }
-  .title-block p{
     margin:0;
-    color:var(--ink-muted);
-    font-size:14px;
   }
   .header-right{display:flex;flex-direction:column;align-items:flex-end;gap:10px;}
-  .updated{
-    text-align:right;
-    font-size:12px;
-    color:var(--ink-faint);
-    line-height:1.5;
-  }
-  .updated strong{color:var(--ink-muted);font-weight:600;}
 
   .account{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;font-size:13px;color:var(--ink-muted);}
   .account .who{font-weight:600;color:var(--ink);}
@@ -108,21 +96,6 @@
     border-radius:5px;
     padding:2px 7px;
   }
-
-  .sample-banner{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    background:var(--gold-soft);
-    color:var(--gold);
-    border:1px solid var(--gold);
-    border-radius:8px;
-    padding:9px 14px;
-    font-size:12.5px;
-    font-weight:600;
-    margin:18px 0 22px;
-  }
-  .sample-banner svg{flex:none;width:15px;height:15px;}
 
   .status-line{
     font-size:13px;
@@ -413,7 +386,6 @@
     header.page{flex-direction:column;align-items:flex-start;}
     .header-right{align-items:flex-start;}
     .account{justify-content:flex-start;}
-    .updated{text-align:left;}
   }
 </style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500..600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
@@ -422,22 +394,12 @@
 <div class="wrap">
   <header class="page">
     <div class="title-block">
-      <h1>Rate Board</h1>
-      <p>Today's mortgage rates, side by side across lenders.</p>
+      <h1>Home Loan Interest Rates</h1>
     </div>
     <div class="header-right">
       <div class="account" id="accountBar"></div>
-      <div class="updated">
-        <strong id="updatedDate">—</strong><br>
-        live from the lenders' published rates
-      </div>
     </div>
   </header>
-
-  <div class="sample-banner">
-    <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8.5" stroke="currentColor" stroke-width="1.6"/><path d="M10 6.2v4.6M10 13.6h.01" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-    The default view (Owner Occupied, P&amp;I, 60–80% LVR) shows each lender's officially published rate as of the date shown — click a lender's name for its source page. Other filter combinations are estimated from that rate using typical market spreads and are not independently sourced.
-  </div>
 
   <p class="status-line" id="statusLine" hidden></p>
 
@@ -493,7 +455,7 @@
   </p>
 
   <footer>
-    <span>Rate Board · indicative rates, not quotes</span>
+    <span>Home Loan Interest Rates · indicative rates, not quotes</span>
     <span id="todayLine"></span>
   </footer>
 </div>
@@ -622,11 +584,6 @@
     return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
   }
 
-  function formatIsoDate(iso){
-    const [y, m, d] = iso.split("-").map(Number);
-    return new Date(y, m - 1, d).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
-  }
-
   function showStatus(text){
     const el = $("statusLine");
     el.hidden = !text;
@@ -682,16 +639,12 @@
     LENDERS = lendersRes.data;
     PRODUCTS = productsRes.data;
     BASE = {};
-    let latestAsOf = null;
     for (const row of ratesRes.data){
       (BASE[row.lender_id] ||= {})[row.product_key] = [Number(row.rate), Number(row.comparison_rate)];
-      if (!latestAsOf || row.as_of > latestAsOf) latestAsOf = row.as_of;
     }
     RATES = buildRates();
     loadState = "ready";
     showStatus("");
-    $("updatedDate").textContent = gated ? "Sign in to see today's rates"
-      : latestAsOf ? "Rates as of " + formatIsoDate(latestAsOf) : "—";
     $("gateCount").textContent = LENDERS.length;
     setGated(gated);
     renderTable();
