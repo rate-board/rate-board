@@ -892,6 +892,12 @@
           options: { emailRedirectTo: SITE_URL },
         });
         if (error) throw error;
+        // Supabase answers a sign-up for an already-registered email with a dummy user that has no identities.
+        if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0){
+          setAuthMode("signin");
+          authMsg("An account with this email already exists — sign in below, or use “Forgot password?”.", "error");
+          return;
+        }
         if (data.session) $("authDialog").close();
         else authMsg("Almost there — we've emailed a confirmation link to " + email + ". Click it, then sign in.", "ok");
       } else if (authMode === "forgot"){
