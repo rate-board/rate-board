@@ -1,0 +1,1036 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Agent Portal</title>
+<meta name="description" content="Post rates below the lenders', see where you rank, and work the leads you get.">
+<link rel="stylesheet" href="common.css">
+<style>
+  .wrap{max-width:1100px;}
+  .title-block .sub{margin:4px 0 0;font-size:13px;color:var(--ink-muted);}
+  .title-block .sub a{color:inherit;}
+
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:12px;
+    box-shadow:var(--shadow);
+    padding:20px;
+  }
+  .card + .card{margin-top:16px;}
+  .card h2{margin:0 0 6px;font-size:20px;font-weight:600;}
+  .card > p{margin:0 0 14px;font-size:13.5px;line-height:1.55;color:var(--ink-muted);}
+  .narrow{max-width:460px;margin:0 auto;}
+  .stack{display:flex;flex-direction:column;gap:14px;}
+
+  .tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--line);margin-bottom:18px;scrollbar-width:none;}
+  .tabs button{
+    font:600 13.5px 'Inter',sans-serif;
+    color:var(--ink-muted);
+    background:none;
+    border:none;
+    border-bottom:2px solid transparent;
+    padding:10px 12px;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .tabs button.active{color:var(--accent);border-bottom-color:var(--accent);}
+  .tabs button:focus-visible{outline:2px solid var(--focus);outline-offset:-2px;}
+  .badge{display:inline-block;min-width:18px;margin-left:5px;padding:1px 6px;border-radius:9px;background:var(--accent);color:#fff;font-size:11px;text-align:center;}
+
+  .banner{margin:0 0 16px;padding:12px 14px;border-radius:10px;font-size:13.5px;line-height:1.5;background:var(--gold-soft);color:var(--ink);}
+  .banner.bad{background:var(--danger-soft);}
+
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));gap:12px;margin-bottom:16px;}
+  .tile{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;}
+  .tile .num{font:600 26px 'IBM Plex Mono',monospace;color:var(--ink);}
+  .tile .lbl{margin-top:2px;font-size:12px;color:var(--ink-muted);}
+  .tile.hot .num{color:var(--accent);}
+
+  .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px;}
+  .controls .label{font-size:12.5px;font-weight:600;color:var(--ink-muted);}
+
+  .table-shell{background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow:hidden;}
+  .table-scroll{overflow-x:auto;}
+  table.grid{border-collapse:collapse;width:100%;min-width:760px;}
+  .grid th, .grid td{padding:11px 14px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;}
+  .grid thead th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-faint);font-weight:600;background:var(--surface-raised);white-space:nowrap;}
+  .grid tbody th{font-size:13.5px;font-weight:600;white-space:nowrap;position:sticky;left:0;background:var(--surface);z-index:1;}
+  .grid tbody tr:last-child :is(th, td){border-bottom:none;}
+  .grid td{font-size:12.5px;}
+  .mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;}
+
+  .mkt-cell{cursor:pointer;}
+  .mkt-cell:hover{background:var(--accent-soft);}
+  .mkt-cell:focus-visible{outline:2px solid var(--focus);outline-offset:-2px;}
+  .mkt-cell.dim{opacity:.35;}
+  .mkt-cell.unaccredited .mkt-lender{color:var(--ink-faint);}
+  .mkt-lender{font:600 14px 'IBM Plex Mono',monospace;}
+  .mkt-line{display:block;margin-top:3px;font-size:11.5px;color:var(--ink-muted);white-space:nowrap;}
+  .mkt-mine{display:block;margin-top:4px;font:600 11.5px 'Inter',sans-serif;color:var(--accent);white-space:nowrap;}
+  .mkt-mine.beaten{color:var(--gold);}
+  .mkt-mine.hidden-rate{color:var(--danger);}
+
+  .list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;}
+  .lead{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;}
+  .lead.is-new{border-left:3px solid var(--accent);}
+  .lead-top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline;}
+  .lead-kind{font-weight:700;font-size:13.5px;}
+  .lead-when{font-size:12px;color:var(--ink-faint);}
+  .lead-about{margin-top:3px;font-size:12.5px;color:var(--ink-muted);}
+  .lead-contact{margin-top:10px;display:flex;flex-wrap:wrap;gap:8px 16px;font-size:14px;}
+  .lead-contact a{color:var(--accent);font-weight:600;}
+  .lead-msg{margin:8px 0 0;padding:8px 10px;border-radius:8px;background:var(--bg);font-size:13px;line-height:1.5;}
+  .lead-work{margin-top:12px;display:grid;grid-template-columns:180px 1fr auto;gap:10px;align-items:end;}
+  .lead-foot{margin-top:10px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:12px;color:var(--ink-faint);}
+  .dispute summary{cursor:pointer;color:var(--ink-muted);font-weight:600;}
+  .dispute div{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;}
+  .dispute input{flex:1;min-width:200px;font:13px 'Inter',sans-serif;padding:7px 9px;border:1px solid var(--line-strong);border-radius:7px;background:var(--bg);color:var(--ink);}
+
+  .lender-checks{display:grid;grid-template-columns:repeat(auto-fill, minmax(170px, 1fr));gap:6px 12px;padding:10px 12px;border:1px solid var(--line-strong);border-radius:8px;background:var(--bg);max-height:220px;overflow:auto;}
+  .lender-checks label{display:flex;gap:7px;align-items:center;font-size:13px;font-weight:400;color:var(--ink);}
+  .photo-row{display:flex;align-items:center;gap:14px;}
+  .photo-row .ar-photo{width:56px;height:56px;font-size:18px;}
+
+  .panel-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;}
+  dialog.modal #postForm{padding:0;}
+  #panelHistory .hc-title{display:none;}
+  .panel-figure{font-size:13px;color:var(--ink-muted);margin:0;}
+  .panel-figure strong{font:600 20px 'IBM Plex Mono',monospace;color:var(--ink);margin-right:6px;}
+  .cost-line{margin:0;font-size:12.5px;color:var(--ink-muted);}
+
+  .plan-rows{display:grid;grid-template-columns:max-content 1fr;gap:8px 20px;font-size:14px;margin:0;}
+  .plan-rows dt{color:var(--ink-muted);}
+  .plan-rows dd{margin:0;font-weight:600;}
+
+  .muted{color:var(--ink-muted);font-size:13px;margin:0;}
+  .bulk{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;font-size:12.5px;color:var(--ink-muted);}
+
+  @media (max-width:760px){
+    .panel-grid{grid-template-columns:1fr;}
+    .lead-work{grid-template-columns:1fr;}
+  }
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500..600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
+<script src="common.js"></script>
+
+<div class="wrap">
+  <header class="page">
+    <div class="title-block">
+      <h1>Agent portal</h1>
+      <p class="sub"><a href="index.html">Home Loan Interest Rates</a></p>
+    </div>
+    <div class="header-right">
+      <div class="account" id="accountBar"></div>
+    </div>
+  </header>
+
+  <p class="status-line" id="statusLine">Loading…</p>
+
+  <!-- Signed out -->
+  <section id="signedOutView" hidden>
+    <div class="card narrow">
+      <form id="signInForm" class="stack" novalidate>
+        <h2 id="signInTitle">Sign in as an agent</h2>
+        <p class="muted" id="signInSub">Use the same email and password you use on Home Loan Interest Rates.</p>
+        <label class="field">
+          <span>Email</span>
+          <input type="email" id="s-email" autocomplete="email">
+        </label>
+        <div class="field" id="s-password-field">
+          <label for="s-password">Password</label>
+          <div class="pw-wrap">
+            <input type="password" id="s-password" autocomplete="current-password">
+            <button type="button" class="pw-toggle" data-pw="s-password">Show</button>
+          </div>
+        </div>
+        <p class="form-msg" id="signInMsg" role="status" hidden></p>
+        <div class="form-links">
+          <button type="button" class="link-btn" id="forgotToggle">Forgot password?</button>
+          <span>New here? <a class="link-btn" href="index.html#join">Create an agent account</a></span>
+        </div>
+        <div class="dialog-actions">
+          <button type="submit" class="btn-primary" id="signInSubmit">Sign in</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- Invited agents and password resets -->
+  <section id="passwordView" hidden>
+    <div class="card narrow">
+      <form id="passwordForm" class="stack" novalidate>
+        <h2>Choose a password</h2>
+        <p class="muted">You'll use it with <span id="pwEmail"></span> to sign in from now on.</p>
+        <div class="field">
+          <label for="n-password">New password (8+ characters)</label>
+          <div class="pw-wrap">
+            <input type="password" id="n-password" autocomplete="new-password">
+            <button type="button" class="pw-toggle" data-pw="n-password">Show</button>
+          </div>
+        </div>
+        <p class="form-msg" id="passwordMsg" role="status" hidden></p>
+        <div class="dialog-actions">
+          <button type="submit" class="btn-primary" id="passwordSubmit">Save password</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- No agent profile yet -->
+  <section id="onboardingView" hidden>
+    <div class="card" id="onboardingCard">
+      <h2>Become an agent</h2>
+      <p>Post rates below the lenders' on Home Loan Interest Rates and get leads from people comparing loans. You keep the same login, and switch between consumer and agent mode any time. We check your licence on the ASIC register before your rates go live.</p>
+    </div>
+  </section>
+
+  <!-- Agent mode -->
+  <section id="portalView" hidden>
+    <nav class="tabs" id="tabs" aria-label="Agent portal">
+      <button type="button" data-tab="home">Home</button>
+      <button type="button" data-tab="market">Rate market</button>
+      <button type="button" data-tab="rates">My rates</button>
+      <button type="button" data-tab="leads">Leads<span class="badge" id="leadsBadge" hidden></span></button>
+      <button type="button" data-tab="plan">Plan</button>
+      <button type="button" data-tab="profile">Profile</button>
+    </nav>
+    <div id="banner"></div>
+
+    <section data-panel="home">
+      <div class="tiles" id="homeTiles"></div>
+      <div class="card">
+        <h2>New leads</h2>
+        <div id="homeLeads"></div>
+      </div>
+      <div class="card">
+        <h2>Where another agent is lower</h2>
+        <div id="homeBeaten"></div>
+      </div>
+    </section>
+
+    <section data-panel="market">
+      <div class="controls">
+        <div class="seg" id="purposeSeg">
+          <button data-v="owner" class="active">Owner Occupied</button>
+          <button data-v="investor">Investment</button>
+        </div>
+        <div class="seg" id="repaySeg">
+          <button data-v="pi" class="active">P&amp;I</button>
+          <button data-v="io">Interest Only</button>
+        </div>
+        <div class="seg" id="lvrSeg">
+          <button data-v="60">≤60% LVR</button>
+          <button data-v="80" class="active">60–80% LVR</button>
+          <button data-v="90">80–90% LVR</button>
+        </div>
+      </div>
+      <div class="controls">
+        <span class="label">Show</span>
+        <div class="seg" id="filterSeg">
+          <button data-v="all" class="active">All</button>
+          <button data-v="mine">My lenders</button>
+          <button data-v="beaten">Not lowest</button>
+          <button data-v="open">No agent rate yet</button>
+        </div>
+      </div>
+      <div class="table-shell"><div class="table-scroll"><table class="grid" id="marketTable"></table></div></div>
+      <p class="muted" style="margin-top:10px;">Each cell shows the lender's rate, the lowest agent rate, and yours with its rank. Click a cell to post or change your rate.</p>
+    </section>
+
+    <section data-panel="rates">
+      <div class="controls">
+        <div class="seg" id="ratesSeg">
+          <button data-v="live" class="active">Live</button>
+          <button data-v="past">Withdrawn and removed</button>
+        </div>
+      </div>
+      <div class="bulk" id="bulkBar">
+        <span id="bulkCount">Select rates to act on several at once.</span>
+        <button type="button" class="btn-ghost btn-sm" id="bulkConfirm" disabled>Mark as up to date</button>
+        <button type="button" class="btn-ghost btn-sm" id="bulkWithdraw" disabled>Withdraw</button>
+      </div>
+      <div class="table-shell"><div class="table-scroll"><table class="grid" id="ratesTable"></table></div></div>
+      <p class="form-msg" id="ratesMsg" role="status" hidden></p>
+    </section>
+
+    <section data-panel="leads">
+      <div class="controls">
+        <div class="seg" id="leadSeg">
+          <button data-v="all" class="active">All</button>
+          <button data-v="new">New</button>
+          <button data-v="contacted">Contacted</button>
+          <button data-v="applied">Applied</button>
+          <button data-v="settled">Settled</button>
+          <button data-v="lost">Lost</button>
+        </div>
+      </div>
+      <ul class="list" id="leadList"></ul>
+    </section>
+
+    <section data-panel="plan">
+      <div class="card">
+        <h2>Your plan</h2>
+        <p>One plan for every agent: a flat charge for each lead. A lead is a consumer clicking Show number or Email on your rate, or sending you a call request, counted once per consumer in 30 days.</p>
+        <dl class="plan-rows" id="planRows"></dl>
+      </div>
+    </section>
+
+    <section data-panel="profile">
+      <div class="card" id="profileCard">
+        <h2>Agent profile</h2>
+        <p id="profileStatus"></p>
+      </div>
+    </section>
+  </section>
+</div>
+
+<!-- One form for becoming an agent and editing the profile; moved into whichever view needs it. -->
+<div hidden>
+<form id="agentForm" class="stack" novalidate>
+  <div class="field-row">
+    <label class="field"><span>Full name</span><input type="text" id="f-name" autocomplete="name" maxlength="100"></label>
+    <label class="field"><span>Mobile number <span class="field-hint">shown when a consumer clicks Show number</span></span><input type="tel" id="f-mobile" autocomplete="tel" inputmode="tel" placeholder="0412 345 678"></label>
+  </div>
+  <div class="field-row">
+    <label class="field"><span>Business name</span><input type="text" id="f-business" autocomplete="organization" maxlength="120"></label>
+    <label class="field"><span>Australian Credit Licence or Credit Representative number</span><input type="text" id="f-licence" inputmode="numeric" maxlength="12"></label>
+  </div>
+  <label class="field"><span>Aggregator <span class="field-hint">(optional, e.g. AFG, Connective)</span></span><input type="text" id="f-aggregator" maxlength="80"></label>
+  <div class="field">
+    <span>Lenders you're accredited with <span class="field-hint">you can post rates only on these</span></span>
+    <div class="lender-checks" id="f-lenders"></div>
+  </div>
+  <label class="field"><span>Short bio <span class="field-hint">(optional, up to 300 characters)</span></span><textarea id="f-bio" rows="3" maxlength="300"></textarea></label>
+  <div class="field">
+    <span>Photo <span class="field-hint">(optional; JPG, PNG or WebP up to 2 MB)</span></span>
+    <div class="photo-row">
+      <span id="f-photo-preview"></span>
+      <input type="file" id="f-photo" accept="image/jpeg,image/png,image/webp">
+      <button type="button" class="link-btn" id="f-photo-remove" hidden>Remove photo</button>
+    </div>
+  </div>
+  <label class="check-row" id="termsRow"><input type="checkbox" id="f-terms"> <span>I agree to the agent terms: my rates are genuine and available; I hold an Australian Credit Licence or am a credit representative; I'll contact consumers only about the rate they chose; and my name, photo, business and email are shown beside my rates, with my mobile shown to anyone who clicks Show number. Leads are free for now, and I'll get 30 days' notice by email before any charge applies.</span></label>
+  <p class="form-msg" id="agentMsg" role="status" hidden></p>
+  <div class="dialog-actions">
+    <button type="submit" class="btn-primary" id="agentSubmit">Submit for approval</button>
+  </div>
+</form>
+</div>
+
+<dialog id="ratePanel" class="modal wide" style="max-width:860px;">
+  <div class="modal-body">
+    <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;">
+      <div>
+        <h2 id="panelTitle"></h2>
+        <p class="modal-sub" id="panelSub" style="margin-top:4px;"></p>
+      </div>
+      <button type="button" class="btn-ghost btn-sm" id="panelClose">Close</button>
+    </div>
+    <div class="panel-grid">
+      <div class="history" id="panelHistory"></div>
+      <div class="stack">
+        <p class="panel-figure" id="panelLender"></p>
+        <form id="postForm" class="stack" novalidate>
+          <h3 id="postTitle">Your rate</h3>
+          <div class="field-row">
+            <label class="field"><span>Your rate (%)</span><input type="number" id="p-rate" step="0.01" min="1" max="20" inputmode="decimal"></label>
+            <label class="field"><span>Comparison rate (%)</span><input type="number" id="p-comp" step="0.01" min="1" max="20" inputmode="decimal"></label>
+          </div>
+          <label class="field"><span>Conditions <span class="field-hint">(optional, up to 200 characters)</span></span><input type="text" id="p-conditions" maxlength="200" placeholder="e.g. Loans over $500k, LVR 70% or less"></label>
+          <p class="cost-line" id="costLine"></p>
+          <p class="form-msg" id="postMsg" role="status" hidden></p>
+          <div class="dialog-actions" style="justify-content:flex-start;">
+            <button type="submit" class="btn-primary" id="postSubmit">Post rate</button>
+            <button type="button" class="btn-danger" id="withdrawBtn" hidden>Withdraw</button>
+          </div>
+        </form>
+        <div id="panelAgents"></div>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<script>
+  let session = null;
+  let agent = null;       // this account's agents row
+  let profile = null;     // { full_name, mobile, suspended }
+  let myRates = [];       // all of this agent's agent_rates rows, newest first
+  let myLeads = [];       // from my_leads()
+  let settings = null;
+  let tab = "home";
+  let purpose = "owner", repay = "pi", lvr = "80", marketFilter = "all", ratesView = "live", leadFilter = "all";
+  let photoUrl = null;
+  let panelCell = null;   // { lender, key, purpose, repay, lvr }
+
+  const KIND_TEXT = { request: "Call request", number: "Viewed your number", email: "Clicked to email you" };
+  const LEAD_STATUSES = ["new", "contacted", "applied", "settled", "lost"];
+  const STATUS_TEXT = { new: "New", contacted: "Contacted", applied: "Applied", settled: "Settled", lost: "Lost" };
+  const TIME_TEXT = { morning: "Morning", afternoon: "Afternoon", evening: "Evening", any: "Any time" };
+
+  function showStatus(text){
+    const el = $("statusLine");
+    el.hidden = !text;
+    el.textContent = text || "";
+  }
+
+  function msg(id, text, kind){
+    const el = $(id);
+    el.hidden = !text;
+    el.textContent = text || "";
+    el.className = "form-msg" + (kind ? " " + kind : "");
+  }
+
+  function money(n){ return "$" + Number(n).toFixed(2); }
+
+  function showView(name){
+    for (const v of ["signedOutView", "passwordView", "onboardingView", "portalView"]) $(v).hidden = v !== name;
+  }
+
+  function sameCell(a, c){
+    return a.lender_id === c.lender && a.product_key === c.key && a.purpose === c.purpose && a.repay === c.repay && a.lvr === c.lvr;
+  }
+
+  function cellOf(r){ return { lender: r.lender_id, key: r.product_key, purpose: r.purpose, repay: r.repay, lvr: r.lvr }; }
+
+  function cellLabel(c){
+    return `${lenderName(c.lender)} ${productLabel(c.key)}`;
+  }
+
+  function lenderRateFor(c){
+    const cell = RATES && RATES[c.purpose][c.repay][c.lvr][c.key] && RATES[c.purpose][c.repay][c.lvr][c.key][c.lender];
+    return cell || null;
+  }
+
+  // Where this agent's live rate on a cell stands among the rates consumers see.
+  function standing(c){
+    const shown = agentRatesFor(c.lender, c.key, c.purpose, c.repay, c.lvr);
+    const mine = myRates.find(r => r.status === "live" && sameCell(r, c));
+    const others = shown.filter(a => a.agent_id !== session.user.id);
+    const lowestOther = others.length ? others[0].rate : null;
+    if (!mine) return { mine: null, shown, others, lowestOther };
+    const idx = shown.findIndex(a => a.id === mine.id);
+    return { mine, shown, others, lowestOther, rank: idx < 0 ? null : idx + 1, beaten: idx > 0 && shown[0].rate < Number(mine.rate) };
+  }
+
+  function chargeNow(){
+    if (!settings) return 0;
+    return localIsoDate() >= settings.charge_from ? Number(settings.per_lead_charge) : Number(settings.previous_charge);
+  }
+
+  function chargeText(){
+    if (!settings) return "";
+    return chargeNow() === 0 ? "Leads are free for now." : `Each lead costs ${money(chargeNow())} (ex GST).`;
+  }
+
+  // --- Data ------------------------------------------------------------------------
+
+  async function loadAll(){
+    const uid = session.user.id;
+    const [marketErr, agentRes, profileRes, ratesRes, leadsRes, settingsRes] = await Promise.all([
+      loadMarket(true),
+      sb.from("agents").select("*").eq("id", uid).maybeSingle(),
+      sb.from("profiles").select("full_name,mobile,suspended").eq("id", uid).maybeSingle(),
+      sb.from("agent_rates").select("*").eq("agent_id", uid).order("updated_at", { ascending: false }),
+      sb.rpc("my_leads"),
+      sb.from("settings").select("*").maybeSingle(),
+    ]);
+    const err = marketErr || agentRes.error || profileRes.error || ratesRes.error || leadsRes.error || settingsRes.error;
+    if (err) throw err;
+    agent = agentRes.data;
+    profile = profileRes.data;
+    myRates = ratesRes.data;
+    myLeads = leadsRes.data;
+    settings = settingsRes.data;
+  }
+
+  async function refresh(){
+    try {
+      await loadAll();
+      showStatus("");
+      route();
+    } catch (err){
+      showStatus("Couldn't load the agent portal — try reloading the page. (" + friendlyError(err) + ")");
+    }
+  }
+
+  // --- Routing ------------------------------------------------------------------------
+
+  function route(){
+    if (!session){ showView("signedOutView"); renderAccount(); return; }
+    if (session.user.user_metadata && session.user.user_metadata.needs_password){
+      $("pwEmail").textContent = session.user.email;
+      showView("passwordView");
+      renderAccount();
+      return;
+    }
+    renderAccount();
+    if (!agent){
+      showView("onboardingView");
+      fillAgentForm();
+      $("onboardingCard").appendChild($("agentForm"));
+      return;
+    }
+    showView("portalView");
+    const hashTab = location.hash.slice(1);
+    if (["home", "market", "rates", "leads", "plan", "profile"].includes(hashTab)) tab = hashTab;
+    renderPortal();
+  }
+
+  function renderAccount(){
+    const bar = $("accountBar");
+    bar.textContent = "";
+    if (!session) return;
+    const who = document.createElement("span");
+    who.className = "who";
+    who.textContent = session.user.email;
+    const toBoard = document.createElement("a");
+    toBoard.className = "btn-ghost btn-sm";
+    toBoard.href = "index.html";
+    toBoard.textContent = "Switch to consumer";
+    const out = document.createElement("button");
+    out.type = "button";
+    out.className = "btn-ghost btn-sm";
+    out.textContent = "Sign out";
+    out.addEventListener("click", () => sb.auth.signOut());
+    bar.append(who, toBoard, out);
+  }
+
+  function setTab(next){
+    tab = next;
+    history.replaceState(null, "", "#" + next);
+    renderPortal();
+  }
+
+  $("tabs").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-tab]");
+    if (btn) setTab(btn.dataset.tab);
+  });
+
+  function renderPortal(){
+    document.querySelectorAll("#tabs [data-tab]").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
+    document.querySelectorAll("[data-panel]").forEach(p => { p.hidden = p.dataset.panel !== tab; });
+    const fresh = myLeads.filter(l => l.status === "new").length;
+    $("leadsBadge").hidden = !fresh;
+    $("leadsBadge").textContent = fresh;
+
+    const suspended = profile && profile.suspended;
+    const banner = suspended || agent.status === "suspended"
+      ? `<p class="banner bad">Your agent account is suspended, so your rates are hidden from consumers.${agent.status_reason ? " Reason: " + escapeHtml(agent.status_reason) : ""}</p>`
+      : agent.status === "pending"
+        ? `<p class="banner">Your profile is waiting for approval. We check your licence on the ASIC register; you'll get an email once you can post rates.</p>`
+        : agent.status === "rejected"
+          ? `<p class="banner bad">Your application wasn't approved.${agent.status_reason ? " Reason: " + escapeHtml(agent.status_reason) : ""} Update your profile to apply again.</p>`
+          : "";
+    $("banner").innerHTML = banner;
+
+    if (tab === "home") renderHome();
+    if (tab === "market") renderMarket();
+    if (tab === "rates") renderRates();
+    if (tab === "leads") renderLeads();
+    if (tab === "plan") renderPlan();
+    if (tab === "profile") renderProfile();
+  }
+
+  // --- Home ---------------------------------------------------------------------------
+
+  function beatenRates(){
+    return myRates.filter(r => r.status === "live").map(r => ({ r, s: standing(cellOf(r)) })).filter(x => x.s.beaten);
+  }
+
+  function renderHome(){
+    const monthStart = localIsoDate().slice(0, 8) + "01";
+    const monthLeads = myLeads.filter(l => l.created_at.slice(0, 10) >= monthStart);
+    const fresh = myLeads.filter(l => l.status === "new");
+    const live = myRates.filter(r => r.status === "live");
+    const beaten = beatenRates();
+    const tiles = [
+      [fresh.length, "New leads", fresh.length > 0],
+      [monthLeads.length, "Leads this month", false],
+      [live.length, "Live rates", false],
+      [beaten.length, "Not the lowest", false],
+    ];
+    $("homeTiles").innerHTML = tiles.map(([n, label, hot]) => `<div class="tile${hot ? " hot" : ""}"><div class="num">${n}</div><div class="lbl">${label}</div></div>`).join("")
+      + `<div class="tile"><div class="num">${money(chargeNow())}</div><div class="lbl">Charge per lead${chargeNow() === 0 ? " (free for now)" : " (ex GST)"}</div></div>`;
+
+    $("homeLeads").innerHTML = fresh.length
+      ? `<ul class="list">${fresh.slice(0, 5).map(leadHtml).join("")}</ul>`
+        + (fresh.length > 5 ? `<p class="muted" style="margin-top:10px;"><button type="button" class="link-btn" data-goto-tab="leads">See all ${fresh.length} new leads</button></p>` : "")
+      : `<p class="muted">No new leads. ${live.length ? "Leads appear here the moment a consumer contacts you." : "Post a rate in the Rate market to start getting leads."}</p>`;
+
+    $("homeBeaten").innerHTML = beaten.length
+      ? `<ul class="list">${beaten.map(({ r, s }) => `<li class="lead">
+          <div class="lead-top"><span class="lead-kind">${escapeHtml(cellLabel(cellOf(r)))}</span>
+          <button type="button" class="btn-ghost btn-sm" data-open-cell="${r.id}">Review</button></div>
+          <div class="lead-about">${escapeHtml(loanTypeLabel(r.purpose, r.repay, r.lvr))} · yours ${fmt(Number(r.rate))}, lowest ${fmt(s.shown[0].rate)}, you're #${s.rank}</div>
+        </li>`).join("")}</ul>`
+      : `<p class="muted">${live.length ? "You have the lowest agent rate on every cell you've posted." : "No rates posted yet."}</p>`;
+  }
+
+  // --- Rate market ------------------------------------------------------------------------
+
+  function wireSeg(id, apply){
+    $(id).addEventListener("click", (e) => {
+      const btn = e.target.closest("button");
+      if (!btn) return;
+      apply(btn.dataset.v);
+      document.querySelectorAll("#" + id + " button").forEach(b => b.classList.toggle("active", b === btn));
+      renderPortal();
+    });
+  }
+  wireSeg("purposeSeg", v => { purpose = v; });
+  wireSeg("repaySeg", v => { repay = v; });
+  wireSeg("lvrSeg", v => { lvr = v; });
+  wireSeg("filterSeg", v => { marketFilter = v; });
+  wireSeg("ratesSeg", v => { ratesView = v; });
+  wireSeg("leadSeg", v => { leadFilter = v; });
+
+  function renderMarket(){
+    const accredited = new Set(agent.lenders);
+    const lenders = marketFilter === "mine" ? LENDERS.filter(l => accredited.has(l.id)) : LENDERS;
+    let html = `<thead><tr><th>Lender</th>${PRODUCTS.map(p => `<th>${escapeHtml(p.label)}</th>`).join("")}</tr></thead><tbody>`;
+    for (const l of lenders){
+      html += `<tr><th scope="row">${escapeHtml(l.name)}${accredited.has(l.id) ? "" : ` <span class="field-hint">not accredited</span>`}</th>`;
+      for (const p of PRODUCTS){
+        const c = { lender: l.id, key: p.key, purpose, repay, lvr };
+        const lr = lenderRateFor(c);
+        if (!lr){ html += `<td class="muted">—</td>`; continue; }
+        const s = standing(c);
+        const match = marketFilter === "beaten" ? s.beaten
+          : marketFilter === "open" ? !s.shown.length
+          : true;
+        let mineHtml = "";
+        if (s.mine){
+          mineHtml = s.rank
+            ? `<span class="mkt-mine${s.beaten ? " beaten" : ""}">You ${fmt(Number(s.mine.rate))} · #${s.rank} of ${s.shown.length}</span>`
+            : `<span class="mkt-mine hidden-rate">You ${fmt(Number(s.mine.rate))} · hidden</span>`;
+        }
+        html += `<td class="mkt-cell${match ? "" : " dim"}${accredited.has(l.id) ? "" : " unaccredited"}" tabindex="0" data-lender="${escapeHtml(l.id)}" data-key="${escapeHtml(p.key)}">
+            <span class="mkt-lender">${fmt(lr[0])}</span>
+            <span class="mkt-line">${s.shown.length ? `Lowest agent ${fmt(s.shown[0].rate)} · ${s.shown.length} agent${s.shown.length > 1 ? "s" : ""}` : "No agent rates"}</span>
+            ${mineHtml}
+          </td>`;
+      }
+      html += `</tr>`;
+    }
+    $("marketTable").innerHTML = html + `</tbody>`;
+  }
+
+  $("marketTable").addEventListener("click", (e) => {
+    const cell = e.target.closest(".mkt-cell");
+    if (cell) openPanel({ lender: cell.dataset.lender, key: cell.dataset.key, purpose, repay, lvr });
+  });
+  $("marketTable").addEventListener("keydown", (e) => {
+    const cell = e.target.closest(".mkt-cell");
+    if (cell && (e.key === "Enter" || e.key === " ")){
+      e.preventDefault();
+      openPanel({ lender: cell.dataset.lender, key: cell.dataset.key, purpose, repay, lvr });
+    }
+  });
+
+  // --- Rate panel ------------------------------------------------------------------------
+
+  function openPanel(c){
+    panelCell = c;
+    msg("postMsg", "");
+    renderPanel(true);
+    if (!$("ratePanel").open) $("ratePanel").showModal();
+  }
+
+  function renderPanel(fillForm){
+    const c = panelCell;
+    const lr = lenderRateFor(c);
+    const s = standing(c);
+    const isBase = c.purpose === "owner" && c.repay === "pi" && c.lvr === "80";
+    $("panelTitle").textContent = cellLabel(c);
+    $("panelSub").textContent = loanTypeLabel(c.purpose, c.repay, c.lvr);
+    $("panelHistory").innerHTML = historyHtml(c.lender, c.key, "rate", isBase);
+    $("panelLender").innerHTML = lr
+      ? `<strong>${fmt(lr[0])}</strong>${escapeHtml(lenderName(c.lender))}'s rate · comp. ${fmt(lr[1])}`
+        + (s.others.length ? `<br>Lowest other agent: ${fmt(s.lowestOther)}` : `<br>No other agent rates yet.`)
+      : "This lender doesn't offer this product.";
+
+    const canPost = agent.status === "approved" && !(profile && profile.suspended) && agent.lenders.includes(c.lender) && !!lr;
+    $("postForm").hidden = !lr;
+    $("postTitle").textContent = s.mine ? `Your rate${s.rank ? ` (#${s.rank} of ${s.shown.length})` : " (hidden: not below the lender)"}` : "Post your rate";
+    if (fillForm){
+      $("p-rate").value = s.mine ? Number(s.mine.rate).toFixed(2) : "";
+      $("p-comp").value = s.mine ? Number(s.mine.comparison_rate).toFixed(2) : "";
+      $("p-conditions").value = s.mine ? s.mine.conditions || "" : "";
+    }
+    for (const id of ["p-rate", "p-comp", "p-conditions", "postSubmit"]) $(id).disabled = !canPost;
+    $("postSubmit").textContent = s.mine ? "Update rate" : "Post rate";
+    $("withdrawBtn").hidden = !s.mine;
+    $("costLine").textContent = !agent.lenders.includes(c.lender)
+      ? `Add ${lenderName(c.lender)} to your accredited lenders in your profile to post here.`
+      : agent.status !== "approved" ? "You can post once your profile is approved."
+      : `Must be lower than ${lr ? fmt(lr[0]) : "the lender's rate"}. Goes live straight away. ${chargeText()}`;
+
+    $("panelAgents").innerHTML = s.shown.length
+      ? `<div class="ar-head"><h3>Agent rates consumers see (${s.shown.length})</h3><span>lowest first</span></div>`
+        + `<ul class="ar-list">${s.shown.map(a => agentRateItemHtml(a, lr && lr[0], "", a.agent_id === session.user.id)).join("")}</ul>`
+      : "";
+  }
+
+  $("panelClose").addEventListener("click", () => $("ratePanel").close());
+
+  $("postForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const c = panelCell;
+    const rate = parseFloat($("p-rate").value);
+    const comp = parseFloat($("p-comp").value);
+    const lr = lenderRateFor(c);
+    if (!isFinite(rate) || !isFinite(comp)){ msg("postMsg", "Enter your rate and comparison rate.", "error"); return; }
+    if (lr && rate > Math.round(lr[0] * 100) / 100 - 0.01 + 1e-9){
+      msg("postMsg", `Your rate must be lower than ${lenderName(c.lender)}'s ${fmt(lr[0])}.`, "error");
+      return;
+    }
+    $("postSubmit").disabled = true;
+    try {
+      const { error } = await sb.rpc("post_agent_rate", {
+        p_lender: c.lender, p_product: c.key, p_purpose: c.purpose, p_repay: c.repay, p_lvr: c.lvr,
+        p_rate: rate, p_comparison_rate: comp, p_conditions: $("p-conditions").value,
+      });
+      if (error) throw error;
+      await loadAll();
+      renderPanel(true);
+      renderPortal();
+      msg("postMsg", "Live. Consumers can see your rate now.", "ok");
+    } catch (err){
+      msg("postMsg", friendlyError(err), "error");
+    } finally {
+      $("postSubmit").disabled = false;
+    }
+  });
+
+  $("withdrawBtn").addEventListener("click", async () => {
+    const s = standing(panelCell);
+    if (!s.mine || !confirm("Withdraw this rate? Consumers will no longer see it.")) return;
+    const { error } = await sb.rpc("withdraw_agent_rate", { p_id: s.mine.id });
+    if (error){ msg("postMsg", friendlyError(error), "error"); return; }
+    await loadAll();
+    renderPanel(true);
+    renderPortal();
+    msg("postMsg", "Withdrawn.", "ok");
+  });
+
+  document.addEventListener("click", (e) => {
+    const open = e.target.closest("[data-open-cell]");
+    if (open){
+      const r = myRates.find(x => String(x.id) === open.dataset.openCell);
+      if (r) openPanel(cellOf(r));
+    }
+    const goto = e.target.closest("[data-goto-tab]");
+    if (goto) setTab(goto.dataset.gotoTab);
+  });
+
+  // --- My rates ---------------------------------------------------------------------------
+
+  function leadsOnCell(c){ return myLeads.filter(l => sameCell(l, c)).length; }
+
+  function renderRates(){
+    const rows = myRates.filter(r => ratesView === "live" ? r.status === "live" : r.status !== "live");
+    $("bulkBar").hidden = ratesView !== "live";
+    if (!rows.length){
+      $("ratesTable").innerHTML = `<tbody><tr><td class="muted" style="padding:20px;">${ratesView === "live" ? "No live rates. Post one from the Rate market." : "Nothing withdrawn or removed."}</td></tr></tbody>`;
+      updateBulk();
+      return;
+    }
+    let html = `<thead><tr>${ratesView === "live" ? `<th><input type="checkbox" id="selectAll" aria-label="Select all"></th>` : ""}<th>Loan</th><th>Your rate</th><th>Lender</th><th>Standing</th><th>Leads</th><th>Last updated</th><th></th></tr></thead><tbody>`;
+    for (const r of rows){
+      const c = cellOf(r);
+      const lr = lenderRateFor(c);
+      const s = standing(c);
+      const standingText = r.status !== "live" ? (r.status === "removed" ? "Removed by admin" + (r.removed_reason ? ": " + r.removed_reason : "") : "Withdrawn")
+        : s.rank ? `#${s.rank} of ${s.shown.length}${s.beaten ? " (not lowest)" : ""}` : "Hidden: not below the lender";
+      const stale = r.status === "live" && Date.now() - new Date(r.updated_at).getTime() > 30 * 86400000;
+      html += `<tr>
+        ${ratesView === "live" ? `<td><input type="checkbox" class="rate-check" value="${r.id}" aria-label="Select"></td>` : ""}
+        <td><strong>${escapeHtml(cellLabel(c))}</strong><br><span class="muted" style="font-size:12px;">${escapeHtml(loanTypeLabel(r.purpose, r.repay, r.lvr))}</span>${r.conditions ? `<br><span class="muted" style="font-size:12px;">${escapeHtml(r.conditions)}</span>` : ""}</td>
+        <td class="mono">${fmt(Number(r.rate))}<br><span class="muted" style="font-size:11.5px;">comp. ${fmt(Number(r.comparison_rate))}</span></td>
+        <td class="mono">${lr ? fmt(lr[0]) : "—"}</td>
+        <td>${escapeHtml(standingText)}</td>
+        <td class="mono">${leadsOnCell(c)}</td>
+        <td>${shortDate(r.updated_at.slice(0, 10))}${stale ? `<br><span style="color:var(--gold);font-size:11.5px;font-weight:600;">Over 30 days</span>` : ""}</td>
+        <td>${r.status === "live" ? `<button type="button" class="btn-ghost btn-sm" data-open-cell="${r.id}">Change</button>` : ""}</td>
+      </tr>`;
+    }
+    $("ratesTable").innerHTML = html + `</tbody>`;
+    updateBulk();
+  }
+
+  function selectedRates(){
+    return [...document.querySelectorAll(".rate-check:checked")].map(cb => myRates.find(r => String(r.id) === cb.value)).filter(Boolean);
+  }
+
+  function updateBulk(){
+    const n = document.querySelectorAll(".rate-check:checked").length;
+    $("bulkCount").textContent = n ? `${n} selected` : "Select rates to act on several at once.";
+    $("bulkConfirm").disabled = !n;
+    $("bulkWithdraw").disabled = !n;
+  }
+
+  $("ratesTable").addEventListener("change", (e) => {
+    if (e.target.id === "selectAll") document.querySelectorAll(".rate-check").forEach(cb => { cb.checked = e.target.checked; });
+    updateBulk();
+  });
+
+  // Re-posting a rate unchanged marks it as confirmed today, which consumers see as "Updated".
+  $("bulkConfirm").addEventListener("click", async () => {
+    const rows = selectedRates();
+    msg("ratesMsg", "");
+    for (const r of rows){
+      const { error } = await sb.rpc("post_agent_rate", {
+        p_lender: r.lender_id, p_product: r.product_key, p_purpose: r.purpose, p_repay: r.repay, p_lvr: r.lvr,
+        p_rate: Number(r.rate), p_comparison_rate: Number(r.comparison_rate), p_conditions: r.conditions,
+      });
+      if (error){ msg("ratesMsg", `${cellLabel(cellOf(r))}: ${friendlyError(error)}`, "error"); break; }
+    }
+    await refresh();
+    if ($("ratesMsg").hidden) msg("ratesMsg", `Marked ${rows.length} rate${rows.length > 1 ? "s" : ""} as up to date.`, "ok");
+  });
+
+  $("bulkWithdraw").addEventListener("click", async () => {
+    const rows = selectedRates();
+    if (!confirm(`Withdraw ${rows.length} rate${rows.length > 1 ? "s" : ""}?`)) return;
+    for (const r of rows) await sb.rpc("withdraw_agent_rate", { p_id: r.id });
+    await refresh();
+    msg("ratesMsg", `Withdrew ${rows.length} rate${rows.length > 1 ? "s" : ""}.`, "ok");
+  });
+
+  // --- Leads -------------------------------------------------------------------------------
+
+  function leadHtml(l){
+    const c = cellOf(l);
+    const when = new Date(l.created_at).toLocaleString("en-AU", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+    const disputable = !l.dispute_status && Date.now() - new Date(l.created_at).getTime() < 7 * 86400000;
+    const charge = l.billable ? (Number(l.charge) > 0 ? `Charge ${money(l.charge)}` : "Free lead") : "Not billed (repeat contact or made free)";
+    const dispute = l.dispute_status
+      ? `Dispute ${l.dispute_status === "open" ? "under review" : l.dispute_status}`
+      : disputable ? `<details class="dispute"><summary>Dispute this lead</summary><div>
+          <input type="text" maxlength="300" placeholder="Why is it invalid? e.g. fake number" data-dispute-input="${l.id}">
+          <button type="button" class="btn-ghost btn-sm" data-dispute="${l.id}">Send</button></div></details>` : "";
+    return `<li class="lead${l.status === "new" ? " is-new" : ""}" data-lead="${l.id}">
+      <div class="lead-top"><span class="lead-kind">${KIND_TEXT[l.kind]}${l.kind === "request" && l.name ? " from " + escapeHtml(l.name) : ""}</span><span class="lead-when">${when}</span></div>
+      <div class="lead-about">${fmt(Number(l.rate))} on ${escapeHtml(cellLabel(c))} · ${escapeHtml(loanTypeLabel(l.purpose, l.repay, l.lvr))}</div>
+      ${l.kind === "request" ? `<div class="lead-contact">
+          <a href="tel:${escapeHtml(l.mobile)}">${escapeHtml(formatMobile(l.mobile))}</a>
+          <a href="mailto:${escapeHtml(l.email)}">${escapeHtml(l.email)}</a>
+          ${l.best_time ? `<span>Best time: ${TIME_TEXT[l.best_time]}</span>` : ""}
+        </div>${l.message ? `<p class="lead-msg">${escapeHtml(l.message)}</p>` : ""}`
+        : `<p class="muted" style="margin-top:8px;font-size:12.5px;">Consumers who only view your number or email stay anonymous. They may contact you directly.</p>`}
+      <div class="lead-work">
+        <label class="field"><span>Status</span><select data-status="${l.id}">${LEAD_STATUSES.map(s => `<option value="${s}"${s === l.status ? " selected" : ""}>${STATUS_TEXT[s]}</option>`).join("")}</select></label>
+        <label class="field"><span>Private notes</span><input type="text" maxlength="2000" value="${escapeHtml(l.notes || "")}" data-notes="${l.id}"></label>
+        <button type="button" class="btn-ghost" data-save-lead="${l.id}">Save</button>
+      </div>
+      <div class="lead-foot"><span>${charge}</span><span>${dispute}</span></div>
+    </li>`;
+  }
+
+  function renderLeads(){
+    const rows = leadFilter === "all" ? myLeads : myLeads.filter(l => l.status === leadFilter);
+    $("leadList").innerHTML = rows.length
+      ? rows.map(leadHtml).join("")
+      : `<li class="muted">${myLeads.length ? "No leads with this status." : "No leads yet. They appear here the moment a consumer contacts you."}</li>`;
+  }
+
+  document.addEventListener("click", async (e) => {
+    const save = e.target.closest("[data-save-lead]");
+    if (save){
+      const id = save.dataset.saveLead;
+      const scope = save.closest("[data-lead]");
+      save.disabled = true;
+      const { error } = await sb.rpc("update_lead", {
+        p_id: Number(id),
+        p_status: scope.querySelector(`[data-status="${id}"]`).value,
+        p_notes: scope.querySelector(`[data-notes="${id}"]`).value,
+      });
+      save.disabled = false;
+      if (error){ alert(friendlyError(error)); return; }
+      await refresh();
+      return;
+    }
+    const dispute = e.target.closest("[data-dispute]");
+    if (dispute){
+      const id = dispute.dataset.dispute;
+      const reason = document.querySelector(`[data-dispute-input="${id}"]`).value;
+      dispute.disabled = true;
+      const { error } = await sb.rpc("dispute_lead", { p_id: Number(id), p_reason: reason });
+      dispute.disabled = false;
+      if (error){ alert(friendlyError(error)); return; }
+      await refresh();
+    }
+  });
+
+  // --- Plan ----------------------------------------------------------------------------------
+
+  function renderPlan(){
+    const monthStart = localIsoDate().slice(0, 8) + "01";
+    const month = myLeads.filter(l => l.created_at.slice(0, 10) >= monthStart);
+    const billable = month.filter(l => l.billable);
+    const charges = billable.reduce((sum, l) => sum + Number(l.charge), 0);
+    const scheduled = settings && localIsoDate() < settings.charge_from
+      ? `<dt>From ${shortDate(settings.charge_from)}</dt><dd>${money(settings.per_lead_charge)} per lead (ex GST)</dd>` : "";
+    $("planRows").innerHTML = `
+      <dt>Charge per lead now</dt><dd>${escapeHtml(chargeText())}</dd>
+      ${scheduled}
+      <dt>Leads this month</dt><dd>${month.length}</dd>
+      <dt>Billable this month</dt><dd>${billable.length}</dd>
+      <dt>Charges this month</dt><dd>${money(charges)}</dd>
+      <dt>Live rates allowed</dt><dd>${settings ? settings.live_rate_limit : "—"}</dd>`;
+  }
+
+  // --- Agent profile form ------------------------------------------------------------------
+
+  function setPhoto(url){
+    photoUrl = url || null;
+    $("f-photo-preview").innerHTML = agentPhotoHtml({ photo_url: photoUrl, agent_name: $("f-name").value || (agent && agent.full_name) });
+    $("f-photo-remove").hidden = !photoUrl;
+  }
+
+  function fillAgentForm(){
+    $("f-name").value = (agent && agent.full_name) || (profile && profile.full_name) || "";
+    $("f-mobile").value = formatMobile(profile && profile.mobile);
+    $("f-business").value = (agent && agent.business) || "";
+    $("f-licence").value = (agent && agent.licence_number) || "";
+    $("f-aggregator").value = (agent && agent.aggregator) || "";
+    $("f-bio").value = (agent && agent.bio) || "";
+    const chosen = new Set((agent && agent.lenders) || []);
+    $("f-lenders").innerHTML = LENDERS.map(l => `<label><input type="checkbox" value="${escapeHtml(l.id)}"${chosen.has(l.id) ? " checked" : ""}> ${escapeHtml(l.name)}</label>`).join("");
+    $("f-photo").value = "";
+    setPhoto(agent && agent.photo_url);
+    $("termsRow").hidden = !!agent;
+    $("agentSubmit").textContent = agent ? "Save profile" : "Submit for approval";
+    msg("agentMsg", "");
+  }
+
+  function renderProfile(){
+    const text = { pending: "Waiting for approval.", approved: "Approved: your rates are live.", rejected: "Not approved.", suspended: "Suspended." };
+    $("profileStatus").textContent = `Status: ${text[agent.status] || agent.status} Changing your licence number sends your profile back for approval.`;
+    if ($("agentForm").parentElement !== $("profileCard")){
+      fillAgentForm();
+      $("profileCard").appendChild($("agentForm"));
+    }
+  }
+
+  $("f-photo").addEventListener("change", async () => {
+    const file = $("f-photo").files[0];
+    if (!file) return;
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)){ msg("agentMsg", "Use a JPG, PNG or WebP image.", "error"); return; }
+    if (file.size > 2 * 1024 * 1024){ msg("agentMsg", "Use an image under 2 MB.", "error"); return; }
+    const path = `${session.user.id}/photo-${Date.now()}.${file.type.split("/")[1]}`;
+    msg("agentMsg", "Uploading photo…");
+    const { error } = await sb.storage.from("agent-photos").upload(path, file, { upsert: true, contentType: file.type });
+    if (error){ msg("agentMsg", friendlyError(error), "error"); return; }
+    setPhoto(sb.storage.from("agent-photos").getPublicUrl(path).data.publicUrl);
+    msg("agentMsg", "Photo ready. Save to use it.", "ok");
+  });
+
+  $("f-photo-remove").addEventListener("click", () => { $("f-photo").value = ""; setPhoto(null); });
+
+  $("agentForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const lenders = [...document.querySelectorAll("#f-lenders input:checked")].map(cb => cb.value);
+    const mobile = $("f-mobile").value.replace(/\D/g, "");
+    const licence = $("f-licence").value.replace(/\s/g, "");
+    if ($("f-name").value.trim().length < 2){ msg("agentMsg", "Enter your full name.", "error"); return; }
+    if (!/^04\d{8}$/.test(mobile)){ msg("agentMsg", "Enter an Australian mobile number, e.g. 0412 345 678.", "error"); return; }
+    if ($("f-business").value.trim().length < 2){ msg("agentMsg", "Enter your business name.", "error"); return; }
+    if (!/^\d{3,10}$/.test(licence)){ msg("agentMsg", "Enter your credit licence or credit representative number (digits only).", "error"); return; }
+    if (!lenders.length){ msg("agentMsg", "Choose at least one lender you're accredited with.", "error"); return; }
+    if (!agent && !$("f-terms").checked){ msg("agentMsg", "Tick the box to agree to the agent terms.", "error"); return; }
+    $("agentSubmit").disabled = true;
+    try {
+      const { data: status, error } = await sb.rpc("become_agent", {
+        p_full_name: $("f-name").value, p_mobile: mobile, p_business: $("f-business").value, p_licence: licence,
+        p_aggregator: $("f-aggregator").value, p_lenders: lenders, p_bio: $("f-bio").value, p_photo_url: photoUrl,
+      });
+      if (error) throw error;
+      const wasAgent = !!agent;
+      await loadAll();
+      if (!wasAgent){ tab = "home"; history.replaceState(null, "", "#home"); route(); return; }
+      fillAgentForm();
+      renderPortal();
+      msg("agentMsg", status === "pending" && agent.status === "pending" ? "Saved. Your profile is waiting for approval." : "Saved.", "ok");
+    } catch (err){
+      msg("agentMsg", friendlyError(err), "error");
+    } finally {
+      $("agentSubmit").disabled = false;
+    }
+  });
+
+  // --- Sign-in, password ----------------------------------------------------------------------
+
+  let forgotMode = false;
+
+  document.querySelectorAll("[data-pw]").forEach(btn => btn.addEventListener("click", () => {
+    const input = $(btn.dataset.pw);
+    const show = input.type === "password";
+    input.type = show ? "text" : "password";
+    btn.textContent = show ? "Hide" : "Show";
+  }));
+
+  $("forgotToggle").addEventListener("click", () => {
+    forgotMode = !forgotMode;
+    $("s-password-field").hidden = forgotMode;
+    $("signInTitle").textContent = forgotMode ? "Reset your password" : "Sign in as an agent";
+    $("signInSubmit").textContent = forgotMode ? "Send reset link" : "Sign in";
+    $("forgotToggle").textContent = forgotMode ? "Back to sign in" : "Forgot password?";
+    msg("signInMsg", "");
+  });
+
+  $("signInForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = $("s-email").value.trim();
+    if (!/^\S+@\S+\.\S+$/.test(email)){ msg("signInMsg", "Enter a valid email address.", "error"); return; }
+    $("signInSubmit").disabled = true;
+    try {
+      if (forgotMode){
+        const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: AGENT_URL });
+        if (error) throw error;
+        msg("signInMsg", "If an account exists for " + email + ", a password reset link is on its way.", "ok");
+      } else {
+        const { error } = await sb.auth.signInWithPassword({ email, password: $("s-password").value });
+        if (error) throw error;
+      }
+    } catch (err){
+      msg("signInMsg", /invalid login/i.test(err.message) ? "That email and password don't match an account." : friendlyError(err), "error");
+    } finally {
+      $("signInSubmit").disabled = false;
+    }
+  });
+
+  $("passwordForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const password = $("n-password").value;
+    if (password.length < 8){ msg("passwordMsg", "Use at least 8 characters.", "error"); return; }
+    $("passwordSubmit").disabled = true;
+    const { data, error } = await sb.auth.updateUser({ password, data: { needs_password: false } });
+    $("passwordSubmit").disabled = false;
+    if (error){ msg("passwordMsg", friendlyError(error), "error"); return; }
+    session = { ...session, user: data.user };
+    showStatus("Loading…");
+    await refresh();
+  });
+
+  // Fires INITIAL_SESSION on load, then on every sign-in/out. Supabase advises against awaiting client calls
+  // inside this callback, hence setTimeout.
+  let lastUserId;
+  sb.auth.onAuthStateChange((event, newSession) => {
+    session = newSession;
+    if (event === "PASSWORD_RECOVERY" && newSession){
+      setTimeout(() => { $("pwEmail").textContent = newSession.user.email; renderAccount(); showView("passwordView"); }, 0);
+      return;
+    }
+    const userId = newSession ? newSession.user.id : null;
+    if (userId === lastUserId) return;
+    lastUserId = userId;
+    setTimeout(async () => {
+      if (!newSession){ showStatus(""); route(); return; }
+      showStatus("Loading…");
+      await refresh();
+    }, 0);
+  });
+</script>

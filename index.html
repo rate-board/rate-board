@@ -4,113 +4,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Home Loan Interest Rates</title>
 <meta name="description" content="Compare today's mortgage rates across lenders and loan products at a glance.">
+<link rel="stylesheet" href="common.css">
 <style>
-  :root{
-    --bg:#F6F7F9;
-    --surface:#FFFFFF;
-    --surface-raised:#FFFFFF;
-    --ink:#1B2430;
-    --ink-muted:#5B6572;
-    --ink-faint:#8A93A1;
-    --line:#E3E7EC;
-    --line-strong:#CBD2DB;
-    --accent:#1F6F54;
-    --accent-soft:#E6F0EC;
-    --gold:#9C7A2E;
-    --gold-soft:#F6EFDD;
-    --danger:#B3261E;
-    --focus:#1F6F54;
-    --shadow: 0 1px 2px rgba(20,30,40,.04), 0 8px 24px rgba(20,30,40,.05);
-  }
-  @media (prefers-color-scheme: dark){
-    :root:not([data-theme="light"]){
-      --bg:#121620;
-      --surface:#191E29;
-      --surface-raised:#1E2430;
-      --ink:#EDEFF2;
-      --ink-muted:#A7AFBC;
-      --ink-faint:#6E7684;
-      --line:#2A313E;
-      --line-strong:#39414F;
-      --accent:#4FAE8A;
-      --accent-soft:#1B3B30;
-      --gold:#D4B461;
-      --gold-soft:#332A14;
-      --danger:#F2B8B5;
-      --focus:#4FAE8A;
-      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
-    }
-  }
-  :root[data-theme="dark"]{
-    --bg:#121620;
-    --surface:#191E29;
-    --surface-raised:#1E2430;
-    --ink:#EDEFF2;
-    --ink-muted:#A7AFBC;
-    --ink-faint:#6E7684;
-    --line:#2A313E;
-    --line-strong:#39414F;
-    --accent:#4FAE8A;
-    --accent-soft:#1B3B30;
-    --gold:#D4B461;
-    --gold-soft:#332A14;
-    --danger:#F2B8B5;
-    --focus:#4FAE8A;
-    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
-  }
-
-  *{box-sizing:border-box;}
-  [hidden]{display:none !important;}
-  body{
-    margin:0;
-    background:var(--bg);
-    color:var(--ink);
-    font-family:'Inter',system-ui,-apple-system,Segoe UI,sans-serif;
-    padding:28px 16px 48px;
-  }
-  .wrap{max-width:980px;margin:0 auto;}
-
-  h1,h2{font-family:'Fraunces',Georgia,serif;}
-
-  header.page{
-    display:flex;
-    flex-wrap:wrap;
-    justify-content:space-between;
-    align-items:center;
-    gap:16px;
-    margin-bottom:24px;
-  }
-  .title-block h1{
-    font-size:30px;
-    font-weight:600;
-    letter-spacing:-0.01em;
-    margin:0;
-  }
-  .header-right{display:flex;flex-direction:column;align-items:flex-end;gap:10px;}
-
-  .account{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;font-size:13px;color:var(--ink-muted);}
-  .account .who{font-weight:600;color:var(--ink);}
-  .role-chip{
-    font-size:10.5px;
-    font-weight:700;
-    letter-spacing:.04em;
-    text-transform:uppercase;
-    color:var(--accent);
-    background:var(--accent-soft);
-    border-radius:5px;
-    padding:2px 7px;
-  }
-
-  .status-line{
-    font-size:13px;
-    color:var(--ink-muted);
-    background:var(--surface);
-    border:1px solid var(--line);
-    border-radius:8px;
-    padding:12px 14px;
-    margin:0 0 18px;
-  }
-
   .rates-area{position:relative;}
   .rates-area.gated .gate-content{
     filter:blur(6px);
@@ -155,26 +50,6 @@
     font-weight:600;
     color:var(--ink-muted);
   }
-
-  .seg{
-    display:flex;
-    background:var(--surface);
-    border:1px solid var(--line-strong);
-    border-radius:8px;
-    overflow:hidden;
-  }
-  .seg button{
-    font-family:inherit;
-    font-size:12.5px;
-    font-weight:600;
-    color:var(--ink-muted);
-    background:transparent;
-    border:none;
-    padding:7px 14px;
-    cursor:pointer;
-  }
-  .seg button.active{background:var(--accent-soft);color:var(--accent);}
-  .seg button:focus-visible{outline:2px solid var(--focus);outline-offset:2px;}
 
   .table-shell{
     background:var(--surface);
@@ -261,31 +136,18 @@
   }
   td.unavailable .rate{color:var(--ink-faint);font-weight:500;}
 
-  .edit-btn{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    width:18px;
-    height:18px;
-    margin-left:6px;
-    border:none;
-    border-radius:5px;
-    background:var(--accent-soft);
-    color:var(--accent);
-    font-size:11px;
-    cursor:pointer;
-    vertical-align:middle;
-  }
-  .edit-btn:hover{background:var(--accent);color:#fff;}
-  .edit-btn:focus-visible{outline:2px solid var(--focus);outline-offset:2px;}
-
+  .rate-cell{cursor:pointer;}
   .rate-cell:focus-visible{outline:2px solid var(--focus);outline-offset:-2px;}
+  .rate-cell.pinned{box-shadow:inset 0 0 0 2px var(--accent);}
+  .agent-tag{display:block;margin-top:5px;font:600 11px 'Inter',sans-serif;color:var(--accent);}
 
   .history-card{
     position:fixed;
     z-index:50;
-    width:304px;
+    width:340px;
     max-width:calc(100vw - 16px);
+    max-height:calc(100vh - 16px);
+    overflow-y:auto;
     background:var(--surface);
     color:var(--ink);
     border:1px solid var(--line);
@@ -295,41 +157,27 @@
     font-family:'Inter',system-ui,sans-serif;
     pointer-events:none;
   }
-  .hc-title{margin:0;font-size:13.5px;font-weight:600;}
-  .hc-sub{margin:2px 0 8px;font-size:12px;color:var(--ink-muted);}
-  .history-card svg{display:block;width:100%;height:auto;}
-  .hc-grid{stroke:var(--line);stroke-width:1;}
-  .hc-axis{font:10px 'IBM Plex Mono',monospace;fill:var(--ink-faint);}
-  .hc-line{fill:none;stroke:var(--accent);stroke-width:2;stroke-linejoin:round;stroke-linecap:round;}
-  .hc-dot{fill:var(--accent);stroke:var(--surface);stroke-width:2;}
-  .hc-end{font:600 11px 'IBM Plex Mono',monospace;fill:var(--ink);}
-  .hc-rba{stroke:var(--gold);stroke-width:1;}
-  .hc-rba-label{font:600 9.5px 'IBM Plex Mono',monospace;fill:var(--ink-muted);}
-  .hc-legend{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:4px;font-size:11px;color:var(--ink-muted);}
-  .hc-key-line{display:inline-block;width:14px;height:2px;margin-right:5px;vertical-align:middle;background:var(--accent);border-radius:1px;}
-  .hc-key-rba{display:inline-block;width:1px;height:10px;margin-right:6px;vertical-align:middle;background:var(--gold);}
-  .hc-empty{margin:4px 0 0;font-size:12px;color:var(--ink-muted);}
-  .history-card table{width:100%;min-width:0;border-collapse:collapse;margin-top:8px;}
-  .history-card td{
-    padding:5px 8px 5px 0;
-    border-bottom:none;
-    border-top:1px solid var(--line);
-    font:12px 'Inter',sans-serif;
-    color:var(--ink);
-    white-space:nowrap;
-    vertical-align:top;
-    background:none !important;
+  .history-card.pinned{pointer-events:auto;}
+  .hc-close{
+    position:sticky;
+    top:0;
+    float:right;
+    margin:-6px -6px 0 8px;
+    width:28px;
+    height:28px;
+    border:none;
+    border-radius:7px;
+    background:var(--bg);
+    color:var(--ink-muted);
+    font-size:16px;
+    cursor:pointer;
   }
-  .history-card td:last-child{padding-right:0;}
-  .history-card .num{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;}
-  .history-card .delta{color:var(--ink-muted);text-align:right;}
-  .hc-note{display:block;margin-top:1px;font-size:11px;color:var(--ink-faint);white-space:normal;}
-  .history-card .num .hc-note{white-space:nowrap;}
-  .hc-foot{margin:8px 0 0;font-size:11px;line-height:1.45;color:var(--ink-faint);}
+  .hc-close:focus-visible{outline:2px solid var(--focus);outline-offset:1px;}
+  .hc-hint{margin:8px 0 0;font-size:11.5px;color:var(--accent);font-weight:600;}
+  .hc-notice{margin:8px 0 0;font-size:12.5px;line-height:1.45;}
+  .hc-notice.ok{color:var(--accent);}
+  .hc-notice.error{color:var(--danger);}
 
-  .rate{font-size:16px;font-weight:600;color:var(--ink);}
-  .apr{display:block;font-size:11.5px;color:var(--ink-faint);margin-top:2px;font-weight:400;}
-  td.best .rate{color:var(--accent);}
   .best-badge{
     display:inline-block;
     margin-left:7px;
@@ -344,96 +192,22 @@
     vertical-align:middle;
   }
 
-  dialog.modal{
-    border:none;
-    border-radius:14px;
-    padding:0;
-    background:var(--surface);
-    color:var(--ink);
-    box-shadow:var(--shadow);
-    max-width:420px;
-    width:calc(100% - 32px);
-  }
-  dialog.modal::backdrop{background:rgba(20,24,32,.45);}
-  dialog.modal form{padding:22px;display:flex;flex-direction:column;gap:14px;}
-  dialog.modal h2{margin:0;font-size:20px;font-weight:600;}
-  .field{display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:600;color:var(--ink-muted);}
-  .field input, .field textarea{
-    font:14px 'Inter',sans-serif;
-    font-weight:400;
-    color:var(--ink);
-    background:var(--bg);
-    border:1px solid var(--line-strong);
-    border-radius:7px;
-    padding:9px 10px;
-    resize:vertical;
-  }
-  .field input:focus-visible, .field textarea:focus-visible{outline:2px solid var(--focus);outline-offset:1px;}
-  .pw-wrap{position:relative;display:flex;}
-  .pw-wrap input{flex:1;padding-right:64px;}
-  .pw-toggle{
-    position:absolute;
-    right:6px;
-    top:50%;
-    transform:translateY(-50%);
-    font:12px 'Inter',sans-serif;
-    font-weight:600;
-    color:var(--accent);
-    background:none;
-    border:none;
-    border-radius:5px;
-    padding:5px 8px;
-    cursor:pointer;
-  }
-  .pw-toggle:hover{background:var(--accent-soft);}
-  .pw-toggle:focus-visible{outline:2px solid var(--focus);outline-offset:1px;}
-  .product-row{
-    display:grid;
-    grid-template-columns:auto 1fr 1fr;
-    gap:8px;
+  .agent-box{
+    display:flex;
     align-items:center;
-    font-size:12.5px;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+    padding:12px 14px;
+    border-radius:10px;
+    background:var(--accent-soft);
+    font-size:13px;
+    line-height:1.45;
   }
-  .product-row .plabel{font-weight:600;color:var(--ink-muted);}
-  .product-row input[type="number"]{
-    font:13px 'IBM Plex Mono',monospace;
-    color:var(--ink);
-    background:var(--bg);
-    border:1px solid var(--line-strong);
-    border-radius:6px;
-    padding:6px 8px;
-    width:100%;
-  }
-  .product-row input:disabled{opacity:.4;}
-  .product-row label.offered{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink-faint);grid-column:1 / -1;}
-  .form-msg{margin:0;font-size:13px;line-height:1.5;}
-  .form-msg.error{color:var(--danger);}
-  .form-msg.ok{color:var(--accent);}
-  .form-links{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:12.5px;color:var(--ink-muted);}
-  .link-btn{
-    background:none;
-    border:none;
-    padding:0;
-    font:inherit;
-    color:var(--accent);
-    cursor:pointer;
-    text-decoration:underline;
-    text-underline-offset:2px;
-  }
-  .link-btn:focus-visible{outline:2px solid var(--focus);outline-offset:2px;}
-  .dialog-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:4px;}
-  .btn-ghost, .btn-primary{
-    font:13px 'Inter',sans-serif;
-    font-weight:600;
-    border-radius:7px;
-    padding:8px 16px;
-    cursor:pointer;
-  }
-  .btn-sm{padding:6px 12px;font-size:12.5px;}
-  .btn-ghost{background:none;border:1px solid var(--line-strong);color:var(--ink-muted);}
-  .btn-primary{background:var(--accent);border:1px solid var(--accent);color:#fff;}
-  .btn-primary:disabled{opacity:.6;cursor:wait;}
-  .btn-ghost:focus-visible, .btn-primary:focus-visible{outline:2px solid var(--focus);outline-offset:2px;}
+  .agent-box strong{display:block;font-size:13.5px;}
+  .request-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:12.5px;}
+  .request-list li{border:1px solid var(--line);border-radius:8px;padding:8px 10px;}
+  .request-list .muted, .muted{color:var(--ink-muted);font-size:12.5px;margin:0;}
 
   .assumptions{
     margin-top:16px;
@@ -442,26 +216,11 @@
     line-height:1.6;
   }
 
-  footer{
-    margin-top:28px;
-    padding-top:16px;
-    border-top:1px solid var(--line);
-    font-size:12px;
-    color:var(--ink-faint);
-    display:flex;
-    justify-content:space-between;
-    flex-wrap:wrap;
-    gap:8px;
-  }
-
   .mobile-sort, .lender-note-text{display:none;}
 
   /* Phones: each lender becomes a card with labelled rates, instead of a wide table to scroll sideways. */
   @media (max-width:640px){
-    body{padding:20px 16px 40px;}
     .controls{gap:8px;}
-    .seg{width:100%;}
-    .seg button{flex:1 1 0;padding:10px 6px;font-size:13px;}
     .view-controls{font-size:13px;}
     .view-controls .seg{width:auto;flex:1;}
     .mobile-sort{display:flex;align-items:center;gap:10px;width:100%;font-size:13px;font-weight:600;color:var(--ink-muted);}
@@ -517,19 +276,12 @@
     .rate{font-size:15px;}
     .lender-note{display:none;}
     .lender-note-text{display:block;margin-top:4px;font:400 12px/1.45 'Inter',sans-serif;color:var(--ink-muted);}
-    .edit-btn{width:30px;height:30px;font-size:14px;margin-left:8px;}
     .gate-overlay{padding-top:40px;}
-  }
-
-  @media (max-width:560px){
-    .title-block h1{font-size:24px;}
-    header.page{flex-direction:column;align-items:flex-start;}
-    .header-right{align-items:flex-start;}
-    .account{justify-content:flex-start;}
   }
 </style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500..600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
+<script src="common.js"></script>
 
 <div class="wrap">
   <header class="page">
@@ -596,16 +348,16 @@
   </section>
 
   <p class="assumptions">
-    Comparison rate based on a $150,000 loan over 25 years — warning: this comparison rate is true only for this example and may not include all fees and charges. Fixed-rate comparison rates assume reversion to the lender's standard variable rate at term end, which is why some fixed comparison rates sit well above the fixed rate itself — expected ASIC methodology, not an error. Lenders Mortgage Insurance (LMI) typically applies above 80% LVR and isn't reflected in the rate shown. Interest-only figures show the rate during the IO period; repayments typically rise when the loan reverts to P&amp;I. "—" means that lender doesn't publish that term. Rates sourced from each lender's own basic/no-frills product where one exists; package or offset products may price differently. Always confirm the current rate and your eligibility directly with the lender before relying on these figures.
+    Comparison rate based on a $150,000 loan over 25 years — warning: this comparison rate is true only for this example and may not include all fees and charges. Fixed-rate comparison rates assume reversion to the lender's standard variable rate at term end, which is why some fixed comparison rates sit well above the fixed rate itself — expected ASIC methodology, not an error. Lenders Mortgage Insurance (LMI) typically applies above 80% LVR and isn't reflected in the rate shown. Interest-only figures show the rate during the IO period; repayments typically rise when the loan reverts to P&amp;I. "—" means that lender doesn't publish that term. Rates sourced from each lender's own basic/no-frills product where one exists; package or offset products may price differently. Agent rates are set by independent mortgage agents, not the lenders. Always confirm the current rate and your eligibility directly with the lender or agent before relying on these figures.
   </p>
 
   <footer>
-    <span>Home Loan Interest Rates · indicative rates, not quotes</span>
+    <span>Home Loan Interest Rates · indicative rates, not quotes · <a class="link-btn" href="agent.html">For mortgage agents</a></span>
     <span id="todayLine"></span>
   </footer>
 </div>
 
-<div class="history-card" id="historyCard" role="tooltip" hidden></div>
+<div class="history-card history" id="historyCard" role="dialog" aria-label="Rate details" hidden></div>
 
 <dialog id="authDialog" class="modal">
   <form id="authForm" novalidate>
@@ -628,6 +380,7 @@
     </div>
     <div class="form-links" data-modes="register forgot">
       <span>Already have an account? <button type="button" class="link-btn" data-goto="signin">Sign in</button></span>
+      <span data-modes="register" id="joinLink">Mortgage agent? <button type="button" class="link-btn" data-goto="join">Join here</button></span>
     </div>
     <div class="dialog-actions">
       <button type="button" class="btn-ghost" id="authCancel">Cancel</button>
@@ -636,76 +389,83 @@
   </form>
 </dialog>
 
-<dialog id="editDialog" class="modal">
-  <form id="editForm" novalidate>
-    <h2 id="editTitle">Edit lender</h2>
-    <p class="form-msg" id="editSyncNote" hidden>This lender's rates update automatically every night from its published rates — any change you make here is replaced at the next nightly sync if it differs from what the lender publishes.</p>
+<dialog id="requestDialog" class="modal">
+  <form id="requestForm" novalidate>
+    <h2>Request a call</h2>
+    <p class="modal-sub" id="requestAbout"></p>
     <label class="field">
-      <span>Source URL</span>
-      <input type="url" id="e-source" placeholder="https://">
+      <span>Your name</span>
+      <input type="text" id="r-name" autocomplete="name" maxlength="100" required>
     </label>
     <label class="field">
-      <span>Rates as of</span>
-      <input type="date" id="e-asof">
+      <span>Mobile number</span>
+      <input type="tel" id="r-mobile" autocomplete="tel" inputmode="tel" placeholder="0412 345 678" required>
     </label>
     <label class="field">
-      <span>Note (optional)</span>
-      <textarea id="e-note" rows="2"></textarea>
+      <span>Best time to call <span class="field-hint">(optional)</span></span>
+      <select id="r-time">
+        <option value="">No preference</option>
+        <option value="morning">Morning</option>
+        <option value="afternoon">Afternoon</option>
+        <option value="evening">Evening</option>
+        <option value="any">Any time</option>
+      </select>
     </label>
-    <div id="editProducts"></div>
-    <p class="form-msg error" id="editError" hidden></p>
+    <label class="field">
+      <span>Message <span class="field-hint">(optional, up to 300 characters)</span></span>
+      <textarea id="r-message" rows="3" maxlength="300"></textarea>
+    </label>
+    <label class="check-row"><input type="checkbox" id="r-consent"> <span id="r-consent-text"></span></label>
+    <label class="check-row"><input type="checkbox" id="r-save"> <span>Save my name and mobile to my profile</span></label>
+    <p class="form-msg" id="requestMsg" role="status" hidden></p>
     <div class="dialog-actions">
-      <button type="button" class="btn-ghost" id="editCancel">Cancel</button>
-      <button type="submit" class="btn-primary" id="editSave">Save</button>
+      <button type="button" class="btn-ghost" id="requestCancel">Cancel</button>
+      <button type="submit" class="btn-primary" id="requestSubmit">Send request</button>
     </div>
   </form>
 </dialog>
 
+<dialog id="profileDialog" class="modal wide">
+  <div class="modal-body">
+    <h2>Your profile</h2>
+    <p class="modal-sub" id="profileEmail"></p>
+    <div class="agent-box" id="agentBox"></div>
+    <form id="detailsForm" novalidate style="padding:0;display:flex;flex-direction:column;gap:12px;">
+      <h3>Your details</h3>
+      <div class="field-row">
+        <label class="field">
+          <span>Name</span>
+          <input type="text" id="p-name" autocomplete="name" maxlength="100">
+        </label>
+        <label class="field">
+          <span>Mobile number</span>
+          <input type="tel" id="p-mobile" autocomplete="tel" inputmode="tel" placeholder="0412 345 678">
+        </label>
+      </div>
+      <p class="form-msg" id="detailsMsg" role="status" hidden></p>
+      <div><button type="submit" class="btn-ghost btn-sm" id="detailsSave">Save details</button></div>
+    </form>
+    <h3>My call requests</h3>
+    <div id="myRequests"><p class="muted">Loading…</p></div>
+    <h3>Delete account</h3>
+    <p class="muted">Deletes your account, profile and call requests. Agents keep details you already sent them.</p>
+    <div><button type="button" class="btn-danger btn-sm" id="deleteAccount">Delete my account</button></div>
+    <p class="form-msg" id="deleteMsg" role="status" hidden></p>
+    <div class="dialog-actions">
+      <button type="button" class="btn-primary" id="profileClose">Close</button>
+    </div>
+  </div>
+</dialog>
+
 <script>
-  const SUPABASE_URL = "https://fwjiofgwolontlglwrog.supabase.co";
-  // Publishable key: designed to ship in browser code — row-level security in the database decides what it may do.
-  const SUPABASE_KEY = "sb_publishable_jxUPwSfv1hkMzND0qAWhcA_Cenv2DRz";
-  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   const SITE_URL = location.origin + location.pathname;
 
-  // Interest-only runs higher than P&I on both the rate and the spread, independent of loan purpose.
-  const REPAY_ADJUST = {
-    variable: { rate: 0.40, spread: 0.10 },
-    variable_package: { rate: 0.40, spread: 0.10 },
-    fixed1:   { rate: 0.45, spread: 0.10 },
-    fixed2:   { rate: 0.45, spread: 0.10 },
-    fixed3:   { rate: 0.45, spread: 0.10 },
-  };
-
-  // Investment loans run higher than owner-occupier on both the rate and the spread, independent of repayment type.
-  const PURPOSE_ADJUST = {
-    variable: { rate: 0.15, spread: 0.03 },
-    variable_package: { rate: 0.15, spread: 0.03 },
-    fixed1:   { rate: 0.18, spread: 0.03 },
-    fixed2:   { rate: 0.20, spread: 0.03 },
-    fixed3:   { rate: 0.20, spread: 0.03 },
-  };
-
-  // Lower LVR (more equity/deposit) prices better; above 80% typically attracts LMI and a bigger premium.
-  const LVR_ADJUST = {
-    "60": { rate: -0.10, spread: -0.02 },
-    "80": { rate: 0, spread: 0 },
-    "90": { rate: 0.35, spread: 0.05 },
-  };
-  const ZERO = { rate: 0, spread: 0 };
-
-  let LENDERS = [];   // [{ id, name, source_url, note }]
-  let PRODUCTS = [];  // [{ key, label }]
-  let BASE = {};      // lenderId -> productKey -> [rate, comparisonRate]
-  let PRODUCT_NAMES = {}; // lenderId -> productKey -> lender's own product name, when known
-  let AUTO_SYNCED = new Set(); // lenders whose rates the nightly sync maintains (Open Banking or website)
-  let HISTORY = {}; // lenderId -> productKey -> [{ date, rate, comp, source, product }] oldest first; rate null = withdrawn
-  let RBA = []; // RBA cash rate decisions since 2020, oldest first: [{ date, change, cashRate }]
-  let RATES = null;
   let loadState = "loading"; // loading | ready | error
   let session = null;
-  let isAdmin = false;
-  let editingLender = null;
+  let profile = null; // { full_name, mobile, suspended }
+  let myAgent = null; // { status } when this account has an agent profile
+  let myRequested = new Set(); // agent_rate ids this consumer has requested a call on
+  const revealed = {}; // agent_rate id -> { mobile, email } once shown
 
   let mode = "rate";
   let purpose = "owner";
@@ -714,107 +474,25 @@
   let sortKey = null;
   let sortDir = "asc";
 
-
-  const $ = (id) => document.getElementById(id);
-
-  function fmt(n){ return n.toFixed(2) + "%"; }
-
-  function escapeHtml(s){
-    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-  }
-
-  function safeUrl(u){
-    return typeof u === "string" && /^https:\/\//i.test(u) ? u : null;
-  }
-
-  function localIsoDate(d = new Date()){
-    const pad = (n) => String(n).padStart(2, "0");
-    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
-  }
-
   function showStatus(text){
     const el = $("statusLine");
     el.hidden = !text;
     el.textContent = text || "";
   }
 
-  // Only the owner-occupier / P&I / 60–80% LVR combination is sourced; the rest apply typical market spreads to it.
-  function buildRates(){
-    const result = {};
-    for (const pur of ["owner", "investor"]){
-      result[pur] = {};
-      for (const rep of ["pi", "io"]){
-        result[pur][rep] = {};
-        for (const band of ["60", "80", "90"]){
-          result[pur][rep][band] = {};
-          for (const p of PRODUCTS){
-            const col = result[pur][rep][band][p.key] = {};
-            const ra = rep === "io" ? (REPAY_ADJUST[p.key] || ZERO) : ZERO;
-            const pa = pur === "investor" ? (PURPOSE_ADJUST[p.key] || ZERO) : ZERO;
-            const la = LVR_ADJUST[band];
-            const shift = ra.rate + pa.rate + la.rate;
-            const extraSpread = ra.spread + pa.spread + la.spread;
-            for (const lender of LENDERS){
-              const base = BASE[lender.id] && BASE[lender.id][p.key];
-              col[lender.id] = base
-                ? [Number((base[0] + shift).toFixed(3)), Number((base[1] + shift + extraSpread).toFixed(3))]
-                : null;
-            }
-          }
-        }
-      }
-    }
-    return result;
-  }
-
-  // Rates are readable only by signed-in users (enforced by the database), so signed-out visitors get the lender
-  // list with masked figures behind a blur, like a news-site paywall.
+  // Signed-out visitors get the lender list with masked figures behind a blur, like a news-site paywall.
   async function loadData(){
-    const gated = !session;
-    const none = Promise.resolve({ data: [], error: null });
-    const [lendersRes, productsRes, ratesRes, historyRes, rbaRes] = await Promise.all([
-      sb.from("lenders").select("id,name,source_url,note").eq("active", true).order("sort_order"),
-      sb.from("products").select("key,label").order("sort_order"),
-      gated ? none : sb.from("rates").select("lender_id,product_key,rate,comparison_rate,product_name,source"),
-      gated ? none : sb.from("rate_history")
-        .select("lender_id,product_key,rate,comparison_rate,as_of,changed_at,source,product_name")
-        .order("changed_at").limit(10000),
-      gated ? none : sb.from("rba_cash_rate").select("effective_date,change,cash_rate")
-        .gte("effective_date", "2020-01-01").order("effective_date"),
-    ]);
-    const err = lendersRes.error || productsRes.error || ratesRes.error || historyRes.error || rbaRes.error;
+    const err = await loadMarket(!!session);
     if (err){
       loadState = "error";
       showStatus("Couldn't load rates — try reloading the page. (" + err.message + ")");
       renderTable();
       return;
     }
-    LENDERS = lendersRes.data;
-    PRODUCTS = productsRes.data;
-    BASE = {};
-    PRODUCT_NAMES = {};
-    AUTO_SYNCED = new Set();
-    for (const row of ratesRes.data){
-      (BASE[row.lender_id] ||= {})[row.product_key] = [Number(row.rate), Number(row.comparison_rate)];
-      if (row.product_name) (PRODUCT_NAMES[row.lender_id] ||= {})[row.product_key] = row.product_name;
-      if (row.source !== "manual") AUTO_SYNCED.add(row.lender_id);
-    }
-    HISTORY = {};
-    for (const h of historyRes.data){
-      ((HISTORY[h.lender_id] ||= {})[h.product_key] ||= []).push({
-        date: h.as_of,
-        rate: h.rate === null ? null : Number(h.rate),
-        comp: h.comparison_rate === null ? null : Number(h.comparison_rate),
-        source: h.source,
-        product: h.product_name,
-      });
-    }
-    RBA = rbaRes.data.map(r => ({ date: r.effective_date, change: Number(r.change), cashRate: Number(r.cash_rate) }));
-    RATES = buildRates();
     loadState = "ready";
-    showStatus("");
+    showStatus(profile && profile.suspended ? "Your account is suspended, so you can't contact agents. Contact the site if you think this is a mistake." : "");
     $("gateCount").textContent = LENDERS.length;
-    setGated(gated);
+    setGated(!session);
     renderTable();
   }
 
@@ -879,6 +557,12 @@
     renderTable();
   });
 
+  function agentTagHtml(list){
+    if (!list.length) return "";
+    const lowest = fmt(list[0][mode === "rate" ? "rate" : "comparison_rate"]);
+    return `<span class="agent-tag">${list.length === 1 ? "Agent rate " + lowest : list.length + " agent rates from " + lowest}</span>`;
+  }
+
   function renderTable(){
     if (activeCell) hideHistory();
     const head = $("headRow");
@@ -908,8 +592,7 @@
       const noteHtml = lender.note ? `<span class="lender-note" title="${escapeHtml(lender.note)}">i</span>` : "";
       // Hover tooltips don't exist on touch screens, so the card layout shows the note as text instead.
       const noteText = lender.note ? `<span class="lender-note-text">${escapeHtml(lender.note)}</span>` : "";
-      const editHtml = isAdmin ? `<button type="button" class="edit-btn" data-edit="${escapeHtml(lender.id)}" title="Edit ${name}">✎</button>` : "";
-      let rowHtml = `<th scope="row">${nameHtml}${noteHtml}${editHtml}${noteText}</th>`;
+      let rowHtml = `<th scope="row">${nameHtml}${noteHtml}${noteText}</th>`;
       PRODUCTS.forEach(p => {
         const label = `data-label="${escapeHtml(p.label)}"`;
         if (!session){
@@ -926,9 +609,10 @@
         const shown = mode === "rate" ? rate : apr;
         const secondary = mode === "rate" ? apr : rate;
         const secondaryLabel = mode === "rate" ? "Comp. rate" : "Rate";
-        rowHtml += `<td class="rate-cell${isBest ? " best" : ""}" ${label} tabindex="0" data-lender="${escapeHtml(lender.id)}" data-key="${escapeHtml(p.key)}" aria-describedby="historyCard">
+        rowHtml += `<td class="rate-cell${isBest ? " best" : ""}" ${label} tabindex="0" data-lender="${escapeHtml(lender.id)}" data-key="${escapeHtml(p.key)}" aria-haspopup="dialog">
             <span class="rate">${fmt(shown)}${isBest ? '<span class="best-badge">BEST</span>' : ""}</span>
             <span class="apr">${secondaryLabel} ${fmt(secondary)}</span>
+            ${agentTagHtml(agentRatesFor(lender.id, p.key, purpose, repay, lvr))}
           </td>`;
       });
       tr.innerHTML = rowHtml;
@@ -936,189 +620,221 @@
     });
   }
 
-  // --- Rate history card ------------------------------------------------------------
+  // --- Rate card: history plus agent rates. Hover previews it; a click or tap pins it so its buttons work. ------
 
-  const CHART = { w: 276, h: 108, padL: 38, padR: 44, padT: 22, padB: 20 };
-  const RBA_LOOKBACK_DAYS = 120;
+  const AGENTS_SHOWN = 5;
   let activeCell = null;
+  let pinned = false;
+  let showAllAgents = false;
+  let cardNotice = null; // { text, kind } shown above the agent list until the card closes
   let lastPointerType = "mouse";
 
-  function dayNumber(iso){
-    const [y, m, d] = iso.split("-").map(Number);
-    return Date.UTC(y, m - 1, d) / 86400000;
+  function agentActionsHtml(a){
+    if (session && a.agent_id === session.user.id) return `<div class="ar-meta">This is your rate.</div>`;
+    const contact = revealed[a.id];
+    const contactHtml = contact
+      ? `<div class="ar-contact">${contact.mobile ? `<a href="tel:${escapeHtml(contact.mobile)}">${escapeHtml(formatMobile(contact.mobile))}</a>` : ""}`
+        + `${contact.mobile && contact.email ? " · " : ""}${contact.email ? `<a href="mailto:${escapeHtml(contact.email)}">${escapeHtml(contact.email)}</a>` : ""}</div>`
+      : "";
+    const requested = myRequested.has(a.id);
+    return contactHtml + `<div class="ar-actions">
+        ${contact && contact.mobile ? "" : `<button type="button" class="btn-ghost btn-sm" data-act="number">Show number</button>`}
+        <button type="button" class="btn-ghost btn-sm" data-act="email">Email</button>
+        <button type="button" class="btn-primary btn-sm" data-act="request"${requested ? " disabled" : ""}>${requested ? "Requested" : "Request a call"}</button>
+      </div>`;
   }
 
-  function shortDate(iso){
-    const [y, m, d] = iso.split("-").map(Number);
-    return new Date(y, m - 1, d).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
-  }
-
-  function dayMonth(iso){
-    const [y, m, d] = iso.split("-").map(Number);
-    return new Date(y, m - 1, d).toLocaleDateString("en-AU", { day: "numeric", month: "short" });
-  }
-
-  function signed(n){ return (n > 0 ? "+" : "−") + Math.abs(n).toFixed(2); }
-
-  // The most recent RBA hike or cut on or before a date, if recent enough to be relevant.
-  function rbaChangeBefore(iso){
-    for (let i = RBA.length - 1; i >= 0; i--){
-      const r = RBA[i];
-      if (r.change !== 0 && r.date <= iso) return dayNumber(iso) - dayNumber(r.date) <= RBA_LOOKBACK_DAYS ? r : null;
+  function agentSectionHtml(lenderId, key){
+    const list = agentRatesFor(lenderId, key, purpose, repay, lvr);
+    if (!list.length) return pinned ? `<p class="hc-foot">No agent rates for this loan yet.</p>` : "";
+    const cell = RATES[purpose][repay][lvr][key][lenderId];
+    const shown = showAllAgents ? list : list.slice(0, AGENTS_SHOWN);
+    let html = `<div class="ar-head"><h3>Agent rates (${list.length})</h3><span>lowest first</span></div>`;
+    if (cardNotice) html += `<p class="hc-notice ${cardNotice.kind}" role="status">${escapeHtml(cardNotice.text)}</p>`;
+    html += `<ul class="ar-list">${shown.map(a => agentRateItemHtml(a, cell && cell[0], pinned ? agentActionsHtml(a) : "",
+      session && a.agent_id === session.user.id)).join("")}</ul>`;
+    if (list.length > shown.length){
+      html += pinned
+        ? `<div class="ar-more"><button type="button" class="link-btn" data-act="all">Show all ${list.length}</button></div>`
+        : `<p class="hc-foot">+${list.length - shown.length} more</p>`;
     }
-    return null;
-  }
-
-  // One entry per date (a same-day correction replaces the earlier figure), oldest first.
-  function historySeries(lenderId, key){
-    const byDate = new Map();
-    for (const entry of (HISTORY[lenderId] && HISTORY[lenderId][key]) || []) byDate.set(entry.date, entry);
-    return [...byDate.values()].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
-  }
-
-  // Straight segments between recorded points, then flat from the latest point to today (it is still current).
-  function historyChartSvg(series, metric){
-    const pts = series.filter(e => e[metric] !== null);
-    if (pts.length < 2) return "";
-    const { w, h, padL, padR, padT, padB } = CHART;
-    // Start early enough to show the RBA move that preceded the first record, so the lag is visible.
-    const leadIn = rbaChangeBefore(pts[0].date);
-    const startDate = leadIn && leadIn.date < pts[0].date ? leadIn.date : pts[0].date;
-    const x0 = dayNumber(startDate);
-    const x1 = Math.max(dayNumber(localIsoDate()), dayNumber(pts[pts.length - 1].date) + 1);
-    const values = pts.map(e => e[metric]);
-    const step = Math.max(...values) - Math.min(...values) > 0.6 ? 0.5 : 0.25;
-    const lo = Math.floor((Math.min(...values) - 0.05) / step) * step;
-    const hi = Math.max(lo + step, Math.ceil((Math.max(...values) + 0.05) / step) * step);
-    const X = (day) => padL + (day - x0) / (x1 - x0) * (w - padL - padR);
-    const Y = (v) => padT + (hi - v) / (hi - lo) * (h - padT - padB);
-
-    let svg = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${metric === "rate" ? "Interest rate" : "Comparison rate"} over time">`;
-    for (let t = lo; t <= hi + 1e-9; t += step){
-      svg += `<line class="hc-grid" x1="${padL}" x2="${w - padR}" y1="${Y(t)}" y2="${Y(t)}"/>`;
-      svg += `<text class="hc-axis" x="${padL - 6}" y="${Y(t) + 3}" text-anchor="end">${t.toFixed(2)}</text>`;
-    }
-    for (const r of RBA){
-      if (r.change === 0) continue;
-      const day = dayNumber(r.date);
-      if (day < x0 || day > x1) continue;
-      const x = X(day);
-      const anchor = x < padL + 18 ? "start" : x > w - padR - 18 ? "end" : "middle";
-      svg += `<line class="hc-rba" x1="${x}" x2="${x}" y1="${padT - 6}" y2="${h - padB}"/>`;
-      svg += `<text class="hc-rba-label" x="${x}" y="${padT - 9}" text-anchor="${anchor}">${signed(r.change)}</text>`;
-    }
-    let path = `M${X(dayNumber(pts[0].date))},${Y(pts[0][metric])}`;
-    for (let i = 1; i < pts.length; i++) path += ` L${X(dayNumber(pts[i].date))},${Y(pts[i][metric])}`;
-    path += ` H${X(x1)}`;
-    svg += `<path class="hc-line" d="${path}"/>`;
-    for (const e of pts) svg += `<circle class="hc-dot" cx="${X(dayNumber(e.date))}" cy="${Y(e[metric])}" r="4"/>`;
-    const last = pts[pts.length - 1][metric];
-    svg += `<text class="hc-end" x="${X(x1) + 5}" y="${Y(last) + 4}">${fmt(last)}</text>`;
-    svg += `<text class="hc-axis" x="${padL}" y="${h - 4}">${shortDate(startDate)}</text>`;
-    svg += `<text class="hc-axis" x="${X(x1)}" y="${h - 4}" text-anchor="end">Today</text>`;
-    return svg + "</svg>";
-  }
-
-  function historyCardHtml(lenderId, key){
-    const lender = LENDERS.find(l => l.id === lenderId);
-    const product = PRODUCTS.find(p => p.key === key);
-    const productName = PRODUCT_NAMES[lenderId] && PRODUCT_NAMES[lenderId][key];
-    const metric = mode === "rate" ? "rate" : "comp";
-    const otherMetric = metric === "rate" ? "comp" : "rate";
-    const series = historySeries(lenderId, key);
-
-    let html = `<p class="hc-title">${escapeHtml(lender ? lender.name : lenderId)} · ${escapeHtml(product ? product.label : key)}</p>`;
-    html += `<p class="hc-sub">${productName ? escapeHtml(productName) : "&nbsp;"}</p>`;
-    const chart = historyChartSvg(series, metric);
-    html += chart || `<p class="hc-empty">${series.length ? "No change since " + shortDate(series[0].date) + "." : "No history recorded yet."}</p>`;
-    if (chart) {
-      html += `<div class="hc-legend"><span><i class="hc-key-line"></i>${metric === "rate" ? "Interest rate" : "Comparison rate"}</span>`
-        + `<span><i class="hc-key-rba"></i>RBA cash rate change</span></div>`;
-    }
-
-    const rows = series.map((e, i) => {
-      const prev = series[i - 1];
-      let delta = "first recorded";
-      if (e[metric] === null) delta = "withdrawn";
-      else if (prev && prev[metric] !== null){
-        const d = e[metric] - prev[metric];
-        delta = Math.abs(d) < 0.005 ? "no change" : (d > 0 ? "▲ +" : "▼ −") + Math.abs(d).toFixed(2);
-      }
-      const notes = [];
-      if (e.source === "manual") notes.push("hand-collected");
-      if (e.product && (!prev || prev.product !== e.product)) notes.push((prev ? "now " : "") + e.product);
-      const rba = rbaChangeBefore(e.date);
-      if (rba){
-        const days = dayNumber(e.date) - dayNumber(rba.date);
-        notes.push(`${days === 0 ? "same day as" : days + (days === 1 ? " day" : " days") + " after"} RBA ${signed(rba.change)} (${dayMonth(rba.date)})`);
-      }
-      const value = e[metric] === null ? "—" : fmt(e[metric]);
-      const other = e[otherMetric] === null ? "" : `${otherMetric === "comp" ? "comp." : "rate"} ${fmt(e[otherMetric])}`;
-      return `<tr><td>${shortDate(e.date)}${notes.length ? `<span class="hc-note">${escapeHtml(notes.join(" · "))}</span>` : ""}</td>`
-        + `<td class="num">${value}<span class="hc-note">${other}</span></td><td class="delta">${delta}</td></tr>`;
-    }).reverse();
-    if (rows.length) html += `<table><tbody>${rows.slice(0, 6).join("")}</tbody></table>`;
-    if (rows.length > 6) html += `<p class="hc-foot">…and ${rows.length - 6} earlier changes.</p>`;
-
-    const latest = RBA[RBA.length - 1];
-    const lastMove = [...RBA].reverse().find(r => r.change !== 0);
-    if (latest && lastMove) {
-      html += `<p class="hc-foot">RBA cash rate ${latest.cashRate.toFixed(2)}% — last moved ${signed(lastMove.change)} on ${shortDate(lastMove.date)}.</p>`;
-    }
-    const isBase = purpose === "owner" && repay === "pi" && lvr === "80";
-    if (!isBase) html += `<p class="hc-foot">History shows the published owner-occupier P&amp;I rate (60–80% LVR); the figure in the table is estimated from it.</p>`;
+    if (!pinned) html += `<p class="hc-hint">Click the rate to contact an agent.</p>`;
+    html += `<p class="ar-disclaimer">${escapeHtml(AGENT_DISCLAIMER)}</p>`;
     return html;
   }
 
-  function showHistory(cell){
+  function renderCard(){
     const card = $("historyCard");
-    card.innerHTML = historyCardHtml(cell.dataset.lender, cell.dataset.key);
-    card.hidden = false;
-    const r = cell.getBoundingClientRect();
+    const { lender, key } = activeCell.dataset;
+    const isBase = purpose === "owner" && repay === "pi" && lvr === "80";
+    card.innerHTML = (pinned ? `<button type="button" class="hc-close" data-act="close" aria-label="Close">×</button>` : "")
+      + historyHtml(lender, key, mode === "rate" ? "rate" : "comp", isBase)
+      + agentSectionHtml(lender, key);
+    card.classList.toggle("pinned", pinned);
+  }
+
+  function positionCard(){
+    const card = $("historyCard");
+    const r = activeCell.getBoundingClientRect();
     const cw = card.offsetWidth, ch = card.offsetHeight;
     const left = window.innerWidth <= 640
       ? (window.innerWidth - cw) / 2
       : Math.min(Math.max(8, r.left + r.width / 2 - cw / 2), window.innerWidth - cw - 8);
     let top = r.bottom + 8;
     if (top + ch > window.innerHeight - 8) top = Math.max(8, r.top - ch - 8);
+    if (top + ch > window.innerHeight - 8) top = Math.max(8, window.innerHeight - ch - 8);
     card.style.left = left + "px";
     card.style.top = top + "px";
+  }
+
+  function showHistory(cell, pin){
+    if (activeCell && activeCell !== cell) activeCell.classList.remove("pinned");
+    if (activeCell !== cell){ showAllAgents = false; cardNotice = null; }
     activeCell = cell;
+    pinned = pin;
+    cell.classList.toggle("pinned", pin);
+    const card = $("historyCard");
+    card.hidden = false;
+    renderCard();
+    positionCard();
+    if (pin) card.focus({ preventScroll: true });
   }
 
   function hideHistory(){
     $("historyCard").hidden = true;
+    if (activeCell) activeCell.classList.remove("pinned");
     activeCell = null;
+    pinned = false;
   }
 
-  // Mouse users get it on hover, keyboard users on focus, touch users on tap.
+  $("historyCard").tabIndex = -1;
+
+  // Mouse users preview on hover; any click, tap or Enter pins the card open.
   $("bodyRows").addEventListener("pointerdown", (e) => { lastPointerType = e.pointerType; });
   $("bodyRows").addEventListener("pointerover", (e) => {
-    if (e.pointerType !== "mouse") return;
+    if (e.pointerType !== "mouse" || pinned) return;
     const cell = e.target.closest(".rate-cell");
-    if (cell && cell !== activeCell) showHistory(cell);
+    if (cell && cell !== activeCell) showHistory(cell, false);
   });
   $("bodyRows").addEventListener("pointerout", (e) => {
-    if (e.pointerType !== "mouse" || !activeCell) return;
+    if (e.pointerType !== "mouse" || !activeCell || pinned) return;
     if (!e.relatedTarget || !activeCell.contains(e.relatedTarget)) hideHistory();
   });
   $("bodyRows").addEventListener("focusin", (e) => {
     const cell = e.target.closest(".rate-cell");
-    if (cell && lastPointerType === "mouse") showHistory(cell);
+    if (cell && !pinned && lastPointerType === "mouse") showHistory(cell, false);
   });
-  $("bodyRows").addEventListener("focusout", () => { if (lastPointerType === "mouse") hideHistory(); });
+  $("bodyRows").addEventListener("focusout", (e) => {
+    if (!pinned && !(e.relatedTarget && $("historyCard").contains(e.relatedTarget))) hideHistory();
+  });
   $("bodyRows").addEventListener("click", (e) => {
-    if (lastPointerType === "mouse") return;
     const cell = e.target.closest(".rate-cell");
-    if (!cell) return;
-    if (cell === activeCell) hideHistory(); else showHistory(cell);
+    if (!cell || e.target.closest("a")) return;
+    if (cell === activeCell && pinned) hideHistory(); else showHistory(cell, true);
+  });
+  $("bodyRows").addEventListener("keydown", (e) => {
+    const cell = e.target.closest(".rate-cell");
+    if (cell && (e.key === "Enter" || e.key === " ")){ e.preventDefault(); showHistory(cell, true); }
   });
   document.addEventListener("pointerdown", (e) => {
-    if (activeCell && !e.target.closest(".rate-cell")) hideHistory();
+    if (!activeCell || e.target.closest(".rate-cell") || $("historyCard").contains(e.target)) return;
+    if (document.querySelector("dialog[open]")) return;
+    hideHistory();
   });
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape") hideHistory(); });
-  window.addEventListener("scroll", hideHistory, true);
-  window.addEventListener("resize", hideHistory);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && activeCell && !document.querySelector("dialog[open]")){
+      const cell = activeCell;
+      hideHistory();
+      cell.focus();
+    }
+  });
+  window.addEventListener("scroll", (e) => {
+    if (activeCell && !(e.target instanceof Node && $("historyCard").contains(e.target))) hideHistory();
+  }, true);
+  window.addEventListener("resize", () => { if (activeCell) hideHistory(); });
+
+  $("historyCard").addEventListener("click", async (e) => {
+    const btn = e.target.closest("[data-act]");
+    if (!btn) return;
+    const act = btn.dataset.act;
+    if (act === "close"){ const cell = activeCell; hideHistory(); cell.focus(); return; }
+    if (act === "all"){ showAllAgents = true; renderCard(); return; }
+    const item = btn.closest("[data-agent-rate]");
+    const a = item && AGENT_RATES.find(x => String(x.id) === item.dataset.agentRate);
+    if (!a) return;
+    if (act === "request"){ openRequest(a); return; }
+    btn.disabled = true;
+    try {
+      const { data, error } = await sb.rpc("contact_agent", { p_rate_id: a.id, p_kind: act });
+      if (error) throw error;
+      const row = data && data[0];
+      revealed[a.id] = { ...(revealed[a.id] || {}), mobile: act === "number" ? row.agent_mobile : (revealed[a.id] || {}).mobile, email: row.agent_email };
+      cardNotice = null;
+      renderCard();
+      if (act === "email"){
+        const subject = `Your ${fmt(a.rate)} rate: ${lenderName(a.lender_id)} ${productLabel(a.product_key)} (${loanTypeLabel(a.purpose, a.repay, a.lvr)})`;
+        location.href = `mailto:${row.agent_email}?subject=${encodeURIComponent(subject)}`;
+      }
+    } catch (err){
+      cardNotice = { text: friendlyError(err), kind: "error" };
+      renderCard();
+    }
+  });
+
+  // --- Request a call --------------------------------------------------------------------
+
+  let requesting = null;
+
+  function requestMsg(text, kind){
+    const el = $("requestMsg");
+    el.hidden = !text;
+    el.textContent = text || "";
+    el.className = "form-msg" + (kind ? " " + kind : "");
+  }
+
+  function openRequest(a){
+    requesting = a;
+    $("requestAbout").textContent = `${a.agent_name} of ${a.business} · ${fmt(a.rate)} on ${lenderName(a.lender_id)} ${productLabel(a.product_key)} (${loanTypeLabel(a.purpose, a.repay, a.lvr)})`;
+    $("r-name").value = (profile && profile.full_name) || "";
+    $("r-mobile").value = formatMobile(profile && profile.mobile);
+    $("r-time").value = "";
+    $("r-message").value = "";
+    $("r-consent").checked = false;
+    $("r-consent-text").textContent = `I agree to share my name, mobile and email with ${a.agent_name} of ${a.business} so they can contact me about this rate.`;
+    $("r-save").checked = !(profile && profile.full_name && profile.mobile);
+    requestMsg("");
+    $("requestDialog").showModal();
+  }
+
+  $("requestCancel").addEventListener("click", () => $("requestDialog").close());
+
+  $("requestForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const a = requesting;
+    const name = $("r-name").value.trim();
+    const mobile = $("r-mobile").value.replace(/\D/g, "");
+    if (name.length < 2){ requestMsg("Enter your name.", "error"); return; }
+    if (!/^04\d{8}$/.test(mobile)){ requestMsg("Enter an Australian mobile number, e.g. 0412 345 678.", "error"); return; }
+    if (!$("r-consent").checked){ requestMsg("Tick the box to agree to share your details.", "error"); return; }
+    const submit = $("requestSubmit");
+    submit.disabled = true;
+    try {
+      const { error } = await sb.rpc("request_call", {
+        p_rate_id: a.id, p_name: name, p_mobile: mobile, p_best_time: $("r-time").value || null,
+        p_message: $("r-message").value, p_consent: true, p_save: $("r-save").checked,
+      });
+      if (error) throw error;
+      myRequested.add(a.id);
+      if ($("r-save").checked) profile = { ...(profile || {}), full_name: name, mobile };
+      $("requestDialog").close();
+      cardNotice = { text: `Sent. ${a.agent_name} will be in touch.`, kind: "ok" };
+      if (activeCell) renderCard();
+    } catch (err){
+      requestMsg(friendlyError(err), "error");
+    } finally {
+      submit.disabled = false;
+    }
+  });
 
   // --- Filters and sorting -----------------------------------------------------
 
@@ -1148,10 +864,11 @@
   // --- Accounts ------------------------------------------------------------------
 
   const AUTH_COPY = {
-    signin:   { title: "Sign in",               submit: "Sign in",           pwAuto: "current-password", pwLabel: "Password" },
-    register: { title: "Create your account",   submit: "Create account",    pwAuto: "new-password",     pwLabel: "Password (8+ characters)" },
-    forgot:   { title: "Reset your password",   submit: "Send reset link",   pwAuto: "off",              pwLabel: "Password" },
-    newpw:    { title: "Choose a new password", submit: "Save new password", pwAuto: "new-password",     pwLabel: "New password (8+ characters)" },
+    signin:   { title: "Sign in",                    submit: "Sign in",           pwAuto: "current-password", pwLabel: "Password" },
+    register: { title: "Create your account",        submit: "Create account",    pwAuto: "new-password",     pwLabel: "Password (8+ characters)" },
+    join:     { title: "Join as a mortgage agent",   submit: "Create account",    pwAuto: "new-password",     pwLabel: "Password (8+ characters)" },
+    forgot:   { title: "Reset your password",        submit: "Send reset link",   pwAuto: "off",              pwLabel: "Password" },
+    newpw:    { title: "Choose a new password",      submit: "Save new password", pwAuto: "new-password",     pwLabel: "New password (8+ characters)" },
   };
   let authMode = "signin";
 
@@ -1162,18 +879,21 @@
     el.className = "form-msg" + (kind ? " " + kind : "");
   }
 
+  // "join" is the register form for agents: same fields, then on to the agent portal to finish the agent profile.
   function setAuthMode(next){
     authMode = next;
     const copy = AUTH_COPY[next];
+    const formMode = next === "join" ? "register" : next;
     $("authTitle").textContent = copy.title;
     $("authSubmit").textContent = copy.submit;
     $("a-password").autocomplete = copy.pwAuto;
     $("a-password-label").textContent = copy.pwLabel;
     document.querySelectorAll("#authForm [data-modes]").forEach(el => {
-      const visible = el.dataset.modes.split(" ").includes(next);
+      const visible = el.dataset.modes.split(" ").includes(formMode);
       el.hidden = !visible;
       el.querySelectorAll("input").forEach(input => { input.disabled = !visible; });
     });
+    $("joinLink").hidden = next !== "register";
     setPasswordVisible(false);
     authMsg("");
   }
@@ -1216,8 +936,9 @@
     e.preventDefault();
     const email = $("a-email").value.trim();
     const password = $("a-password").value;
+    const registering = authMode === "register" || authMode === "join";
 
-    if (["signin", "register", "forgot"].includes(authMode) && !/^\S+@\S+\.\S+$/.test(email)){
+    if ((["signin", "forgot"].includes(authMode) || registering) && !/^\S+@\S+\.\S+$/.test(email)){
       authMsg("Enter a valid email address.", "error");
       return;
     }
@@ -1225,7 +946,7 @@
       authMsg("Enter your password.", "error");
       return;
     }
-    if ((authMode === "register" || authMode === "newpw") && password.length < 8){
+    if ((registering || authMode === "newpw") && password.length < 8){
       authMsg("Use at least 8 characters for your password.", "error");
       return;
     }
@@ -1237,11 +958,12 @@
         const { error } = await sb.auth.signInWithPassword({ email, password });
         if (error) throw error;
         $("authDialog").close();
-      } else if (authMode === "register"){
+      } else if (registering){
+        const joining = authMode === "join";
         const { data, error } = await sb.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: SITE_URL },
+          options: { emailRedirectTo: joining ? AGENT_URL + "#join" : SITE_URL },
         });
         if (error) throw error;
         // Supabase answers a sign-up for an already-registered email with a dummy user that has no identities.
@@ -1250,8 +972,13 @@
           authMsg("An account with this email already exists — sign in below, or use “Forgot password?”.", "error");
           return;
         }
-        if (data.session) $("authDialog").close();
-        else authMsg("Almost there — we've emailed a confirmation link to " + email + ". Click it, then sign in.", "ok");
+        if (data.session){
+          if (joining){ location.href = AGENT_URL + "#join"; return; }
+          $("authDialog").close();
+        } else {
+          authMsg("Almost there — we've emailed a confirmation link to " + email + ". Click it"
+            + (joining ? " to finish your agent profile." : ", then sign in."), "ok");
+        }
       } else if (authMode === "forgot"){
         const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: SITE_URL });
         if (error) throw error;
@@ -1291,23 +1018,34 @@
     who.className = "who";
     who.textContent = session.user.email;
     bar.append(who);
-    if (isAdmin){
-      const chip = document.createElement("span");
-      chip.className = "role-chip";
-      chip.textContent = "Admin";
-      bar.append(chip);
+    if (myAgent){
+      const toAgent = document.createElement("a");
+      toAgent.className = "btn-ghost btn-sm";
+      toAgent.href = AGENT_URL;
+      toAgent.textContent = "Switch to agent";
+      bar.append(toAgent);
     }
-    bar.append(button("Sign out", "btn-ghost", async () => { await sb.auth.signOut(); }));
+    bar.append(
+      button("Profile", "btn-ghost", openProfile),
+      button("Sign out", "btn-ghost", async () => { await sb.auth.signOut(); }),
+    );
   }
 
-  async function refreshRole(){
-    isAdmin = false;
+  async function refreshAccount(){
+    profile = null;
+    myAgent = null;
+    myRequested = new Set();
     if (session){
-      const { data } = await sb.from("profiles").select("role").eq("id", session.user.id).maybeSingle();
-      isAdmin = !!data && data.role === "admin";
+      const [profileRes, agentRes, requestsRes] = await Promise.all([
+        sb.from("profiles").select("full_name,mobile,suspended").eq("id", session.user.id).maybeSingle(),
+        sb.from("agents").select("status").eq("id", session.user.id).maybeSingle(),
+        sb.rpc("my_requests"),
+      ]);
+      profile = profileRes.data;
+      myAgent = agentRes.data;
+      myRequested = new Set((requestsRes.data || []).map(r => r.agent_rate_id));
     }
     renderAccount();
-    renderTable();
   }
 
   // Fires INITIAL_SESSION on load, then on every sign-in/out. Reload data only when the user actually changes
@@ -1319,7 +1057,7 @@
     const userId = newSession ? newSession.user.id : null;
     if (userId !== lastUserId){
       lastUserId = userId;
-      setTimeout(async () => { await refreshRole(); await loadData(); }, 0);
+      setTimeout(async () => { await refreshAccount(); await loadData(); }, 0);
     } else {
       setTimeout(renderAccount, 0);
     }
@@ -1330,105 +1068,79 @@
     if (btn) openAuth(btn.dataset.auth);
   });
 
-  // --- Admin editing ---------------------------------------------------------------
+  // --- Profile ---------------------------------------------------------------------
 
-  function openEditDialog(lenderId){
-    editingLender = LENDERS.find(l => l.id === lenderId);
-    if (!editingLender) return;
-    $("editTitle").textContent = "Edit " + editingLender.name;
-    $("editSyncNote").hidden = !AUTO_SYNCED.has(editingLender.id);
-    $("e-source").value = editingLender.source_url || "";
-    $("e-note").value = editingLender.note || "";
-    $("e-asof").value = localIsoDate();
-    const container = $("editProducts");
-    container.innerHTML = "";
-    PRODUCTS.forEach(p => {
-      const cell = BASE[editingLender.id] && BASE[editingLender.id][p.key];
-      const offered = !!cell;
-      const row = document.createElement("div");
-      row.className = "product-row";
-      row.innerHTML = `
-        <span class="plabel">${escapeHtml(p.label)}</span>
-        <input type="number" step="0.01" min="0" max="20" id="e-${p.key}-rate" placeholder="Rate %" value="${offered ? cell[0] : ""}" ${offered ? "" : "disabled"}>
-        <input type="number" step="0.01" min="0" max="20" id="e-${p.key}-comp" placeholder="Comp. %" value="${offered ? cell[1] : ""}" ${offered ? "" : "disabled"}>
-        <label class="offered"><input type="checkbox" id="e-${p.key}-offered" ${offered ? "checked" : ""}> Offered</label>
-      `;
-      container.appendChild(row);
-    });
-    $("editError").hidden = true;
-    $("editDialog").showModal();
+  const STATUS_TEXT = { pending: "Waiting for approval", approved: "Approved", rejected: "Not approved", suspended: "Suspended" };
+
+  function formMsg(id, text, kind){
+    const el = $(id);
+    el.hidden = !text;
+    el.textContent = text || "";
+    el.className = "form-msg" + (kind ? " " + kind : "");
   }
 
-  $("bodyRows").addEventListener("click", (e) => {
-    const btn = e.target.closest(".edit-btn");
-    if (btn) openEditDialog(btn.dataset.edit);
-  });
+  async function openProfile(){
+    $("profileEmail").textContent = session.user.email;
+    $("agentBox").innerHTML = myAgent
+      ? `<div><strong>Agent mode</strong>${escapeHtml(STATUS_TEXT[myAgent.status] || myAgent.status)}</div>
+         <a class="btn-primary btn-sm" href="${escapeHtml(AGENT_URL)}">Switch to agent</a>`
+      : `<div><strong>Are you a mortgage agent?</strong>Post rates below the banks' and get leads from people comparing loans.</div>
+         <a class="btn-primary btn-sm" href="${escapeHtml(AGENT_URL)}#join">Become an agent</a>`;
+    $("p-name").value = (profile && profile.full_name) || "";
+    $("p-mobile").value = formatMobile(profile && profile.mobile);
+    formMsg("detailsMsg", "");
+    formMsg("deleteMsg", "");
+    $("myRequests").innerHTML = `<p class="muted">Loading…</p>`;
+    $("profileDialog").showModal();
 
-  $("editProducts").addEventListener("change", (e) => {
-    if (!e.target.matches('input[type="checkbox"]')) return;
-    const key = e.target.id.slice(2, -"-offered".length);
-    $(`e-${key}-rate`).disabled = !e.target.checked;
-    $(`e-${key}-comp`).disabled = !e.target.checked;
-  });
+    const { data, error } = await sb.rpc("my_requests");
+    if (error){ $("myRequests").innerHTML = `<p class="muted">${escapeHtml(friendlyError(error))}</p>`; return; }
+    myRequested = new Set(data.map(r => r.agent_rate_id));
+    $("myRequests").innerHTML = data.length
+      ? `<ul class="request-list">${data.map(r => `<li>
+          <strong>${escapeHtml(r.agent_name)}</strong> · ${escapeHtml(r.business)}<br>
+          ${fmt(Number(r.rate))} on ${escapeHtml(lenderName(r.lender_id))} ${escapeHtml(productLabel(r.product_key))}
+          <span class="muted">(${escapeHtml(loanTypeLabel(r.purpose, r.repay, r.lvr))})</span><br>
+          <span class="muted">Sent ${shortDate(r.created_at.slice(0, 10))} · ${r.status === "new" ? "Waiting for the agent" : "Agent has seen it"}</span>
+        </li>`).join("")}</ul>`
+      : `<p class="muted">You haven't requested any calls yet. Click a rate with agent rates to contact an agent.</p>`;
+  }
 
-  $("editCancel").addEventListener("click", () => $("editDialog").close());
+  $("profileClose").addEventListener("click", () => $("profileDialog").close());
 
-  $("editForm").addEventListener("submit", async (e) => {
+  $("detailsForm").addEventListener("submit", async (e) => {
     e.preventDefault();
-    if (!editingLender) return;
-    const errorEl = $("editError");
-    const fail = (text) => { errorEl.textContent = text; errorEl.hidden = false; };
-    errorEl.hidden = true;
+    const full_name = $("p-name").value.trim() || null;
+    const digits = $("p-mobile").value.replace(/\D/g, "");
+    const mobile = digits || null;
+    if (mobile && !/^04\d{8}$/.test(mobile)){ formMsg("detailsMsg", "Enter an Australian mobile number, e.g. 0412 345 678.", "error"); return; }
+    $("detailsSave").disabled = true;
+    const { error } = await sb.from("profiles").update({ full_name, mobile }).eq("id", session.user.id);
+    $("detailsSave").disabled = false;
+    if (error){ formMsg("detailsMsg", friendlyError(error), "error"); return; }
+    profile = { ...(profile || {}), full_name, mobile };
+    formMsg("detailsMsg", "Saved.", "ok");
+  });
 
-    const lenderId = editingLender.id;
-    const source = $("e-source").value.trim();
-    const note = $("e-note").value.trim();
-    const asOf = $("e-asof").value || localIsoDate();
-    if (source && !safeUrl(source)){ fail("Source URL must start with https://"); return; }
-
-    const upserts = [];
-    const removals = [];
-    for (const p of PRODUCTS){
-      if (!$(`e-${p.key}-offered`).checked){
-        if (BASE[lenderId] && BASE[lenderId][p.key]) removals.push(p.key);
-        continue;
-      }
-      const rate = parseFloat($(`e-${p.key}-rate`).value);
-      const comp = parseFloat($(`e-${p.key}-comp`).value);
-      if (!isFinite(rate) || !isFinite(comp) || rate <= 0 || rate >= 25 || comp <= 0 || comp >= 25){
-        fail(p.label + ": enter a valid rate and comparison rate.");
-        return;
-      }
-      upserts.push({ lender_id: lenderId, product_key: p.key, rate, comparison_rate: comp, as_of: asOf, source: "manual", product_name: null });
-    }
-
-    const save = $("editSave");
-    save.disabled = true;
+  $("deleteAccount").addEventListener("click", async () => {
+    if (!confirm("Delete your account? This can't be undone.")) return;
+    $("deleteAccount").disabled = true;
     try {
-      // RLS silently filters updates a non-admin may not make, so check a row actually changed.
-      const lenderRes = await sb.from("lenders").update({ source_url: source || null, note: note || null }).eq("id", lenderId).select("id");
-      if (lenderRes.error) throw lenderRes.error;
-      if (!lenderRes.data.length) throw new Error("Your account doesn't have permission to edit rates.");
-      if (upserts.length){
-        const { error } = await sb.from("rates").upsert(upserts);
-        if (error) throw error;
-      }
-      if (removals.length){
-        const { error } = await sb.from("rates").delete().eq("lender_id", lenderId).in("product_key", removals);
-        if (error) throw error;
-      }
-      $("editDialog").close();
-      await loadData();
+      await callMarketplace({ action: "delete_self" });
+      $("profileDialog").close();
+      await sb.auth.signOut();
+      showStatus("Your account has been deleted.");
     } catch (err){
-      fail((err && err.message) || "Couldn't save — try again.");
+      formMsg("deleteMsg", friendlyError(err), "error");
     } finally {
-      save.disabled = false;
+      $("deleteAccount").disabled = false;
     }
   });
 
   // --- Start ---------------------------------------------------------------------
 
   $("todayLine").textContent = "Viewed " + new Date().toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" });
+  if (location.hash === "#register" || location.hash === "#join") openAuth(location.hash.slice(1));
   renderAccount();
   renderTable();
 </script>
