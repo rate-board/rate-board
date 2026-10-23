@@ -510,7 +510,7 @@
 <dialog id="editDialog" class="modal">
   <form id="editForm" novalidate>
     <h2 id="editTitle">Edit lender</h2>
-    <p class="form-msg" id="editSyncNote" hidden>This lender's rates update automatically every night from its published Open Banking data — any change you make here is replaced at the next nightly sync if it differs from the lender's published rate.</p>
+    <p class="form-msg" id="editSyncNote" hidden>This lender's rates update automatically every night from its published rates — any change you make here is replaced at the next nightly sync if it differs from what the lender publishes.</p>
     <label class="field">
       <span>Source URL</span>
       <input type="url" id="e-source" placeholder="https://">
@@ -569,6 +569,7 @@
   let PRODUCTS = [];  // [{ key, label }]
   let BASE = {};      // lenderId -> productKey -> [rate, comparisonRate]
   let PRODUCT_NAMES = {}; // lenderId -> productKey -> lender's own product name, when known
+  let AUTO_SYNCED = new Set(); // lenders whose rates the nightly sync maintains (Open Banking or website)
   let RATES = null;
   let loadState = "loading"; // loading | ready | error
   let session = null;
@@ -641,10 +642,10 @@
   async function loadData(){
     const gated = !session;
     const [lendersRes, productsRes, ratesRes] = await Promise.all([
-      sb.from("lenders").select("id,name,source_url,note,cdr_base_uri").eq("active", true).order("sort_order"),
+      sb.from("lenders").select("id,name,source_url,note").eq("active", true).order("sort_order"),
       sb.from("products").select("key,label").order("sort_order"),
       gated ? Promise.resolve({ data: [], error: null })
-            : sb.from("rates").select("lender_id,product_key,rate,comparison_rate,product_name"),
+            : sb.from("rates").select("lender_id,product_key,rate,comparison_rate,product_name,source"),
     ]);
     const err = lendersRes.error || productsRes.error || ratesRes.error;
     if (err){
@@ -657,9 +658,11 @@
     PRODUCTS = productsRes.data;
     BASE = {};
     PRODUCT_NAMES = {};
+    AUTO_SYNCED = new Set();
     for (const row of ratesRes.data){
       (BASE[row.lender_id] ||= {})[row.product_key] = [Number(row.rate), Number(row.comparison_rate)];
       if (row.product_name) (PRODUCT_NAMES[row.lender_id] ||= {})[row.product_key] = row.product_name;
+      if (row.source !== "manual") AUTO_SYNCED.add(row.lender_id);
     }
     RATES = buildRates();
     loadState = "ready";
@@ -992,7 +995,7 @@
     editingLender = LENDERS.find(l => l.id === lenderId);
     if (!editingLender) return;
     $("editTitle").textContent = "Edit " + editingLender.name;
-    $("editSyncNote").hidden = !editingLender.cdr_base_uri;
+    $("editSyncNote").hidden = !AUTO_SYNCED.has(editingLender.id);
     $("e-source").value = editingLender.source_url || "";
     $("e-note").value = editingLender.note || "";
     $("e-asof").value = localIsoDate();

@@ -131,19 +131,114 @@ export async function fetchLenderProducts(baseUri: string): Promise<ProductDetai
   return details.filter((d): d is ProductDetail => d !== null);
 }
 
+// --- Lenders outside Open Banking: read from their own websites -------------------------------
+
+const SCRAPE_UA = "RateBoard/1.0 (+https://rate-board.github.io/rate-board/; nightly rate check)";
+
+async function getText(url: string): Promise<string> {
+  const res = await fetch(url, {
+    headers: { "User-Agent": SCRAPE_UA, Accept: "text/html,application/json" },
+    signal: AbortSignal.timeout(20_000),
+  });
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText} for ${url}`);
+  return res.text();
+}
+
+function pageText(html: string): string {
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/\s+/g, " ");
+}
+
+function offer(picks: Partial<Record<ProductKey, Pick>>, key: ProductKey, rateRaw: unknown, compRaw: unknown, productName: string) {
+  const rate = percent(rateRaw as string);
+  const comp = percent(compRaw as string);
+  if (rate === null || comp === null || !sane(rate, comp)) return;
+  const candidate = { rate, comp, productName };
+  if (better(picks[key], candidate)) picks[key] = candidate;
+}
+
+const TERM_KEYS: Record<string, ProductKey> = { "1": "fixed1", "2": "fixed2", "3": "fixed3" };
+
+// Athena embeds its rate card in the page's Next.js data, banded by LVR (fractions, e.g. 0.7–0.8).
+async function scrapeAthena() {
+  const html = await getText("https://www.athena.com.au/home-loans/rates-no-fees");
+  const m = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
+  if (!m) throw new Error("Athena page data not found");
+  const rates = JSON.parse(m[1])?.props?.pageProps?.rates;
+  const band = (bands: Record<string, any> | undefined) =>
+    Object.values(bands ?? {}).find((b: any) => b.minLvr < LVR / 100 && b.maxLvr >= LVR / 100 - 0.0001) as any;
+  const picks: Partial<Record<ProductKey, Pick>> = {};
+  // Power Up adds an offset but charges no fees, so by the same rule as Open Banking lenders it counts as basic.
+  for (const [product, name] of [["direct-basics", "Straight Up"], ["direct-extras", "Power Up"]]) {
+    const b = band(rates?.[product]?.VARIABLE_RATE?.PRINCIPAL_AND_INTEREST?.OWNER_OCCUPIED);
+    if (b) offer(picks, "variable", b.rate, b.comparisonRate, name);
+  }
+  for (const [term, key] of Object.entries(TERM_KEYS)) {
+    const b = band(rates?.["direct-basics"]?.FIXED_RATE?.[term]?.PRINCIPAL_AND_INTEREST?.OWNER_OCCUPIED);
+    if (b) offer(picks, key, b.rate, b.comparisonRate, `${term} year fixed`);
+  }
+  return picks;
+}
+
+// Pepper fills its pages from a key/value feed: hl-ov-* = owner-occupier variable rows by LVR band,
+// hl-of-* = owner-occupier fixed rows by term; *-min is the lowest ("from") rate of its risk-based range.
+async function scrapePepper() {
+  const data = JSON.parse(await getText("https://www.peppermoney.com.au/graphql/execute.json/pepper/variables"));
+  const vars = new Map<string, string>(
+    (data?.data?.variableList?.items ?? []).map((i: any) => [i.key, String(i.value?.plaintext ?? "").trim()]),
+  );
+  const picks: Partial<Record<ProductKey, Pick>> = {};
+  for (let r = 1; vars.has(`hl-ov-r${r}-title`); r++) {
+    const m = vars.get(`hl-ov-r${r}-title`)!.match(/(\d+)\s*-\s*(\d+)\s*%/);
+    if (m && Number(m[1]) < LVR && Number(m[2]) >= LVR) {
+      offer(picks, "variable", vars.get(`hl-ov-r${r}-v-min`), vars.get(`hl-ov-r${r}-c-min`), "Variable home loan (from rate)");
+    }
+  }
+  for (let r = 1; vars.has(`hl-of-r${r}-title`); r++) {
+    const term = vars.get(`hl-of-r${r}-title`)!.match(/^(\d+)\s*year/)?.[1];
+    const key = term ? TERM_KEYS[term] : undefined;
+    if (key) offer(picks, key, vars.get(`hl-of-r${r}-f-min`), vars.get(`hl-of-r${r}-c-min`), `${term} year fixed (from rate)`);
+  }
+  return picks;
+}
+
+async function scrapeLoansComAu() {
+  const picks: Partial<Record<ProductKey, Pick>> = {};
+  const variable = pageText(await getText("https://www.loans.com.au/home-loans/variable-rate/"));
+  const v = variable.match(/Variable Bare Home Loan ([\d.]+)% p\.a\.\s*\*?\s*([\d.]+)% p\.a\./);
+  if (v) offer(picks, "variable", v[1], v[2], "Variable Bare Home Loan");
+  // The principal & interest table comes first; the interest-only table after it repeats the same product names.
+  const fixed = pageText(await getText("https://www.loans.com.au/home-loans/fixed-rate/"));
+  for (const m of fixed.matchAll(/Fixed Bold (\d) years? ([\d.]+)% p\.a\.\s*\*?\s*([\d.]+)% p\.a\./g)) {
+    const key = TERM_KEYS[m[1]];
+    if (key && !picks[key]) offer(picks, key, m[2], m[3], `Fixed Bold ${m[1]} year${m[1] === "1" ? "" : "s"}`);
+  }
+  return picks;
+}
+
+// A scraper must find every rate it expects; anything less means the page changed, so nothing is written.
+export const SCRAPERS: Record<string, { expected: ProductKey[]; run: () => Promise<Partial<Record<ProductKey, Pick>>> }> = {
+  "athena-home-loans": { expected: ["variable", "fixed1", "fixed2", "fixed3"], run: scrapeAthena },
+  "pepper-money": { expected: ["variable", "fixed2", "fixed3"], run: scrapePepper },
+  "loans-com-au": { expected: ["variable", "fixed1", "fixed2", "fixed3"], run: scrapeLoansComAu },
+};
+
 function sydneyToday(): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Australia/Sydney" }).format(new Date());
 }
 
-async function syncLender(db: ReturnType<typeof createClient>, lender: { id: string; cdr_base_uri: string }) {
-  const products = await fetchLenderProducts(lender.cdr_base_uri);
-  const picks = pickRates(products);
-  if (Object.keys(picks).length === 0) {
-    return { lender: lender.id, ok: false, error: `no usable rates in ${products.length} products`, changed: [] as string[] };
-  }
-
+// Open Banking data is the lender's complete product list, so a column it no longer covers is removed;
+// a scraped page only shows what it shows, so scraped columns are only ever updated.
+async function writePicks(
+  db: ReturnType<typeof createClient>, lenderId: string,
+  picks: Partial<Record<ProductKey, Pick>>, source: "cdr" | "scrape",
+): Promise<string[]> {
   const { data: existing, error } = await db.from("rates")
-    .select("product_key,rate,comparison_rate").eq("lender_id", lender.id);
+    .select("product_key,rate,comparison_rate").eq("lender_id", lenderId);
   if (error) throw error;
   const current = new Map((existing ?? []).map(r => [r.product_key, r]));
 
@@ -155,21 +250,42 @@ async function syncLender(db: ReturnType<typeof createClient>, lender: { id: str
     if (pick) {
       const differs = !cur || Number(cur.rate) !== pick.rate || Number(cur.comparison_rate) !== pick.comp;
       const row = {
-        lender_id: lender.id, product_key: key, source: "cdr", product_name: pick.productName, checked_at: now,
+        lender_id: lenderId, product_key: key, source, product_name: pick.productName, checked_at: now,
         ...(differs ? { rate: pick.rate, comparison_rate: pick.comp, as_of: sydneyToday() } : {}),
       };
       const res = differs
         ? await db.from("rates").upsert(row)
-        : await db.from("rates").update(row).eq("lender_id", lender.id).eq("product_key", key);
+        : await db.from("rates").update(row).eq("lender_id", lenderId).eq("product_key", key);
       if (res.error) throw res.error;
-      if (differs) changed.push(`${key}: ${cur ? `${Number(cur.rate)} → ` : ""}${pick.rate}`);
-    } else if (cur) {
-      const res = await db.from("rates").delete().eq("lender_id", lender.id).eq("product_key", key);
+      if (differs) {
+        const before = cur ? `${Number(cur.rate)}/${Number(cur.comparison_rate)} → ` : "";
+        changed.push(`${key}: ${before}${pick.rate}/${pick.comp}`);
+      }
+    } else if (cur && source === "cdr") {
+      const res = await db.from("rates").delete().eq("lender_id", lenderId).eq("product_key", key);
       if (res.error) throw res.error;
       changed.push(`${key}: removed`);
     }
   }
-  return { lender: lender.id, ok: true, products: products.length, changed };
+  return changed;
+}
+
+async function syncLender(db: ReturnType<typeof createClient>, lender: { id: string; cdr_base_uri: string | null }) {
+  if (lender.cdr_base_uri) {
+    const products = await fetchLenderProducts(lender.cdr_base_uri);
+    const picks = pickRates(products);
+    if (Object.keys(picks).length === 0) {
+      return { lender: lender.id, ok: false, source: "cdr", error: `no usable rates in ${products.length} products`, changed: [] as string[] };
+    }
+    return { lender: lender.id, ok: true, source: "cdr", products: products.length, changed: await writePicks(db, lender.id, picks, "cdr") };
+  }
+  const scraper = SCRAPERS[lender.id];
+  const picks = await scraper.run();
+  const missing = scraper.expected.filter(k => !picks[k]);
+  if (missing.length) {
+    return { lender: lender.id, ok: false, source: "scrape", error: `site layout may have changed — couldn't find ${missing.join(", ")}`, changed: [] as string[] };
+  }
+  return { lender: lender.id, ok: true, source: "scrape", changed: await writePicks(db, lender.id, picks, "scrape") };
 }
 
 async function handler(): Promise<Response> {
@@ -185,11 +301,11 @@ async function handler(): Promise<Response> {
   const { data: run, error: runError } = await db.from("sync_runs").insert({}).select("id").single();
   if (runError) return Response.json({ error: runError.message }, { status: 500 });
 
-  const { data: lenders, error } = await db.from("lenders")
-    .select("id,cdr_base_uri").eq("active", true).not("cdr_base_uri", "is", null);
+  const { data: lenders, error } = await db.from("lenders").select("id,cdr_base_uri").eq("active", true);
   if (error) return Response.json({ error: error.message }, { status: 500 });
+  const syncable = (lenders ?? []).filter(l => l.cdr_base_uri || SCRAPERS[l.id]);
 
-  const results = await mapLimit(lenders ?? [], LENDER_CONCURRENCY, async (lender) => {
+  const results = await mapLimit(syncable, LENDER_CONCURRENCY, async (lender) => {
     try {
       return await syncLender(db, lender);
     } catch (e) {
