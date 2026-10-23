@@ -69,6 +69,16 @@ function formatMobile(m){
   return m && /^04\d{8}$/.test(m) ? m.slice(0, 4) + " " + m.slice(4, 7) + " " + m.slice(7) : m || "";
 }
 
+// Monthly repayment on a loan: principal and interest over the term, or interest only.
+function monthlyRepayment(ratePct, amount, years, interestOnly){
+  const r = ratePct / 100 / 12;
+  if (interestOnly) return amount * r;
+  const n = years * 12;
+  return r === 0 ? amount / n : amount * r / (1 - Math.pow(1 + r, -n));
+}
+
+function dollars(n){ return "$" + Math.round(n).toLocaleString("en-AU"); }
+
 function loanTypeLabel(pur, rep, band){
   return PURPOSE_LABEL[pur] + ", " + REPAY_LABEL[rep] + ", " + LVR_LABEL[band];
 }
@@ -239,7 +249,10 @@ function historyChartSvg(series, metric){
   const X = (day) => padL + (day - x0) / (x1 - x0) * (w - padL - padR);
   const Y = (v) => padT + (hi - v) / (hi - lo) * (h - padT - padB);
 
-  let svg = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${metric === "rate" ? "Interest rate" : "Comparison rate"} over time">`;
+  const first = pts[0], last0 = pts[pts.length - 1];
+  const summary = `${metric === "rate" ? "Interest rate" : "Comparison rate"} over time: ${fmt(first[metric])} on ${shortDate(first.date)}, `
+    + `${fmt(last0[metric])} since ${shortDate(last0.date)}, ${pts.length} recorded changes.`;
+  let svg = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${escapeHtml(summary)}">`;
   for (let t = lo; t <= hi + 1e-9; t += step){
     svg += `<line class="hc-grid" x1="${padL}" x2="${w - padR}" y1="${Y(t)}" y2="${Y(t)}"/>`;
     svg += `<text class="hc-axis" x="${padL - 6}" y="${Y(t) + 3}" text-anchor="end">${t.toFixed(2)}</text>`;
@@ -321,8 +334,9 @@ function agentPhotoHtml(a){
     : `<span class="ar-photo" aria-hidden="true">${escapeHtml(initials(a.agent_name))}</span>`;
 }
 
-// One agent rate: rate, gap to the lender, agent, conditions and last update. `actionsHtml` adds buttons.
-function agentRateItemHtml(a, lenderRate, actionsHtml = "", mine = false){
+// One agent rate: rate, gap to the lender, agent, conditions and last update. `actionsHtml` adds buttons;
+// `extraHtml` adds a line under the details (the board uses it for the monthly repayment).
+function agentRateItemHtml(a, lenderRate, actionsHtml = "", mine = false, extraHtml = ""){
   const below = lenderRate ? lenderRate - a.rate : null;
   const meta = [];
   if (a.conditions) meta.push(escapeHtml(a.conditions));
@@ -338,10 +352,26 @@ function agentRateItemHtml(a, lenderRate, actionsHtml = "", mine = false){
           </div>
           <div class="ar-who">${escapeHtml(a.agent_name)}${mine ? " (you)" : ""} <span>· ${escapeHtml(a.business)}</span></div>
           <div class="ar-meta">${meta.join(" · ")}</div>
+          ${extraHtml}
         </div>
       </div>
       ${actionsHtml}
     </li>`;
 }
 
-const AGENT_DISCLAIMER = "Agent rates are set by independent mortgage agents. Home Loan Interest Rates does not arrange loans or verify them. Confirm details with the agent.";
+// The test copy of the site (rate-board-test) is labelled on screen and kept out of search engines.
+const IS_TEST_SITE = /\/rate-board-test\//.test(location.pathname);
+if (IS_TEST_SITE){
+  const robots = document.createElement("meta");
+  robots.name = "robots";
+  robots.content = "noindex, nofollow";
+  document.head.appendChild(robots);
+  document.addEventListener("DOMContentLoaded", () => {
+    const banner = document.createElement("p");
+    banner.className = "test-banner";
+    banner.textContent = "Test version: changes here are for review and may not be final. Data is live.";
+    document.body.prepend(banner);
+  });
+}
+
+const AGENT_DISCLAIMER ="Agent rates are set by independent mortgage agents. Home Loan Interest Rates does not arrange loans or verify them. Confirm details with the agent.";

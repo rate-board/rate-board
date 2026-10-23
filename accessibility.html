@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en-AU">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Accessibility Statement</title>
+<script>try { const t = localStorage.getItem("rb.theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (_) {}</script>
+<link rel="stylesheet" href="common.css?v=4">
+<style>
+  .doc{max-width:70ch;font-size:16px;}
+  .doc h1{font-size:30px;margin:0 0 8px;}
+  .doc h2{font-size:21px;margin:28px 0 8px;}
+  .doc p, .doc li{margin:0 0 10px;}
+  .doc a{color:var(--accent);}
+  .draft{padding:12px 14px;border:1px solid var(--gold);border-radius:8px;background:var(--gold-soft);color:var(--gold);font-weight:600;}
+  .back{display:inline-flex;align-items:center;min-height:44px;color:var(--accent);font-weight:600;}
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@400;600;700&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
+<script src="common.js?v=4"></script>
+
+<a class="skip-link" href="#content">Skip to content</a>
+<div class="wrap">
+  <a class="back" href="index.html">← Home Loan Interest Rates</a>
+  <main class="doc" id="content" tabindex="-1">
+    <h1>Accessibility statement</h1>
+    <p class="draft">Draft for review. Independent testing hasn't happened yet.</p>
+
+    <h2>Our goal</h2>
+    <p>We aim for the rate comparison board to meet the Web Content Accessibility Guidelines (WCAG) 2.2 at level AA, and level AAA wherever it applies. The board has no video or audio, so the criteria for media don't apply.</p>
+
+    <h2>What we've done</h2>
+    <ul>
+      <li>Text and controls meet AAA contrast (7:1 for text) in both light and dark themes.</li>
+      <li>Everything works with a keyboard, with a clearly visible focus ring and a "Skip to rates" link.</li>
+      <li>Every button and link is at least 44 by 44 pixels.</li>
+      <li>Rates, toggles, sorting and the rate details card are announced properly to screen readers.</li>
+      <li>Abbreviations such as LVR and P&amp;I are explained, with plain-English help next to each choice.</li>
+      <li>The page works at 400% zoom, on a 320 pixel wide screen, in Windows High Contrast, and with reduced motion.</li>
+      <li>You can choose a light or dark theme, or match your device, at the bottom of the board.</li>
+    </ul>
+
+    <h2>Known limitations</h2>
+    <ul>
+      <li>The board hasn't yet been tested by people using screen readers such as NVDA, JAWS or VoiceOver.</li>
+      <li>The agent portal shares the board's colours and controls but hasn't had the full review yet.</li>
+    </ul>
+
+    <h2>Feedback</h2>
+    <p>If something doesn't work for you, tell us. Contact details for accessibility feedback will be added before launch; until then, use "Report a wrong rate" in any rate's details.</p>
+  </main>
+  <footer>
+    <span>Home Loan Interest Rates</span>
+    <nav aria-label="Site"><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="accessibility.html" aria-current="page">Accessibility</a></nav>
+  </footer>
+</div>
