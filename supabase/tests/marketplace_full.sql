@@ -98,14 +98,19 @@ begin
   perform public.become_agent('Second Agent', '0400000000', 'Second Broking', '654321', null, array['cba'], null, null);
   execute 'reset role';
   update public.agents set status = 'approved' where id = ag2;
-  execute 'set local role authenticated';
+  -- The outbox is admin-only, so emails are counted as the database owner (reset role).
   select count(*) into n from public.email_outbox where to_email = 'test-agent@example.invalid' and subject like 'Another agent%';
+  execute 'set local role authenticated';
   rid2 := public.post_agent_rate('cba', 'fixed2', 'owner', 'pi', '80', lr - 0.60, lr - 0.30, null);
+  execute 'reset role';
   if (select count(*) from public.email_outbox where to_email = 'test-agent@example.invalid' and subject like 'Another agent%') = n
     then pass := pass + 1; else fail := fail + 1; log := log || E'\nFAIL matching rate sent a beaten email'; end if;
+  execute 'set local role authenticated';
   perform public.post_agent_rate('cba', 'fixed2', 'owner', 'pi', '80', lr - 0.70, lr - 0.40, null);
+  execute 'reset role';
   if (select count(*) from public.email_outbox where to_email = 'test-agent@example.invalid' and subject like 'Another agent%') = n + 1
     then pass := pass + 1; else fail := fail + 1; log := log || E'\nFAIL beaten agent not emailed'; end if;
+  execute 'set local role authenticated';
   begin
     perform public.withdraw_agent_rate(rid);
     fail := fail + 1; log := log || E'\nFAIL agent withdrew another agent''s rate';
