@@ -95,8 +95,19 @@
   .panel-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;}
   dialog.modal #postForm{padding:0;}
   #panelHistory .hc-title{display:none;}
-  .panel-figure{font-size:13px;color:var(--ink-muted);margin:0;}
-  .panel-figure strong{font:600 20px 'IBM Plex Mono',monospace;color:var(--ink);margin-right:6px;}
+  .panel-pickers{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;align-items:end;}
+  .band{border:1px solid var(--line);border-radius:10px;padding:10px 12px;}
+  .band.unavailable{opacity:.55;}
+  .band-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;font-size:12.5px;}
+  .band-head strong{font-size:13px;}
+  .band-head span{color:var(--ink-muted);}
+  .band-inputs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
+  .band-inputs input{font:14px 'IBM Plex Mono',monospace;color:var(--ink);background:var(--bg);border:1px solid var(--line-strong);border-radius:7px;padding:8px 9px;width:100%;}
+  .band-inputs input:focus-visible{outline:2px solid var(--focus);outline-offset:1px;}
+  .band-inputs input:disabled{opacity:.5;}
+  .band-tools{display:flex;gap:16px;margin-top:7px;font-size:12px;}
+  .band-msg{margin:6px 0 0;font-size:12px;}
+  .band-msg.error{color:var(--danger);}
   .cost-line{margin:0;font-size:12.5px;color:var(--ink-muted);}
 
   .plan-rows{display:grid;grid-template-columns:max-content 1fr;gap:8px 20px;font-size:14px;margin:0;}
@@ -108,6 +119,7 @@
 
   @media (max-width:760px){
     .panel-grid{grid-template-columns:1fr;}
+    .panel-pickers{grid-template-columns:1fr;}
     .lead-work{grid-template-columns:1fr;}
   }
 </style>
@@ -331,19 +343,24 @@
     <div class="panel-grid">
       <div class="history" id="panelHistory"></div>
       <div class="stack">
-        <p class="panel-figure" id="panelLender"></p>
+        <div class="panel-pickers">
+          <label class="field"><span>Lender</span><select id="p-lender"></select></label>
+          <label class="field"><span>Product</span><select id="p-product"></select></label>
+          <label class="field"><span>Loan type</span><select id="p-loan">
+            <option value="owner|pi">Owner Occupied · P&amp;I</option>
+            <option value="owner|io">Owner Occupied · Interest Only</option>
+            <option value="investor|pi">Investment · P&amp;I</option>
+            <option value="investor|io">Investment · Interest Only</option>
+          </select></label>
+        </div>
         <form id="postForm" class="stack" novalidate>
-          <h3 id="postTitle">Your rate</h3>
-          <div class="field-row">
-            <label class="field"><span>Your rate (%)</span><input type="number" id="p-rate" step="0.01" min="1" max="20" inputmode="decimal"></label>
-            <label class="field"><span>Comparison rate (%)</span><input type="number" id="p-comp" step="0.01" min="1" max="20" inputmode="decimal"></label>
-          </div>
-          <label class="field"><span>Conditions <span class="field-hint">(optional, up to 200 characters)</span></span><input type="text" id="p-conditions" maxlength="200" placeholder="e.g. Loans over $500k, LVR 70% or less"></label>
+          <h3>Your rates by LVR</h3>
+          <div class="stack" id="bandRows" style="gap:8px;"></div>
+          <label class="field"><span>Conditions <span class="field-hint">(optional, up to 200 characters; applies to every band you save)</span></span><input type="text" id="p-conditions" maxlength="200" placeholder="e.g. Loans over $500k"></label>
           <p class="cost-line" id="costLine"></p>
           <p class="form-msg" id="postMsg" role="status" hidden></p>
           <div class="dialog-actions" style="justify-content:flex-start;">
-            <button type="submit" class="btn-primary" id="postSubmit">Post rate</button>
-            <button type="button" class="btn-danger" id="withdrawBtn" hidden>Withdraw</button>
+            <button type="submit" class="btn-primary" id="postSubmit">Save rates</button>
           </div>
         </form>
         <div id="panelAgents"></div>
@@ -631,88 +648,185 @@
 
   // --- Rate panel ------------------------------------------------------------------------
 
+  // The panel covers one lender, product and loan type, with a rate for each LVR band (each band is its own
+  // cell on the board, priced against the lender's rate for that band).
+  const BANDS = ["60", "80", "90"];
+
   function openPanel(c){
-    panelCell = c;
+    panelCell = { lender: c.lender, key: c.key, purpose: c.purpose, repay: c.repay };
     msg("postMsg", "");
-    renderPanel(true);
+    renderPanel();
     if (!$("ratePanel").open) $("ratePanel").showModal();
   }
 
-  function renderPanel(fillForm){
-    const c = panelCell;
-    const lr = lenderRateFor(c);
-    const s = standing(c);
-    const isBase = c.purpose === "owner" && c.repay === "pi" && c.lvr === "80";
-    $("panelTitle").textContent = cellLabel(c);
-    $("panelSub").textContent = loanTypeLabel(c.purpose, c.repay, c.lvr);
-    $("panelHistory").innerHTML = historyHtml(c.lender, c.key, "rate", isBase);
-    $("panelLender").innerHTML = lr
-      ? `<strong>${fmt(lr[0])}</strong>${escapeHtml(lenderName(c.lender))}'s rate · comp. ${fmt(lr[1])}`
-        + (s.others.length ? `<br>Lowest other agent: ${fmt(s.lowestOther)}` : `<br>No other agent rates yet.`)
-      : "This lender doesn't offer this product.";
+  function bandCell(band){ return { ...panelCell, lvr: band }; }
 
-    const canPost = agent.status === "approved" && !(profile && profile.suspended) && agent.lenders.includes(c.lender) && !!lr;
-    $("postForm").hidden = !lr;
-    $("postTitle").textContent = s.mine ? `Your rate${s.rank ? ` (#${s.rank} of ${s.shown.length})` : " (hidden: not below the lender)"}` : "Post your rate";
-    if (fillForm){
-      $("p-rate").value = s.mine ? Number(s.mine.rate).toFixed(2) : "";
-      $("p-comp").value = s.mine ? Number(s.mine.comparison_rate).toFixed(2) : "";
-      $("p-conditions").value = s.mine ? s.mine.conditions || "" : "";
-    }
-    for (const id of ["p-rate", "p-comp", "p-conditions", "postSubmit"]) $(id).disabled = !canPost;
-    $("postSubmit").textContent = s.mine ? "Update rate" : "Post rate";
-    $("withdrawBtn").hidden = !s.mine;
+  function offeredProducts(lenderId){ return PRODUCTS.filter(p => BASE[lenderId] && BASE[lenderId][p.key]); }
+
+  function canPostOn(lenderId){
+    return agent.status === "approved" && !(profile && profile.suspended) && agent.lenders.includes(lenderId);
+  }
+
+  function bandRow(band){ return $("bandRows").querySelector(`[data-band="${band}"]`); }
+
+  function bandMsg(band, text, kind){
+    const el = bandRow(band) && bandRow(band).querySelector(".band-msg");
+    if (!el) return;
+    el.hidden = !text;
+    el.textContent = text || "";
+    el.className = "band-msg" + (kind ? " " + kind : "");
+  }
+
+  function bandInputs(band){
+    const row = bandRow(band);
+    return row ? { rate: row.querySelector('[data-field="rate"]'), comp: row.querySelector('[data-field="comp"]') } : null;
+  }
+
+  function renderPanel(){
+    const c = panelCell;
+    const lenders = LENDERS.filter(l => agent.lenders.includes(l.id) || l.id === c.lender);
+    $("p-lender").innerHTML = lenders.map(l => `<option value="${escapeHtml(l.id)}"${l.id === c.lender ? " selected" : ""}>`
+      + `${escapeHtml(l.name)}${agent.lenders.includes(l.id) ? "" : " (not accredited)"}</option>`).join("");
+    $("p-product").innerHTML = offeredProducts(c.lender).map(p => `<option value="${escapeHtml(p.key)}"${p.key === c.key ? " selected" : ""}>${escapeHtml(p.label)}</option>`).join("");
+    $("p-loan").value = c.purpose + "|" + c.repay;
+
+    $("panelTitle").textContent = cellLabel(c);
+    $("panelSub").textContent = PURPOSE_LABEL[c.purpose] + ", " + REPAY_LABEL[c.repay];
+    $("panelHistory").innerHTML = historyHtml(c.lender, c.key, "rate", c.purpose === "owner" && c.repay === "pi");
+
+    const canPost = canPostOn(c.lender);
+    $("bandRows").innerHTML = BANDS.map(band => {
+      const bc = bandCell(band);
+      const lr = lenderRateFor(bc);
+      if (!lr) return `<div class="band unavailable" data-band="${band}"><div class="band-head"><strong>${LVR_LABEL[band]}</strong><span>Not offered</span></div></div>`;
+      const s = standing(bc);
+      const where = s.mine
+        ? (s.rank ? `you're #${s.rank} of ${s.shown.length}` : "yours is hidden (not below the lender)")
+        : s.others.length ? `lowest agent ${fmt(s.lowestOther)}` : "no agent rates yet";
+      const off = canPost ? "" : " disabled";
+      return `<div class="band" data-band="${band}">
+          <div class="band-head"><strong>${LVR_LABEL[band]}</strong><span>${escapeHtml(lenderName(c.lender))} ${fmt(lr[0])} · ${where}</span></div>
+          <div class="band-inputs">
+            <input type="number" step="0.01" min="1" max="20" inputmode="decimal" data-field="rate" placeholder="Your rate %" aria-label="Your rate, ${LVR_LABEL[band]}" value="${s.mine ? Number(s.mine.rate).toFixed(2) : ""}"${off}>
+            <input type="number" step="0.01" min="1" max="20" inputmode="decimal" data-field="comp" placeholder="Comparison rate %" aria-label="Comparison rate, ${LVR_LABEL[band]}" value="${s.mine ? Number(s.mine.comparison_rate).toFixed(2) : ""}"${off}>
+          </div>
+          ${canPost ? `<div class="band-tools">
+            <button type="button" class="link-btn" data-copy="${band}">Copy to all bands</button>
+            ${s.mine ? `<button type="button" class="link-btn" data-withdraw="${s.mine.id}">Withdraw</button>` : ""}
+          </div>` : ""}
+          <p class="band-msg" hidden></p>
+        </div>`;
+    }).join("");
+
+    const mineAny = BANDS.map(band => standing(bandCell(band)).mine).find(Boolean);
+    $("p-conditions").value = mineAny ? mineAny.conditions || "" : "";
+    $("p-conditions").disabled = !canPost;
+    $("postSubmit").disabled = !canPost;
     $("costLine").textContent = !agent.lenders.includes(c.lender)
       ? `Add ${lenderName(c.lender)} to your accredited lenders in your profile to post here.`
       : agent.status !== "approved" ? "You can post once your profile is approved."
-      : `Must be lower than ${lr ? fmt(lr[0]) : "the lender's rate"}. Goes live straight away. ${chargeText()}`;
+      : `Each band must be lower than the lender's rate for that band. Leave a band blank to skip it. Rates go live straight away. ${chargeText()}`;
 
-    $("panelAgents").innerHTML = s.shown.length
-      ? `<div class="ar-head"><h3>Agent rates consumers see (${s.shown.length})</h3><span>lowest first</span></div>`
-        + `<ul class="ar-list">${s.shown.map(a => agentRateItemHtml(a, lr && lr[0], "", a.agent_id === session.user.id)).join("")}</ul>`
-      : "";
+    $("panelAgents").innerHTML = BANDS.map(band => {
+      const bc = bandCell(band);
+      const s = standing(bc);
+      const lr = lenderRateFor(bc);
+      if (!s.shown.length) return "";
+      return `<div class="ar-head"><h3>${LVR_LABEL[band]}: rates consumers see (${s.shown.length})</h3><span>lowest first</span></div>`
+        + `<ul class="ar-list">${s.shown.map(a => agentRateItemHtml(a, lr && lr[0], "", a.agent_id === session.user.id)).join("")}</ul>`;
+    }).join("");
   }
 
   $("panelClose").addEventListener("click", () => $("ratePanel").close());
 
-  $("postForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const c = panelCell;
-    const rate = parseFloat($("p-rate").value);
-    const comp = parseFloat($("p-comp").value);
-    const lr = lenderRateFor(c);
-    if (!isFinite(rate) || !isFinite(comp)){ msg("postMsg", "Enter your rate and comparison rate.", "error"); return; }
-    if (lr && rate > Math.round(lr[0] * 100) / 100 - 0.01 + 1e-9){
-      msg("postMsg", `Your rate must be lower than ${lenderName(c.lender)}'s ${fmt(lr[0])}.`, "error");
+  $("p-lender").addEventListener("change", () => {
+    panelCell.lender = $("p-lender").value;
+    const offered = offeredProducts(panelCell.lender);
+    if (!offered.some(p => p.key === panelCell.key) && offered.length) panelCell.key = offered[0].key;
+    msg("postMsg", "");
+    renderPanel();
+  });
+  $("p-product").addEventListener("change", () => { panelCell.key = $("p-product").value; msg("postMsg", ""); renderPanel(); });
+  $("p-loan").addEventListener("change", () => {
+    [panelCell.purpose, panelCell.repay] = $("p-loan").value.split("|");
+    msg("postMsg", "");
+    renderPanel();
+  });
+
+  $("bandRows").addEventListener("click", async (e) => {
+    const copy = e.target.closest("[data-copy]");
+    if (copy){
+      const from = bandInputs(copy.dataset.copy);
+      if (!from.rate.value && !from.comp.value){ bandMsg(copy.dataset.copy, "Enter a rate here first.", "error"); return; }
+      for (const band of BANDS){
+        const to = bandInputs(band);
+        if (!to || to.rate.disabled) continue;
+        to.rate.value = from.rate.value;
+        to.comp.value = from.comp.value;
+        bandMsg(band, "");
+      }
+      msg("postMsg", "Copied to every band. Adjust any band if needed, then save.", "ok");
       return;
     }
-    $("postSubmit").disabled = true;
-    try {
-      const { error } = await sb.rpc("post_agent_rate", {
-        p_lender: c.lender, p_product: c.key, p_purpose: c.purpose, p_repay: c.repay, p_lvr: c.lvr,
-        p_rate: rate, p_comparison_rate: comp, p_conditions: $("p-conditions").value,
-      });
-      if (error) throw error;
+    const withdraw = e.target.closest("[data-withdraw]");
+    if (withdraw){
+      if (!confirm("Withdraw this rate? Consumers will no longer see it.")) return;
+      const { error } = await sb.rpc("withdraw_agent_rate", { p_id: Number(withdraw.dataset.withdraw) });
+      if (error){ msg("postMsg", friendlyError(error), "error"); return; }
       await loadAll();
-      renderPanel(true);
+      renderPanel();
       renderPortal();
-      msg("postMsg", "Live. Consumers can see your rate now.", "ok");
-    } catch (err){
-      msg("postMsg", friendlyError(err), "error");
-    } finally {
-      $("postSubmit").disabled = false;
+      msg("postMsg", "Withdrawn.", "ok");
     }
   });
 
-  $("withdrawBtn").addEventListener("click", async () => {
-    const s = standing(panelCell);
-    if (!s.mine || !confirm("Withdraw this rate? Consumers will no longer see it.")) return;
-    const { error } = await sb.rpc("withdraw_agent_rate", { p_id: s.mine.id });
-    if (error){ msg("postMsg", friendlyError(error), "error"); return; }
+  // Checks every filled band first, so nothing is saved while any band is invalid; then posts each band.
+  $("postForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const c = panelCell;
+    const rows = [];
+    let invalid = false;
+    for (const band of BANDS){
+      const inputs = bandInputs(band);
+      bandMsg(band, "");
+      if (!inputs || !inputs.rate) continue;
+      const rateText = inputs.rate.value.trim(), compText = inputs.comp.value.trim();
+      if (!rateText && !compText) continue;
+      const rate = parseFloat(rateText), comp = parseFloat(compText);
+      if (!isFinite(rate) || !isFinite(comp)){ bandMsg(band, "Enter both your rate and comparison rate.", "error"); invalid = true; continue; }
+      const lr = lenderRateFor(bandCell(band));
+      if (rate > Math.round(lr[0] * 100) / 100 - 0.01 + 1e-9){
+        const name = lenderName(c.lender);
+        bandMsg(band, `Must be lower than ${name}${/s$/i.test(name) ? "'" : "'s"} ${fmt(lr[0])} for this band.`, "error");
+        invalid = true;
+        continue;
+      }
+      rows.push({ band, rate, comp, rateText, compText });
+    }
+    if (invalid){ msg("postMsg", "Fix the bands marked in red. Nothing was saved.", "error"); return; }
+    if (!rows.length){ msg("postMsg", "Enter a rate for at least one LVR band.", "error"); return; }
+
+    $("postSubmit").disabled = true;
+    const saved = [], failed = [];
+    for (const r of rows){
+      const { error } = await sb.rpc("post_agent_rate", {
+        p_lender: c.lender, p_product: c.key, p_purpose: c.purpose, p_repay: c.repay, p_lvr: r.band,
+        p_rate: r.rate, p_comparison_rate: r.comp, p_conditions: $("p-conditions").value,
+      });
+      if (error) failed.push({ ...r, text: friendlyError(error) }); else saved.push(r.band);
+    }
     await loadAll();
-    renderPanel(true);
+    renderPanel();
     renderPortal();
-    msg("postMsg", "Withdrawn.", "ok");
+    for (const f of failed){
+      const inputs = bandInputs(f.band);
+      inputs.rate.value = f.rateText;
+      inputs.comp.value = f.compText;
+      bandMsg(f.band, f.text, "error");
+    }
+    msg("postMsg",
+      saved.length ? `Live for ${saved.map(b => LVR_LABEL[b]).join(", ")}.${failed.length ? " The bands marked in red weren't saved." : ""}` : "Nothing was saved.",
+      saved.length ? "ok" : "error");
   });
 
   document.addEventListener("click", (e) => {
