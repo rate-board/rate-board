@@ -146,11 +146,10 @@
     align-items:center;
     margin-bottom:18px;
   }
-  .filter-summary{
-    margin:0 0 10px;
-    font-size:12.5px;
-    font-weight:500;
-    color:var(--ink-faint);
+  .view-controls{
+    display:flex;
+    justify-content:flex-end;
+    margin-top:14px;
   }
 
   .seg{
@@ -554,17 +553,11 @@
       <button data-lvr="80" class="active">60–80% LVR</button>
       <button data-lvr="90">80–90% LVR</button>
     </div>
-    <div class="seg" id="viewSeg">
-      <button data-mode="rate" class="active">Rate</button>
-      <button data-mode="apr">Comp. Rate</button>
-    </div>
     <label class="mobile-sort" for="mobileSort">
       <span>Sort by</span>
       <select id="mobileSort"></select>
     </label>
   </div>
-
-  <p class="filter-summary" id="filterSummary"></p>
 
   <div class="table-shell">
     <div class="table-scroll">
@@ -574,6 +567,12 @@
         </thead>
         <tbody id="bodyRows"></tbody>
       </table>
+    </div>
+  </div>
+  <div class="view-controls">
+    <div class="seg" id="viewSeg">
+      <button data-mode="rate" class="active">Rate</button>
+      <button data-mode="apr">Comp. Rate</button>
     </div>
   </div>
   </div>
@@ -708,7 +707,6 @@
   let sortKey = null;
   let sortDir = "asc";
 
-  const LVR_LABEL = { "60": "≤60% LVR", "80": "60–80% LVR", "90": "80–90% LVR" };
 
   const $ = (id) => document.getElementById(id);
 
@@ -820,12 +818,6 @@
     $("gateOverlay").hidden = !gated;
   }
 
-  function subLabel(){
-    const isBase = purpose === "owner" && repay === "pi" && lvr === "80";
-    const text = (purpose === "owner" ? "owner-occupier" : "investor") + ", " + (repay === "pi" ? "P&I" : "interest-only") + ", " + LVR_LABEL[lvr];
-    return text + (isBase ? "" : " (estimated)");
-  }
-
   function bestLender(productKey){
     const col = RATES[purpose][repay][lvr][productKey];
     let best = null, bestVal = Infinity;
@@ -884,17 +876,14 @@
     if (activeCell) hideHistory();
     const head = $("headRow");
     const body = $("bodyRows");
-    const summary = $("filterSummary");
 
     if (loadState !== "ready"){
       head.innerHTML = "";
       const msg = loadState === "error" ? "Couldn't load rates." : "Loading live rates…";
       body.innerHTML = `<tr><td style="padding:24px 16px;color:var(--ink-faint);">${msg}</td></tr>`;
-      summary.textContent = "";
       return;
     }
 
-    summary.textContent = "Showing " + subLabel() + " rates." + (lvr === "90" ? " LMI typically applies above 80% LVR." : "");
     head.innerHTML = headCell("lender", "Lender") + PRODUCTS.map(p => headCell(p.key, p.label)).join("");
     renderMobileSort();
 
