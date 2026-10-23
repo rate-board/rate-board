@@ -227,6 +227,39 @@ export const SCRAPERS: Record<string, { expected: ProductKey[]; run: () => Promi
   "loans-com-au": { expected: ["variable", "fixed1", "fixed2", "fixed3"], run: scrapeLoansComAu },
 };
 
+// --- RBA cash rate target: marks on the rate charts ------------------------------------------
+
+const MONTHS: Record<string, string> = {
+  Jan: "01", Feb: "02", Mar: "03", Apr: "04", May: "05", Jun: "06",
+  Jul: "07", Aug: "08", Sep: "09", Oct: "10", Nov: "11", Dec: "12",
+};
+
+// The RBA's table reads "30 Sep 2026 +0.25 4.60 …" per decision: effective date, change, new target.
+export async function fetchRbaDecisions() {
+  const text = pageText(await getText("https://www.rba.gov.au/statistics/cash-rate/"));
+  const rows: { effective_date: string; change: number; cash_rate: number }[] = [];
+  const pattern = /(\d{1,2}) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) (\d{4}) ([+-]?\d+\.\d{2}) (\d+\.\d{2})/g;
+  for (const m of text.matchAll(pattern)) {
+    rows.push({ effective_date: `${m[3]}-${MONTHS[m[2]]}-${m[1].padStart(2, "0")}`, change: Number(m[4]), cash_rate: Number(m[5]) });
+  }
+  return rows;
+}
+
+async function syncRba(db: ReturnType<typeof createClient>) {
+  const rows = await fetchRbaDecisions();
+  if (rows.length < 10) {
+    return { lender: "rba", ok: false, source: "rba", error: `only ${rows.length} RBA decisions found — page layout may have changed`, changed: [] as string[] };
+  }
+  const { data: existing, error: readError } = await db.from("rba_cash_rate").select("effective_date");
+  if (readError) throw readError;
+  const known = new Set((existing ?? []).map(r => r.effective_date));
+  const { error } = await db.from("rba_cash_rate").upsert(rows);
+  if (error) throw error;
+  const added = rows.filter(r => !known.has(r.effective_date))
+    .map(r => `${r.effective_date}: ${r.change >= 0 ? "+" : ""}${r.change.toFixed(2)} → ${r.cash_rate.toFixed(2)}`);
+  return { lender: "rba", ok: true, source: "rba", changed: known.size ? added : [`loaded ${rows.length} decisions`] };
+}
+
 function sydneyToday(): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Australia/Sydney" }).format(new Date());
 }
@@ -312,6 +345,11 @@ async function handler(): Promise<Response> {
       return { lender: lender.id, ok: false, error: e instanceof Error ? e.message : String(e), changed: [] as string[] };
     }
   });
+  try {
+    results.push(await syncRba(db));
+  } catch (e) {
+    results.push({ lender: "rba", ok: false, source: "rba", error: e instanceof Error ? e.message : String(e), changed: [] as string[] });
+  }
 
   const failed = results.filter(r => !r.ok).length;
   const status = failed === 0 ? "ok" : failed === results.length ? "failed" : "partial";

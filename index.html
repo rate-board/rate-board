@@ -296,6 +296,11 @@
   .hc-line{fill:none;stroke:var(--accent);stroke-width:2;stroke-linejoin:round;stroke-linecap:round;}
   .hc-dot{fill:var(--accent);stroke:var(--surface);stroke-width:2;}
   .hc-end{font:600 11px 'IBM Plex Mono',monospace;fill:var(--ink);}
+  .hc-rba{stroke:var(--gold);stroke-width:1;}
+  .hc-rba-label{font:600 9.5px 'IBM Plex Mono',monospace;fill:var(--ink-muted);}
+  .hc-legend{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:4px;font-size:11px;color:var(--ink-muted);}
+  .hc-key-line{display:inline-block;width:14px;height:2px;margin-right:5px;vertical-align:middle;background:var(--accent);border-radius:1px;}
+  .hc-key-rba{display:inline-block;width:1px;height:10px;margin-right:6px;vertical-align:middle;background:var(--gold);}
   .hc-empty{margin:4px 0 0;font-size:12px;color:var(--ink-muted);}
   .history-card table{width:100%;min-width:0;border-collapse:collapse;margin-top:8px;}
   .history-card td{
@@ -616,6 +621,7 @@
   let PRODUCT_NAMES = {}; // lenderId -> productKey -> lender's own product name, when known
   let AUTO_SYNCED = new Set(); // lenders whose rates the nightly sync maintains (Open Banking or website)
   let HISTORY = {}; // lenderId -> productKey -> [{ date, rate, comp, source, product }] oldest first; rate null = withdrawn
+  let RBA = []; // RBA cash rate decisions since 2020, oldest first: [{ date, change, cashRate }]
   let RATES = null;
   let loadState = "loading"; // loading | ready | error
   let session = null;
@@ -688,15 +694,17 @@
   async function loadData(){
     const gated = !session;
     const none = Promise.resolve({ data: [], error: null });
-    const [lendersRes, productsRes, ratesRes, historyRes] = await Promise.all([
+    const [lendersRes, productsRes, ratesRes, historyRes, rbaRes] = await Promise.all([
       sb.from("lenders").select("id,name,source_url,note").eq("active", true).order("sort_order"),
       sb.from("products").select("key,label").order("sort_order"),
       gated ? none : sb.from("rates").select("lender_id,product_key,rate,comparison_rate,product_name,source"),
       gated ? none : sb.from("rate_history")
         .select("lender_id,product_key,rate,comparison_rate,as_of,changed_at,source,product_name")
         .order("changed_at").limit(10000),
+      gated ? none : sb.from("rba_cash_rate").select("effective_date,change,cash_rate")
+        .gte("effective_date", "2020-01-01").order("effective_date"),
     ]);
-    const err = lendersRes.error || productsRes.error || ratesRes.error || historyRes.error;
+    const err = lendersRes.error || productsRes.error || ratesRes.error || historyRes.error || rbaRes.error;
     if (err){
       loadState = "error";
       showStatus("Couldn't load rates — try reloading the page. (" + err.message + ")");
@@ -723,6 +731,7 @@
         product: h.product_name,
       });
     }
+    RBA = rbaRes.data.map(r => ({ date: r.effective_date, change: Number(r.change), cashRate: Number(r.cash_rate) }));
     RATES = buildRates();
     loadState = "ready";
     showStatus("");
@@ -839,7 +848,8 @@
 
   // --- Rate history card ------------------------------------------------------------
 
-  const CHART = { w: 276, h: 96, padL: 38, padR: 44, padT: 10, padB: 20 };
+  const CHART = { w: 276, h: 108, padL: 38, padR: 44, padT: 22, padB: 20 };
+  const RBA_LOOKBACK_DAYS = 120;
   let activeCell = null;
   let lastPointerType = "mouse";
 
@@ -851,6 +861,22 @@
   function shortDate(iso){
     const [y, m, d] = iso.split("-").map(Number);
     return new Date(y, m - 1, d).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
+  }
+
+  function dayMonth(iso){
+    const [y, m, d] = iso.split("-").map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString("en-AU", { day: "numeric", month: "short" });
+  }
+
+  function signed(n){ return (n > 0 ? "+" : "−") + Math.abs(n).toFixed(2); }
+
+  // The most recent RBA hike or cut on or before a date, if recent enough to be relevant.
+  function rbaChangeBefore(iso){
+    for (let i = RBA.length - 1; i >= 0; i--){
+      const r = RBA[i];
+      if (r.change !== 0 && r.date <= iso) return dayNumber(iso) - dayNumber(r.date) <= RBA_LOOKBACK_DAYS ? r : null;
+    }
+    return null;
   }
 
   // One entry per date (a same-day correction replaces the earlier figure), oldest first.
@@ -865,7 +891,10 @@
     const pts = series.filter(e => e[metric] !== null);
     if (pts.length < 2) return "";
     const { w, h, padL, padR, padT, padB } = CHART;
-    const x0 = dayNumber(pts[0].date);
+    // Start early enough to show the RBA move that preceded the first record, so the lag is visible.
+    const leadIn = rbaChangeBefore(pts[0].date);
+    const startDate = leadIn && leadIn.date < pts[0].date ? leadIn.date : pts[0].date;
+    const x0 = dayNumber(startDate);
     const x1 = Math.max(dayNumber(localIsoDate()), dayNumber(pts[pts.length - 1].date) + 1);
     const values = pts.map(e => e[metric]);
     const step = Math.max(...values) - Math.min(...values) > 0.6 ? 0.5 : 0.25;
@@ -879,6 +908,15 @@
       svg += `<line class="hc-grid" x1="${padL}" x2="${w - padR}" y1="${Y(t)}" y2="${Y(t)}"/>`;
       svg += `<text class="hc-axis" x="${padL - 6}" y="${Y(t) + 3}" text-anchor="end">${t.toFixed(2)}</text>`;
     }
+    for (const r of RBA){
+      if (r.change === 0) continue;
+      const day = dayNumber(r.date);
+      if (day < x0 || day > x1) continue;
+      const x = X(day);
+      const anchor = x < padL + 18 ? "start" : x > w - padR - 18 ? "end" : "middle";
+      svg += `<line class="hc-rba" x1="${x}" x2="${x}" y1="${padT - 6}" y2="${h - padB}"/>`;
+      svg += `<text class="hc-rba-label" x="${x}" y="${padT - 9}" text-anchor="${anchor}">${signed(r.change)}</text>`;
+    }
     let path = `M${X(dayNumber(pts[0].date))},${Y(pts[0][metric])}`;
     for (let i = 1; i < pts.length; i++) path += ` L${X(dayNumber(pts[i].date))},${Y(pts[i][metric])}`;
     path += ` H${X(x1)}`;
@@ -886,7 +924,7 @@
     for (const e of pts) svg += `<circle class="hc-dot" cx="${X(dayNumber(e.date))}" cy="${Y(e[metric])}" r="4"/>`;
     const last = pts[pts.length - 1][metric];
     svg += `<text class="hc-end" x="${X(x1) + 5}" y="${Y(last) + 4}">${fmt(last)}</text>`;
-    svg += `<text class="hc-axis" x="${padL}" y="${h - 4}">${shortDate(pts[0].date)}</text>`;
+    svg += `<text class="hc-axis" x="${padL}" y="${h - 4}">${shortDate(startDate)}</text>`;
     svg += `<text class="hc-axis" x="${X(x1)}" y="${h - 4}" text-anchor="end">Today</text>`;
     return svg + "</svg>";
   }
@@ -903,6 +941,10 @@
     html += `<p class="hc-sub">${productName ? escapeHtml(productName) : "&nbsp;"}</p>`;
     const chart = historyChartSvg(series, metric);
     html += chart || `<p class="hc-empty">${series.length ? "No change since " + shortDate(series[0].date) + "." : "No history recorded yet."}</p>`;
+    if (chart) {
+      html += `<div class="hc-legend"><span><i class="hc-key-line"></i>${metric === "rate" ? "Interest rate" : "Comparison rate"}</span>`
+        + `<span><i class="hc-key-rba"></i>RBA cash rate change</span></div>`;
+    }
 
     const rows = series.map((e, i) => {
       const prev = series[i - 1];
@@ -915,6 +957,11 @@
       const notes = [];
       if (e.source === "manual") notes.push("hand-collected");
       if (e.product && (!prev || prev.product !== e.product)) notes.push((prev ? "now " : "") + e.product);
+      const rba = rbaChangeBefore(e.date);
+      if (rba){
+        const days = dayNumber(e.date) - dayNumber(rba.date);
+        notes.push(`${days === 0 ? "same day as" : days + (days === 1 ? " day" : " days") + " after"} RBA ${signed(rba.change)} (${dayMonth(rba.date)})`);
+      }
       const value = e[metric] === null ? "—" : fmt(e[metric]);
       const other = e[otherMetric] === null ? "" : `${otherMetric === "comp" ? "comp." : "rate"} ${fmt(e[otherMetric])}`;
       return `<tr><td>${shortDate(e.date)}${notes.length ? `<span class="hc-note">${escapeHtml(notes.join(" · "))}</span>` : ""}</td>`
@@ -923,6 +970,11 @@
     if (rows.length) html += `<table><tbody>${rows.slice(0, 6).join("")}</tbody></table>`;
     if (rows.length > 6) html += `<p class="hc-foot">…and ${rows.length - 6} earlier changes.</p>`;
 
+    const latest = RBA[RBA.length - 1];
+    const lastMove = [...RBA].reverse().find(r => r.change !== 0);
+    if (latest && lastMove) {
+      html += `<p class="hc-foot">RBA cash rate ${latest.cashRate.toFixed(2)}% — last moved ${signed(lastMove.change)} on ${shortDate(lastMove.date)}.</p>`;
+    }
     const isBase = purpose === "owner" && repay === "pi" && lvr === "80";
     if (!isBase) html += `<p class="hc-foot">History shows the published owner-occupier P&amp;I rate (60–80% LVR); the figure in the table is estimated from it.</p>`;
     return html;
