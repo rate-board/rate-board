@@ -860,7 +860,7 @@
     return [...byDate.values()].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
   }
 
-  // Step line: a rate holds flat until the day it changes, then jumps.
+  // Straight segments between recorded points, then flat from the latest point to today (it is still current).
   function historyChartSvg(series, metric){
     const pts = series.filter(e => e[metric] !== null);
     if (pts.length < 2) return "";
@@ -880,7 +880,7 @@
       svg += `<text class="hc-axis" x="${padL - 6}" y="${Y(t) + 3}" text-anchor="end">${t.toFixed(2)}</text>`;
     }
     let path = `M${X(dayNumber(pts[0].date))},${Y(pts[0][metric])}`;
-    for (let i = 1; i < pts.length; i++) path += ` H${X(dayNumber(pts[i].date))} V${Y(pts[i][metric])}`;
+    for (let i = 1; i < pts.length; i++) path += ` L${X(dayNumber(pts[i].date))},${Y(pts[i][metric])}`;
     path += ` H${X(x1)}`;
     svg += `<path class="hc-line" d="${path}"/>`;
     for (const e of pts) svg += `<circle class="hc-dot" cx="${X(dayNumber(e.date))}" cy="${Y(e[metric])}" r="4"/>`;
