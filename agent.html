@@ -4,7 +4,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Agent Portal</title>
 <meta name="description" content="Post rates below the lenders', see where you rank, and work the leads you get.">
-<link rel="stylesheet" href="common.css">
+<link rel="stylesheet" href="common.css?v=3">
 <style>
   .wrap{max-width:1100px;}
   .title-block .sub{margin:4px 0 0;font-size:13px;color:var(--ink-muted);}
@@ -125,7 +125,7 @@
 </style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500..600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
-<script src="common.js"></script>
+<script src="common.js?v=3"></script>
 
 <div class="wrap">
   <header class="page">
@@ -1036,7 +1036,7 @@
     if (file.size > 2 * 1024 * 1024){ msg("agentMsg", "Use an image under 2 MB.", "error"); return; }
     const path = `${session.user.id}/photo-${Date.now()}.${file.type.split("/")[1]}`;
     msg("agentMsg", "Uploading photo…");
-    const { error } = await sb.storage.from("agent-photos").upload(path, file, { upsert: true, contentType: file.type });
+    const { error } = await sb.storage.from("agent-photos").upload(path, file, { contentType: file.type });
     if (error){ msg("agentMsg", friendlyError(error), "error"); return; }
     setPhoto(sb.storage.from("agent-photos").getPublicUrl(path).data.publicUrl);
     msg("agentMsg", "Photo ready. Save to use it.", "ok");

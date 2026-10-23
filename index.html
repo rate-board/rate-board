@@ -4,7 +4,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Home Loan Interest Rates</title>
 <meta name="description" content="Compare today's mortgage rates across lenders and loan products at a glance.">
-<link rel="stylesheet" href="common.css">
+<link rel="stylesheet" href="common.css?v=3">
 <style>
   .rates-area{position:relative;}
   .rates-area.gated .gate-content{
@@ -281,7 +281,7 @@
 </style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500..600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
-<script src="common.js"></script>
+<script src="common.js?v=3"></script>
 
 <div class="wrap">
   <header class="page">
@@ -963,7 +963,8 @@
         const { data, error } = await sb.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: joining ? AGENT_URL + "#join" : SITE_URL },
+          // No #fragment on redirects: Supabase appends the session tokens as one.
+          options: { emailRedirectTo: joining ? AGENT_URL : SITE_URL },
         });
         if (error) throw error;
         // Supabase answers a sign-up for an already-registered email with a dummy user that has no identities.
@@ -973,7 +974,7 @@
           return;
         }
         if (data.session){
-          if (joining){ location.href = AGENT_URL + "#join"; return; }
+          if (joining){ location.href = AGENT_URL; return; }
           $("authDialog").close();
         } else {
           authMsg("Almost there — we've emailed a confirmation link to " + email + ". Click it"

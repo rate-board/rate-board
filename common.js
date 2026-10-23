@@ -180,7 +180,8 @@ async function loadMarket(signedIn){
 // Agent rates for one cell, lowest first (on a tie, the one posted first).
 function agentRatesFor(lenderId, key, pur, rep, band){
   return AGENT_RATES.filter(a => a.lender_id === lenderId && a.product_key === key
-    && a.purpose === pur && a.repay === rep && a.lvr === band);
+    && a.purpose === pur && a.repay === rep && a.lvr === band)
+    .sort((a, b) => a.rate - b.rate || (a.created_at < b.created_at ? -1 : a.created_at > b.created_at ? 1 : 0));
 }
 
 // --- Rate history ----------------------------------------------------------------------
