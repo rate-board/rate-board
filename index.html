@@ -272,6 +272,49 @@
   .edit-btn:hover{background:var(--accent);color:#fff;}
   .edit-btn:focus-visible{outline:2px solid var(--focus);outline-offset:2px;}
 
+  .rate-cell:focus-visible{outline:2px solid var(--focus);outline-offset:-2px;}
+
+  .history-card{
+    position:fixed;
+    z-index:50;
+    width:304px;
+    max-width:calc(100vw - 16px);
+    background:var(--surface);
+    color:var(--ink);
+    border:1px solid var(--line);
+    border-radius:12px;
+    box-shadow:var(--shadow);
+    padding:14px 14px 12px;
+    font-family:'Inter',system-ui,sans-serif;
+    pointer-events:none;
+  }
+  .hc-title{margin:0;font-size:13.5px;font-weight:600;}
+  .hc-sub{margin:2px 0 8px;font-size:12px;color:var(--ink-muted);}
+  .history-card svg{display:block;width:100%;height:auto;}
+  .hc-grid{stroke:var(--line);stroke-width:1;}
+  .hc-axis{font:10px 'IBM Plex Mono',monospace;fill:var(--ink-faint);}
+  .hc-line{fill:none;stroke:var(--accent);stroke-width:2;stroke-linejoin:round;stroke-linecap:round;}
+  .hc-dot{fill:var(--accent);stroke:var(--surface);stroke-width:2;}
+  .hc-end{font:600 11px 'IBM Plex Mono',monospace;fill:var(--ink);}
+  .hc-empty{margin:4px 0 0;font-size:12px;color:var(--ink-muted);}
+  .history-card table{width:100%;min-width:0;border-collapse:collapse;margin-top:8px;}
+  .history-card td{
+    padding:5px 8px 5px 0;
+    border-bottom:none;
+    border-top:1px solid var(--line);
+    font:12px 'Inter',sans-serif;
+    color:var(--ink);
+    white-space:nowrap;
+    vertical-align:top;
+    background:none !important;
+  }
+  .history-card td:last-child{padding-right:0;}
+  .history-card .num{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;}
+  .history-card .delta{color:var(--ink-muted);text-align:right;}
+  .hc-note{display:block;margin-top:1px;font-size:11px;color:var(--ink-faint);white-space:normal;}
+  .history-card .num .hc-note{white-space:nowrap;}
+  .hc-foot{margin:8px 0 0;font-size:11px;line-height:1.45;color:var(--ink-faint);}
+
   .rate{font-size:16px;font-weight:600;color:var(--ink);}
   .apr{display:block;font-size:11.5px;color:var(--ink-faint);margin-top:2px;font-weight:400;}
   td.best .rate{color:var(--accent);}
@@ -478,6 +521,8 @@
   </footer>
 </div>
 
+<div class="history-card" id="historyCard" role="tooltip" hidden></div>
+
 <dialog id="authDialog" class="modal">
   <form id="authForm" novalidate>
     <h2 id="authTitle">Sign in</h2>
@@ -570,6 +615,7 @@
   let BASE = {};      // lenderId -> productKey -> [rate, comparisonRate]
   let PRODUCT_NAMES = {}; // lenderId -> productKey -> lender's own product name, when known
   let AUTO_SYNCED = new Set(); // lenders whose rates the nightly sync maintains (Open Banking or website)
+  let HISTORY = {}; // lenderId -> productKey -> [{ date, rate, comp, source, product }] oldest first; rate null = withdrawn
   let RATES = null;
   let loadState = "loading"; // loading | ready | error
   let session = null;
@@ -641,13 +687,16 @@
   // list with masked figures behind a blur, like a news-site paywall.
   async function loadData(){
     const gated = !session;
-    const [lendersRes, productsRes, ratesRes] = await Promise.all([
+    const none = Promise.resolve({ data: [], error: null });
+    const [lendersRes, productsRes, ratesRes, historyRes] = await Promise.all([
       sb.from("lenders").select("id,name,source_url,note").eq("active", true).order("sort_order"),
       sb.from("products").select("key,label").order("sort_order"),
-      gated ? Promise.resolve({ data: [], error: null })
-            : sb.from("rates").select("lender_id,product_key,rate,comparison_rate,product_name,source"),
+      gated ? none : sb.from("rates").select("lender_id,product_key,rate,comparison_rate,product_name,source"),
+      gated ? none : sb.from("rate_history")
+        .select("lender_id,product_key,rate,comparison_rate,as_of,changed_at,source,product_name")
+        .order("changed_at").limit(10000),
     ]);
-    const err = lendersRes.error || productsRes.error || ratesRes.error;
+    const err = lendersRes.error || productsRes.error || ratesRes.error || historyRes.error;
     if (err){
       loadState = "error";
       showStatus("Couldn't load rates — try reloading the page. (" + err.message + ")");
@@ -663,6 +712,16 @@
       (BASE[row.lender_id] ||= {})[row.product_key] = [Number(row.rate), Number(row.comparison_rate)];
       if (row.product_name) (PRODUCT_NAMES[row.lender_id] ||= {})[row.product_key] = row.product_name;
       if (row.source !== "manual") AUTO_SYNCED.add(row.lender_id);
+    }
+    HISTORY = {};
+    for (const h of historyRes.data){
+      ((HISTORY[h.lender_id] ||= {})[h.product_key] ||= []).push({
+        date: h.as_of,
+        rate: h.rate === null ? null : Number(h.rate),
+        comp: h.comparison_rate === null ? null : Number(h.comparison_rate),
+        source: h.source,
+        product: h.product_name,
+      });
     }
     RATES = buildRates();
     loadState = "ready";
@@ -723,6 +782,7 @@
   }
 
   function renderTable(){
+    if (activeCell) hideHistory();
     const head = $("headRow");
     const body = $("bodyRows");
     const summary = $("filterSummary");
@@ -767,9 +827,7 @@
         const shown = mode === "rate" ? rate : apr;
         const secondary = mode === "rate" ? apr : rate;
         const secondaryLabel = mode === "rate" ? "Comp. rate" : "Rate";
-        const productName = PRODUCT_NAMES[lender.id] && PRODUCT_NAMES[lender.id][p.key];
-        const titleAttr = productName ? ` title="${escapeHtml(productName)}"` : "";
-        rowHtml += `<td class="${isBest ? "best" : ""}"${titleAttr}>
+        rowHtml += `<td class="rate-cell${isBest ? " best" : ""}" tabindex="0" data-lender="${escapeHtml(lender.id)}" data-key="${escapeHtml(p.key)}" aria-describedby="historyCard">
             <span class="rate">${fmt(shown)}${isBest ? '<span class="best-badge">BEST</span>' : ""}</span>
             <span class="apr">${secondaryLabel} ${fmt(secondary)}</span>
           </td>`;
@@ -778,6 +836,145 @@
       body.appendChild(tr);
     });
   }
+
+  // --- Rate history card ------------------------------------------------------------
+
+  const CHART = { w: 276, h: 96, padL: 38, padR: 44, padT: 10, padB: 20 };
+  let activeCell = null;
+  let lastPointerType = "mouse";
+
+  function dayNumber(iso){
+    const [y, m, d] = iso.split("-").map(Number);
+    return Date.UTC(y, m - 1, d) / 86400000;
+  }
+
+  function shortDate(iso){
+    const [y, m, d] = iso.split("-").map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
+  }
+
+  // One entry per date (a same-day correction replaces the earlier figure), oldest first.
+  function historySeries(lenderId, key){
+    const byDate = new Map();
+    for (const entry of (HISTORY[lenderId] && HISTORY[lenderId][key]) || []) byDate.set(entry.date, entry);
+    return [...byDate.values()].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+  }
+
+  // Step line: a rate holds flat until the day it changes, then jumps.
+  function historyChartSvg(series, metric){
+    const pts = series.filter(e => e[metric] !== null);
+    if (pts.length < 2) return "";
+    const { w, h, padL, padR, padT, padB } = CHART;
+    const x0 = dayNumber(pts[0].date);
+    const x1 = Math.max(dayNumber(localIsoDate()), dayNumber(pts[pts.length - 1].date) + 1);
+    const values = pts.map(e => e[metric]);
+    const step = Math.max(...values) - Math.min(...values) > 0.6 ? 0.5 : 0.25;
+    const lo = Math.floor((Math.min(...values) - 0.05) / step) * step;
+    const hi = Math.max(lo + step, Math.ceil((Math.max(...values) + 0.05) / step) * step);
+    const X = (day) => padL + (day - x0) / (x1 - x0) * (w - padL - padR);
+    const Y = (v) => padT + (hi - v) / (hi - lo) * (h - padT - padB);
+
+    let svg = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${metric === "rate" ? "Interest rate" : "Comparison rate"} over time">`;
+    for (let t = lo; t <= hi + 1e-9; t += step){
+      svg += `<line class="hc-grid" x1="${padL}" x2="${w - padR}" y1="${Y(t)}" y2="${Y(t)}"/>`;
+      svg += `<text class="hc-axis" x="${padL - 6}" y="${Y(t) + 3}" text-anchor="end">${t.toFixed(2)}</text>`;
+    }
+    let path = `M${X(dayNumber(pts[0].date))},${Y(pts[0][metric])}`;
+    for (let i = 1; i < pts.length; i++) path += ` H${X(dayNumber(pts[i].date))} V${Y(pts[i][metric])}`;
+    path += ` H${X(x1)}`;
+    svg += `<path class="hc-line" d="${path}"/>`;
+    for (const e of pts) svg += `<circle class="hc-dot" cx="${X(dayNumber(e.date))}" cy="${Y(e[metric])}" r="4"/>`;
+    const last = pts[pts.length - 1][metric];
+    svg += `<text class="hc-end" x="${X(x1) + 5}" y="${Y(last) + 4}">${fmt(last)}</text>`;
+    svg += `<text class="hc-axis" x="${padL}" y="${h - 4}">${shortDate(pts[0].date)}</text>`;
+    svg += `<text class="hc-axis" x="${X(x1)}" y="${h - 4}" text-anchor="end">Today</text>`;
+    return svg + "</svg>";
+  }
+
+  function historyCardHtml(lenderId, key){
+    const lender = LENDERS.find(l => l.id === lenderId);
+    const product = PRODUCTS.find(p => p.key === key);
+    const productName = PRODUCT_NAMES[lenderId] && PRODUCT_NAMES[lenderId][key];
+    const metric = mode === "rate" ? "rate" : "comp";
+    const otherMetric = metric === "rate" ? "comp" : "rate";
+    const series = historySeries(lenderId, key);
+
+    let html = `<p class="hc-title">${escapeHtml(lender ? lender.name : lenderId)} · ${escapeHtml(product ? product.label : key)}</p>`;
+    html += `<p class="hc-sub">${productName ? escapeHtml(productName) : "&nbsp;"}</p>`;
+    const chart = historyChartSvg(series, metric);
+    html += chart || `<p class="hc-empty">${series.length ? "No change since " + shortDate(series[0].date) + "." : "No history recorded yet."}</p>`;
+
+    const rows = series.map((e, i) => {
+      const prev = series[i - 1];
+      let delta = "first recorded";
+      if (e[metric] === null) delta = "withdrawn";
+      else if (prev && prev[metric] !== null){
+        const d = e[metric] - prev[metric];
+        delta = Math.abs(d) < 0.005 ? "no change" : (d > 0 ? "▲ +" : "▼ −") + Math.abs(d).toFixed(2);
+      }
+      const notes = [];
+      if (e.source === "manual") notes.push("hand-collected");
+      if (e.product && (!prev || prev.product !== e.product)) notes.push((prev ? "now " : "") + e.product);
+      const value = e[metric] === null ? "—" : fmt(e[metric]);
+      const other = e[otherMetric] === null ? "" : `${otherMetric === "comp" ? "comp." : "rate"} ${fmt(e[otherMetric])}`;
+      return `<tr><td>${shortDate(e.date)}${notes.length ? `<span class="hc-note">${escapeHtml(notes.join(" · "))}</span>` : ""}</td>`
+        + `<td class="num">${value}<span class="hc-note">${other}</span></td><td class="delta">${delta}</td></tr>`;
+    }).reverse();
+    if (rows.length) html += `<table><tbody>${rows.slice(0, 6).join("")}</tbody></table>`;
+    if (rows.length > 6) html += `<p class="hc-foot">…and ${rows.length - 6} earlier changes.</p>`;
+
+    const isBase = purpose === "owner" && repay === "pi" && lvr === "80";
+    if (!isBase) html += `<p class="hc-foot">History shows the published owner-occupier P&amp;I rate (60–80% LVR); the figure in the table is estimated from it.</p>`;
+    return html;
+  }
+
+  function showHistory(cell){
+    const card = $("historyCard");
+    card.innerHTML = historyCardHtml(cell.dataset.lender, cell.dataset.key);
+    card.hidden = false;
+    const r = cell.getBoundingClientRect();
+    const cw = card.offsetWidth, ch = card.offsetHeight;
+    const left = Math.min(Math.max(8, r.left + r.width / 2 - cw / 2), window.innerWidth - cw - 8);
+    let top = r.bottom + 8;
+    if (top + ch > window.innerHeight - 8) top = Math.max(8, r.top - ch - 8);
+    card.style.left = left + "px";
+    card.style.top = top + "px";
+    activeCell = cell;
+  }
+
+  function hideHistory(){
+    $("historyCard").hidden = true;
+    activeCell = null;
+  }
+
+  // Mouse users get it on hover, keyboard users on focus, touch users on tap.
+  $("bodyRows").addEventListener("pointerdown", (e) => { lastPointerType = e.pointerType; });
+  $("bodyRows").addEventListener("pointerover", (e) => {
+    if (e.pointerType !== "mouse") return;
+    const cell = e.target.closest(".rate-cell");
+    if (cell && cell !== activeCell) showHistory(cell);
+  });
+  $("bodyRows").addEventListener("pointerout", (e) => {
+    if (e.pointerType !== "mouse" || !activeCell) return;
+    if (!e.relatedTarget || !activeCell.contains(e.relatedTarget)) hideHistory();
+  });
+  $("bodyRows").addEventListener("focusin", (e) => {
+    const cell = e.target.closest(".rate-cell");
+    if (cell && lastPointerType === "mouse") showHistory(cell);
+  });
+  $("bodyRows").addEventListener("focusout", () => { if (lastPointerType === "mouse") hideHistory(); });
+  $("bodyRows").addEventListener("click", (e) => {
+    if (lastPointerType === "mouse") return;
+    const cell = e.target.closest(".rate-cell");
+    if (!cell) return;
+    if (cell === activeCell) hideHistory(); else showHistory(cell);
+  });
+  document.addEventListener("pointerdown", (e) => {
+    if (activeCell && !e.target.closest(".rate-cell")) hideHistory();
+  });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") hideHistory(); });
+  window.addEventListener("scroll", hideHistory, true);
+  window.addEventListener("resize", hideHistory);
 
   // --- Filters and sorting -----------------------------------------------------
 
