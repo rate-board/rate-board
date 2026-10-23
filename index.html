@@ -1,3 +1,7 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Home Loan Interest Rates</title>
 <meta name="description" content="Compare today's mortgage rates across lenders and loan products at a glance.">
 <style>
@@ -447,6 +451,71 @@
     gap:8px;
   }
 
+  .mobile-sort, .lender-note-text{display:none;}
+
+  /* Phones: each lender becomes a card with labelled rates, instead of a wide table to scroll sideways. */
+  @media (max-width:640px){
+    body{padding:20px 16px 40px;}
+    .controls{gap:8px;}
+    .seg{width:100%;}
+    .seg button{flex:1 1 0;padding:10px 6px;font-size:13px;}
+    .mobile-sort{display:flex;align-items:center;gap:10px;width:100%;font-size:13px;font-weight:600;color:var(--ink-muted);}
+    .mobile-sort select{
+      flex:1;
+      min-width:0;
+      font:14px 'Inter',sans-serif;
+      color:var(--ink);
+      background:var(--surface);
+      border:1px solid var(--line-strong);
+      border-radius:8px;
+      padding:9px 10px;
+    }
+    .mobile-sort select:focus-visible{outline:2px solid var(--focus);outline-offset:1px;}
+
+    .table-shell{background:none;border:none;border-radius:0;box-shadow:none;overflow:visible;}
+    .table-scroll{overflow:visible;}
+    .table-shell :is(table, thead, tbody, tr, th, td){display:block;}
+    .table-shell table{min-width:0;}
+    .table-shell thead{display:none;}
+    .table-shell tbody tr{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:14px 16px;
+      background:var(--surface);
+      border:1px solid var(--line);
+      border-radius:12px;
+      box-shadow:var(--shadow);
+      padding:14px 16px 16px;
+      margin-bottom:12px;
+    }
+    .table-shell tbody th, .table-shell tbody tr:last-child th{
+      grid-column:1 / -1;
+      position:static;
+      padding:0 0 10px;
+      border-bottom:1px solid var(--line);
+      white-space:normal;
+      font-size:15px;
+      background:none;
+    }
+    .table-shell tbody td{padding:0;border:none;white-space:normal;}
+    .table-shell tbody td:only-child{grid-column:1 / -1;}
+    .table-shell tbody td[data-label]::before{
+      content:attr(data-label);
+      display:block;
+      margin-bottom:3px;
+      font:600 10.5px 'Inter',sans-serif;
+      letter-spacing:.05em;
+      text-transform:uppercase;
+      color:var(--ink-faint);
+    }
+    .table-shell tbody tr:hover :is(td, th){background:none;}
+    .rate{font-size:15px;}
+    .lender-note{display:none;}
+    .lender-note-text{display:block;margin-top:4px;font:400 12px/1.45 'Inter',sans-serif;color:var(--ink-muted);}
+    .edit-btn{width:30px;height:30px;font-size:14px;margin-left:8px;}
+    .gate-overlay{padding-top:40px;}
+  }
+
   @media (max-width:560px){
     .title-block h1{font-size:24px;}
     header.page{flex-direction:column;align-items:flex-start;}
@@ -489,6 +558,10 @@
       <button data-mode="rate" class="active">Rate</button>
       <button data-mode="apr">Comp. Rate</button>
     </div>
+    <label class="mobile-sort" for="mobileSort">
+      <span>Sort by</span>
+      <select id="mobileSort"></select>
+    </label>
   </div>
 
   <p class="filter-summary" id="filterSummary"></p>
@@ -790,6 +863,23 @@
     return `<th scope="col"><button type="button" class="sort-btn" data-sort="${escapeHtml(key)}">${escapeHtml(label)}${arrow}</button></th>`;
   }
 
+  // On phones the column headers are hidden (each lender becomes a card), so sorting moves to a dropdown.
+  function renderMobileSort(){
+    const options = [["", "Default order"], ["lender:asc", "Lender (A–Z)"]]
+      .concat(PRODUCTS.map(p => [p.key + ":asc", "Lowest " + p.label]));
+    const current = sortKey ? sortKey + ":" + sortDir : "";
+    $("mobileSort").innerHTML = options
+      .map(([value, text]) => `<option value="${escapeHtml(value)}"${value === current ? " selected" : ""}>${escapeHtml(text)}</option>`)
+      .join("");
+  }
+
+  $("mobileSort").addEventListener("change", (e) => {
+    const [key, dir] = e.target.value.split(":");
+    sortKey = key || null;
+    sortDir = dir || "asc";
+    renderTable();
+  });
+
   function renderTable(){
     if (activeCell) hideHistory();
     const head = $("headRow");
@@ -806,6 +896,7 @@
 
     summary.textContent = "Showing " + subLabel() + " rates." + (lvr === "90" ? " LMI typically applies above 80% LVR." : "");
     head.innerHTML = headCell("lender", "Lender") + PRODUCTS.map(p => headCell(p.key, p.label)).join("");
+    renderMobileSort();
 
     const bestByProduct = {};
     PRODUCTS.forEach(p => { bestByProduct[p.key] = bestLender(p.key); });
@@ -819,16 +910,19 @@
         ? `<a class="lender-link" href="${escapeHtml(href)}" target="_blank" rel="noopener">${name}</a>`
         : `<span>${name}</span>`;
       const noteHtml = lender.note ? `<span class="lender-note" title="${escapeHtml(lender.note)}">i</span>` : "";
+      // Hover tooltips don't exist on touch screens, so the card layout shows the note as text instead.
+      const noteText = lender.note ? `<span class="lender-note-text">${escapeHtml(lender.note)}</span>` : "";
       const editHtml = isAdmin ? `<button type="button" class="edit-btn" data-edit="${escapeHtml(lender.id)}" title="Edit ${name}">✎</button>` : "";
-      let rowHtml = `<th scope="row">${nameHtml}${noteHtml}${editHtml}</th>`;
+      let rowHtml = `<th scope="row">${nameHtml}${noteHtml}${editHtml}${noteText}</th>`;
       PRODUCTS.forEach(p => {
+        const label = `data-label="${escapeHtml(p.label)}"`;
         if (!session){
-          rowHtml += `<td><span class="rate">•.••%</span><span class="apr">Comp. rate •.••%</span></td>`;
+          rowHtml += `<td ${label}><span class="rate">•.••%</span><span class="apr">Comp. rate •.••%</span></td>`;
           return;
         }
         const cell = RATES[purpose][repay][lvr][p.key][lender.id];
         if (!cell){
-          rowHtml += `<td class="unavailable"><span class="rate">—</span></td>`;
+          rowHtml += `<td class="unavailable" ${label}><span class="rate">—</span></td>`;
           return;
         }
         const [rate, apr] = cell;
@@ -836,7 +930,7 @@
         const shown = mode === "rate" ? rate : apr;
         const secondary = mode === "rate" ? apr : rate;
         const secondaryLabel = mode === "rate" ? "Comp. rate" : "Rate";
-        rowHtml += `<td class="rate-cell${isBest ? " best" : ""}" tabindex="0" data-lender="${escapeHtml(lender.id)}" data-key="${escapeHtml(p.key)}" aria-describedby="historyCard">
+        rowHtml += `<td class="rate-cell${isBest ? " best" : ""}" ${label} tabindex="0" data-lender="${escapeHtml(lender.id)}" data-key="${escapeHtml(p.key)}" aria-describedby="historyCard">
             <span class="rate">${fmt(shown)}${isBest ? '<span class="best-badge">BEST</span>' : ""}</span>
             <span class="apr">${secondaryLabel} ${fmt(secondary)}</span>
           </td>`;
@@ -986,7 +1080,9 @@
     card.hidden = false;
     const r = cell.getBoundingClientRect();
     const cw = card.offsetWidth, ch = card.offsetHeight;
-    const left = Math.min(Math.max(8, r.left + r.width / 2 - cw / 2), window.innerWidth - cw - 8);
+    const left = window.innerWidth <= 640
+      ? (window.innerWidth - cw) / 2
+      : Math.min(Math.max(8, r.left + r.width / 2 - cw / 2), window.innerWidth - cw - 8);
     let top = r.bottom + 8;
     if (top + ch > window.innerHeight - 8) top = Math.max(8, r.top - ch - 8);
     card.style.left = left + "px";
