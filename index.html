@@ -510,6 +510,7 @@
 <dialog id="editDialog" class="modal">
   <form id="editForm" novalidate>
     <h2 id="editTitle">Edit lender</h2>
+    <p class="form-msg" id="editSyncNote" hidden>This lender's rates update automatically every night from its published Open Banking data — any change you make here is replaced at the next nightly sync if it differs from the lender's published rate.</p>
     <label class="field">
       <span>Source URL</span>
       <input type="url" id="e-source" placeholder="https://">
@@ -541,6 +542,7 @@
   // Interest-only runs higher than P&I on both the rate and the spread, independent of loan purpose.
   const REPAY_ADJUST = {
     variable: { rate: 0.40, spread: 0.10 },
+    variable_package: { rate: 0.40, spread: 0.10 },
     fixed1:   { rate: 0.45, spread: 0.10 },
     fixed2:   { rate: 0.45, spread: 0.10 },
     fixed3:   { rate: 0.45, spread: 0.10 },
@@ -549,6 +551,7 @@
   // Investment loans run higher than owner-occupier on both the rate and the spread, independent of repayment type.
   const PURPOSE_ADJUST = {
     variable: { rate: 0.15, spread: 0.03 },
+    variable_package: { rate: 0.15, spread: 0.03 },
     fixed1:   { rate: 0.18, spread: 0.03 },
     fixed2:   { rate: 0.20, spread: 0.03 },
     fixed3:   { rate: 0.20, spread: 0.03 },
@@ -565,6 +568,7 @@
   let LENDERS = [];   // [{ id, name, source_url, note }]
   let PRODUCTS = [];  // [{ key, label }]
   let BASE = {};      // lenderId -> productKey -> [rate, comparisonRate]
+  let PRODUCT_NAMES = {}; // lenderId -> productKey -> lender's own product name, when known
   let RATES = null;
   let loadState = "loading"; // loading | ready | error
   let session = null;
@@ -637,10 +641,10 @@
   async function loadData(){
     const gated = !session;
     const [lendersRes, productsRes, ratesRes] = await Promise.all([
-      sb.from("lenders").select("id,name,source_url,note").eq("active", true).order("sort_order"),
+      sb.from("lenders").select("id,name,source_url,note,cdr_base_uri").eq("active", true).order("sort_order"),
       sb.from("products").select("key,label").order("sort_order"),
       gated ? Promise.resolve({ data: [], error: null })
-            : sb.from("rates").select("lender_id,product_key,rate,comparison_rate,as_of"),
+            : sb.from("rates").select("lender_id,product_key,rate,comparison_rate,product_name"),
     ]);
     const err = lendersRes.error || productsRes.error || ratesRes.error;
     if (err){
@@ -652,8 +656,10 @@
     LENDERS = lendersRes.data;
     PRODUCTS = productsRes.data;
     BASE = {};
+    PRODUCT_NAMES = {};
     for (const row of ratesRes.data){
       (BASE[row.lender_id] ||= {})[row.product_key] = [Number(row.rate), Number(row.comparison_rate)];
+      if (row.product_name) (PRODUCT_NAMES[row.lender_id] ||= {})[row.product_key] = row.product_name;
     }
     RATES = buildRates();
     loadState = "ready";
@@ -758,7 +764,9 @@
         const shown = mode === "rate" ? rate : apr;
         const secondary = mode === "rate" ? apr : rate;
         const secondaryLabel = mode === "rate" ? "Comp. rate" : "Rate";
-        rowHtml += `<td class="${isBest ? "best" : ""}">
+        const productName = PRODUCT_NAMES[lender.id] && PRODUCT_NAMES[lender.id][p.key];
+        const titleAttr = productName ? ` title="${escapeHtml(productName)}"` : "";
+        rowHtml += `<td class="${isBest ? "best" : ""}"${titleAttr}>
             <span class="rate">${fmt(shown)}${isBest ? '<span class="best-badge">BEST</span>' : ""}</span>
             <span class="apr">${secondaryLabel} ${fmt(secondary)}</span>
           </td>`;
@@ -984,6 +992,7 @@
     editingLender = LENDERS.find(l => l.id === lenderId);
     if (!editingLender) return;
     $("editTitle").textContent = "Edit " + editingLender.name;
+    $("editSyncNote").hidden = !editingLender.cdr_base_uri;
     $("e-source").value = editingLender.source_url || "";
     $("e-note").value = editingLender.note || "";
     $("e-asof").value = localIsoDate();
@@ -1046,7 +1055,7 @@
         fail(p.label + ": enter a valid rate and comparison rate.");
         return;
       }
-      upserts.push({ lender_id: lenderId, product_key: p.key, rate, comparison_rate: comp, as_of: asOf });
+      upserts.push({ lender_id: lenderId, product_key: p.key, rate, comparison_rate: comp, as_of: asOf, source: "manual", product_name: null });
     }
 
     const save = $("editSave");
