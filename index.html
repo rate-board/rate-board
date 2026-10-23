@@ -148,8 +148,12 @@
   }
   .view-controls{
     display:flex;
-    justify-content:flex-end;
+    align-items:center;
+    gap:10px;
     margin-top:14px;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--ink-muted);
   }
 
   .seg{
@@ -458,6 +462,8 @@
     .controls{gap:8px;}
     .seg{width:100%;}
     .seg button{flex:1 1 0;padding:10px 6px;font-size:13px;}
+    .view-controls{font-size:13px;}
+    .view-controls .seg{width:auto;flex:1;}
     .mobile-sort{display:flex;align-items:center;gap:10px;width:100%;font-size:13px;font-weight:600;color:var(--ink-muted);}
     .mobile-sort select{
       flex:1;
@@ -570,6 +576,7 @@
     </div>
   </div>
   <div class="view-controls">
+    <span>Show</span>
     <div class="seg" id="viewSeg">
       <button data-mode="rate" class="active">Rate</button>
       <button data-mode="apr">Comp. Rate</button>
