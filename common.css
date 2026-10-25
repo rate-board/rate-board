@@ -349,7 +349,7 @@ footer{
 }
 footer a{color:var(--accent);}
 footer nav{display:flex;flex-wrap:wrap;gap:4px 16px;}
-footer nav a{display:inline-flex;align-items:center;min-height:44px;}
+footer nav a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:44px;}
 
 @media (max-width:640px){
   body{padding:20px 16px 40px;}

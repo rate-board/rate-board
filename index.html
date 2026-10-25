@@ -11,19 +11,20 @@
 <link rel="stylesheet" href="common.css?v=4">
 <style>
   .rates-area{position:relative;}
-  .rates-area.gated .gate-content{
-    filter:blur(6px);
-    opacity:.7;
-    user-select:none;
-    pointer-events:none;
+  /* Signed out: the first half of the lenders show real rates at full contrast; from the first locked row the
+     table fades out, and the sign-in card sits over the fade. --fade-start is set from the rendered rows. */
+  .rates-area.gated .table-shell{
+    -webkit-mask-image:linear-gradient(to bottom, #000 var(--fade-start, 60%), transparent 100%);
+    mask-image:linear-gradient(to bottom, #000 var(--fade-start, 60%), transparent 100%);
   }
+  .locked-row{filter:blur(4px);user-select:none;}
   .gate-overlay{
-    position:absolute;
-    inset:0;
+    position:relative;
+    z-index:3;
     display:flex;
     justify-content:center;
-    align-items:flex-start;
-    padding:64px 16px 0;
+    margin-top:-230px;
+    padding:0 16px;
   }
   .gate-card{
     background:var(--surface);
@@ -104,8 +105,7 @@
     width:100%;
     min-width:680px;
   }
-  table:focus{outline:none;}
-  table:focus-visible{outline:3px solid var(--focus);outline-offset:2px;}
+  .rates-area:focus{outline:none;}
   thead th{
     position:sticky;
     top:0;
@@ -169,6 +169,7 @@
     align-items:center;
     gap:4px;
     min-height:44px;
+    min-width:44px;
     color:inherit;
     text-decoration:underline;
     text-decoration-color:var(--line-strong);
@@ -403,7 +404,7 @@
     .rate{font-size:16px;}
     .note-btn{display:none;}
     .lender-note-text{display:block;max-width:none;}
-    .gate-overlay{padding-top:40px;}
+    .gate-overlay{margin-top:-260px;}
     .repay-inputs{grid-template-columns:1fr;}
   }
 </style>
@@ -411,7 +412,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
 <script src="common.js?v=4"></script>
 
-<a class="skip-link" href="#rates">Skip to rates</a>
+<a class="skip-link" href="#ratesArea">Skip to rates</a>
 
 <div class="wrap">
   <header class="page">
@@ -427,7 +428,7 @@
   <div class="visually-hidden" id="srStatus" role="status" aria-live="polite"></div>
 
   <main>
-  <section class="rates-area" id="ratesArea" aria-labelledby="ratesHeading">
+  <section class="rates-area" id="ratesArea" aria-labelledby="ratesHeading" tabindex="-1">
   <h2 class="visually-hidden" id="ratesHeading">Home loan rates by lender</h2>
   <div class="gate-content" id="gateContent">
   <h3 class="visually-hidden">Choose your loan</h3>
@@ -465,13 +466,24 @@
 
   <div class="table-shell">
     <div class="table-scroll">
-      <table id="rates" tabindex="-1" role="table">
+      <table id="rates" role="table">
         <caption class="visually-hidden" id="ratesCaption"></caption>
         <thead role="rowgroup">
           <tr id="headRow" role="row"></tr>
         </thead>
         <tbody id="bodyRows" role="rowgroup"></tbody>
       </table>
+    </div>
+  </div>
+  <div class="gate-overlay" id="gateOverlay" hidden>
+    <div class="gate-card">
+      <h2 id="gateTitle">Sign in to see every lender</h2>
+      <p id="gateText">Create a free account to compare live home loan rates from <span id="gateCount">all</span> lenders, with rate history, monthly repayments and agent rates.</p>
+      <div class="gate-actions">
+        <button type="button" class="btn-primary" data-auth="register">Create free account</button>
+        <button type="button" class="btn-ghost" data-auth="signin">Sign in</button>
+      </div>
+      <p class="trust">Free to use. We never sell your details. An agent only sees your details if you ask them to call you.</p>
     </div>
   </div>
   <div class="view-controls">
@@ -485,17 +497,6 @@
     </div>
   </div>
   <p class="help-pop" id="help-view" hidden style="margin-top:10px;"><strong>Comparison rate</strong> adds most fees and charges to the interest rate, so it's a fairer way to compare loans that have different fees.</p>
-  </div>
-  <div class="gate-overlay" id="gateOverlay" hidden>
-    <div class="gate-card">
-      <h2>Sign in to see today's rates</h2>
-      <p>Create a free account to compare live home loan rates from <span id="gateCount">Australia's leading</span> lenders, side by side.</p>
-      <div class="gate-actions">
-        <button type="button" class="btn-primary" data-auth="register">Create free account</button>
-        <button type="button" class="btn-ghost" data-auth="signin">Sign in</button>
-      </div>
-      <p class="trust">Free to use. We never sell your details. An agent only sees your details if you ask them to call you.</p>
-    </div>
   </div>
   </section>
 
@@ -595,7 +596,6 @@
     </label>
     <label class="check-row"><input type="checkbox" id="r-consent"> <span id="r-consent-text"></span></label>
     <label class="check-row"><input type="checkbox" id="r-save"> <span>Save my name and mobile to my profile</span></label>
-    <p class="muted">You can cancel this request from your profile until the agent has been in touch.</p>
     <p class="form-msg" id="requestMsg" role="status" hidden></p>
     <div class="dialog-actions">
       <button type="button" class="btn-ghost" id="requestCancel">Cancel</button>
@@ -741,9 +741,24 @@
     return `${PURPOSE_LABEL[purpose]}, ${REPAY_LABEL[repay]}, ${LVR_LABEL[lvr]}, showing ${mode === "rate" ? "interest rates" : "comparison rates"}`;
   }
 
-  // Signed-out visitors get the lender list with masked figures behind a blur, like a news-site paywall.
+  // Signed-out visitors get a sneak peek, like a news-site paywall: real rates for the first half of the lenders
+  // (the database caps how many), then a few locked rows fading out under the sign-in card.
+  const LOCKED_ROWS_SHOWN = 5;
+  let previewIds = new Set();
+
+  async function loadPreview(){
+    const n = Math.ceil(LENDERS.length / 2);
+    const { data, error } = await sb.rpc("rate_preview", { p_limit: n });
+    if (error) return error;
+    previewIds = new Set(LENDERS.slice(0, n).map(l => l.id));
+    BASE = {};
+    for (const r of data) (BASE[r.lender_id] ||= {})[r.product_key] = [Number(r.rate), Number(r.comparison_rate)];
+    RATES = buildRates();
+    return null;
+  }
+
   async function loadData(){
-    const err = await loadMarket(!!session);
+    const err = (await loadMarket(!!session)) || (!session && (await loadPreview()));
     if (err){
       loadState = "error";
       showStatus("We couldn't load the rates. Check your connection and try again.", true);
@@ -752,17 +767,25 @@
     }
     loadState = "ready";
     showStatus(profile && profile.suspended ? "Your account is suspended, so you can't contact agents. Contact the site if you think this is a mistake." : "");
-    $("gateCount").textContent = LENDERS.length;
+    $("gateText").firstChild.textContent = `You're seeing ${previewIds.size} of ${LENDERS.length} lenders. Create a free account to compare `;
+    $("gateCount").textContent = "all " + LENDERS.length;
     setGated(!session);
     renderTable();
   }
 
   function setGated(gated){
     $("ratesArea").classList.toggle("gated", gated);
-    $("gateContent").inert = gated;
-    $("gateContent").setAttribute("aria-hidden", gated ? "true" : "false");
     $("gateOverlay").hidden = !gated;
   }
+
+  // The fade starts exactly at the first locked row, so every real rate above it keeps full contrast.
+  function placeFade(){
+    const shell = document.querySelector(".table-shell");
+    const first = $("bodyRows").querySelector(".locked-row");
+    if (!first) return;
+    shell.style.setProperty("--fade-start", Math.max(0, first.getBoundingClientRect().top - shell.getBoundingClientRect().top) + "px");
+  }
+  window.addEventListener("resize", () => { if (!session) placeFade(); });
 
   function bestLender(productKey){
     const col = RATES[purpose][repay][lvr][productKey];
@@ -844,7 +867,8 @@
     const head = $("headRow");
     const body = $("bodyRows");
     $("ratesCaption").textContent = `Home loan interest rates by lender and product: ${viewDescription()}. `
-      + (session ? "Select a rate to see its history, monthly repayment and agent rates." : "Sign in to see the rates.");
+      + (session ? "Select a rate to see its history, monthly repayment and agent rates."
+        : `Showing ${previewIds.size} of ${LENDERS.length} lenders. Sign in to see them all.`);
 
     if (loadState !== "ready"){
       head.innerHTML = "";
@@ -861,9 +885,19 @@
     PRODUCTS.forEach(p => { bestByProduct[p.key] = bestLender(p.key); });
 
     body.innerHTML = "";
-    sortedLenders().forEach(lender => {
+    const all = sortedLenders();
+    const rows = session ? all
+      : all.filter(l => previewIds.has(l.id)).concat(all.filter(l => !previewIds.has(l.id)).slice(0, LOCKED_ROWS_SHOWN));
+    rows.forEach(lender => {
       const tr = document.createElement("tr");
       tr.setAttribute("role", "row");
+      const locked = !session && !previewIds.has(lender.id);
+      if (locked){
+        // Locked rows are decoration under the fade: hidden from screen readers and unreachable by keyboard.
+        tr.className = "locked-row";
+        tr.inert = true;
+        tr.setAttribute("aria-hidden", "true");
+      }
       const name = escapeHtml(lender.name);
       const href = safeUrl(lender.source_url);
       const nameHtml = href
@@ -877,8 +911,8 @@
       let rowHtml = `<th scope="row" role="rowheader"><div class="lender-cell">${nameHtml}${noteBtn}${noteText}</div></th>`;
       PRODUCTS.forEach(p => {
         const label = `data-label="${escapeHtml(p.label)}"`;
-        if (!session){
-          rowHtml += `<td role="cell" class="static" ${label}><span aria-hidden="true"><span class="rate">•.••%</span><span class="apr">Comp. rate •.••%</span></span><span class="visually-hidden">Sign in to see this rate</span></td>`;
+        if (locked){
+          rowHtml += `<td role="cell" class="static" ${label}><span class="rate">•.••%</span><span class="apr">Comp. rate •.••%</span></td>`;
           return;
         }
         const cell = RATES[purpose][repay][lvr][p.key][lender.id];
@@ -887,13 +921,19 @@
           return;
         }
         const [rate, apr] = cell;
+        if (!session){
+          // Sneak-peek rows: real figures, but history, repayments and agent rates need an account.
+          rowHtml += `<td role="cell" class="static" ${label}><span class="rate">${fmt(mode === "rate" ? rate : apr)}</span>`
+            + `<span class="apr">${mode === "rate" ? "Comp. rate" : "Rate"} ${fmt(mode === "rate" ? apr : rate)}</span></td>`;
+          return;
+        }
         const isBest = lender.id === bestByProduct[p.key];
         const shown = mode === "rate" ? rate : apr;
         const secondary = mode === "rate" ? apr : rate;
         const secondaryLabel = mode === "rate" ? "Comp. rate" : "Rate";
         const tag = agentTagText(agentRatesFor(lender.id, p.key, purpose, repay, lvr));
         rowHtml += `<td role="cell" class="rate-cell${isBest ? " best" : ""}" ${label} data-lender="${escapeHtml(lender.id)}" data-key="${escapeHtml(p.key)}">
-            <button type="button" class="rate-btn" aria-haspopup="dialog" aria-expanded="false" aria-controls="historyCard">
+            <button type="button" class="rate-btn" aria-haspopup="dialog" aria-expanded="false">
               <span class="visually-hidden">${name}, ${escapeHtml(p.label)}: </span>
               <span class="rate">${fmt(shown)}${isBest ? '<span class="best-badge" aria-hidden="true">BEST</span>' : ""}</span>
               <span class="apr">${secondaryLabel} ${fmt(secondary)}</span>
@@ -905,6 +945,7 @@
       tr.innerHTML = rowHtml;
       body.appendChild(tr);
     });
+    if (!session) placeFade();
   }
 
   // Lender notes open on click, tap or Enter (desktop); on phones the note is always shown.
@@ -1241,7 +1282,7 @@
       myRequested.add(a.id);
       if ($("r-save").checked) profile = { ...(profile || {}), full_name: name, mobile };
       $("requestDialog").close();
-      cardNotice = { text: `Sent. ${a.agent_name} will be in touch. You can cancel from your profile.`, kind: "ok" };
+      cardNotice = { text: `Sent. ${a.agent_name} will be in touch.`, kind: "ok" };
       if (activeCell){ renderCard(); $("historyCard").focus(); }
       announce(cardNotice.text);
     } catch (err){
@@ -1562,7 +1603,6 @@
           ${fmt(Number(r.rate))} on ${escapeHtml(lenderName(r.lender_id))} ${escapeHtml(productLabel(r.product_key))}
           <span class="muted">(${escapeHtml(loanTypeLabel(r.purpose, r.repay, r.lvr))})</span><br>
           <span class="muted">Sent ${shortDate(r.created_at.slice(0, 10))} · ${requestStatusText(r)}</span>
-          ${!r.cancelled_at && r.status === "new" ? `<div><button type="button" class="link-btn solo" data-cancel-request="${r.id}">Cancel request<span class="visually-hidden"> to ${escapeHtml(r.agent_name)}</span></button></div>` : ""}
         </li>`).join("")}</ul>`
       : `<p class="muted">You haven't requested any calls yet. Choose a rate with agent rates to contact an agent.</p>`;
   }
@@ -1585,16 +1625,6 @@
   }
 
   $("profileClose").addEventListener("click", () => $("profileDialog").close());
-
-  $("myRequests").addEventListener("click", async (e) => {
-    const btn = e.target.closest("[data-cancel-request]");
-    if (!btn || !confirm("Cancel this call request? The agent will be told.")) return;
-    btn.disabled = true;
-    const { error } = await sb.rpc("cancel_call_request", { p_id: Number(btn.dataset.cancelRequest) });
-    if (error){ btn.disabled = false; announce(friendlyError(error)); alert(friendlyError(error)); return; }
-    await renderRequests();
-    announce("Request cancelled.");
-  });
 
   $("detailsForm").addEventListener("submit", async (e) => {
     e.preventDefault();
