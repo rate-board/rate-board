@@ -18,6 +18,10 @@ Newest first. Each entry names the release or branch, what changed, and the requ
   product in the hub (`FEA-004`). Old root links with board filters, `#register`, `#join` or a password-reset
   token forward to the board. Docs: REQ 1.1, ARC 1.1, FLW 1.1, PG 1.2. At production merge, consider renaming the
   email footer "Find the Cheapest Home Loan" (it links to the site root, now the hub).
+- Home loans has no menu item of its own: the menu is All products, My money, Calculators on every page, and the
+  home loan page has the same "All products" breadcrumb as other products (`FEA-001`).
+- Open Banking lists that come back empty are retried at older versions (Westpac returns an empty list for a
+  version it does not support), restoring Westpac everyday and savings accounts (`CAP-03`).
 - Documentation set created: requirements, processes, architecture, flows, designs, configuration, credentials,
   codebase (docs v1.0). Design set 1.1 adds credit cards and the phone card layout.
 

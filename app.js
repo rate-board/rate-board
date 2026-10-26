@@ -9,7 +9,6 @@ const FUNCTIONS_JWT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 
 const NAV = [
   ["index.html", "All products"],
-  ["home-loans.html", "Home loans"],
   ["my-money.html", "My money"],
   ["calculators.html", "Calculators"],
 ];

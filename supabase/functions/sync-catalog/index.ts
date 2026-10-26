@@ -213,11 +213,25 @@ export const CDR_JOBS: Record<string, CdrSpec[]> = {
 // Returns the product details plus how many detail requests failed; a failure means the list is incomplete.
 export async function fetchCategory(baseUri: string, category: string, version: number): Promise<{ details: any[]; failed: number }> {
   const ids: string[] = [];
-  let url: string | undefined = `${baseUri}/cds-au/v1/banking/products?product-category=${category}&page-size=100`;
-  while (url) {
-    const page = await getJson(url, 6);
+  const first = `${baseUri}/cds-au/v1/banking/products?product-category=${category}&page-size=100`;
+  // Some publishers (Westpac) answer an unsupported list version with an empty list rather than an error, so an
+  // empty or refused first page is retried at older versions before the category counts as empty.
+  let listVersion = 6;
+  let page: any = null;
+  let lastError: unknown = null;
+  for (const v of [6, 5, 4, 3]) {
+    let got: any;
+    try { got = await getJson(first, v); } catch (e) { lastError = e; continue; }
+    const found = (got.data?.products ?? []).length > 0;
+    if (!page || found) { page = got; listVersion = v; }
+    if (found) break;
+  }
+  if (!page) throw lastError;
+  for (;;) {
     for (const p of page.data?.products ?? []) ids.push(p.productId);
-    url = page.links?.next || undefined;
+    const next = page.links?.next;
+    if (!next) break;
+    page = await getJson(next, listVersion);
   }
   const details = await mapLimit(ids, DETAIL_CONCURRENCY, async (id) => {
     try {
