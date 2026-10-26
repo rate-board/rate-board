@@ -71,8 +71,9 @@ function isBusiness(p: any): boolean {
     || /business|corporate|commercial|smsf|wholesale|agribusiness|farm/i.test(p.name ?? "");
 }
 
+// Older CDR versions put a fee's amount in `amount`; newer ones in `fixedAmount.amount`.
 function fee(p: any, test: (f: any) => boolean): number | null {
-  for (const f of p.fees ?? []) if (test(f)) { const a = money(f.amount); if (a !== null) return a; }
+  for (const f of p.fees ?? []) if (test(f)) { const a = money(f.amount ?? f.fixedAmount?.amount); if (a !== null) return a; }
   return null;
 }
 
@@ -84,7 +85,12 @@ function link(p: any): string | null {
 // --- Open Banking categories -----------------------------------------------------------------------------
 
 function cardRow(p: any): Partial<Row> | null {
+  // Some banks file loans, packages and accounts under cards; keep only products that look like a card.
   const rates = p.lendingRates ?? [];
+  const looksLikeCard = /card|visa|mastercard|amex/i.test(p.name ?? "")
+    || rates.some((r: any) => r.lendingRateType === "PURCHASE")
+    || (p.features ?? []).some((f: any) => f.featureType === "INTEREST_FREE");
+  if (!looksLikeCard || /loan|mortgage|line of credit|overdraft|offset|package/i.test(p.name ?? "") && !/card/i.test(p.name ?? "")) return null;
   const purchase = min(rates.filter((r: any) => r.lendingRateType === "PURCHASE").map((r: any) => percent(r.rate)))
     ?? min(rates.filter((r: any) => ["VARIABLE", "FIXED"].includes(r.lendingRateType)).map((r: any) => percent(r.rate)));
   const bt = rates.filter((r: any) => r.lendingRateType === "BALANCE_TRANSFER")
