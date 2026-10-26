@@ -1,4 +1,4 @@
-// Shared by the board (index.html) and the agent portal (agent.html): the Supabase client, rate data,
+// Shared by the board (home-loans.html) and the agent portal (agent.html): the Supabase client, rate data,
 // the rate-history chart and the agent-rate list.
 
 const SUPABASE_URL = "https://fwjiofgwolontlglwrog.supabase.co";

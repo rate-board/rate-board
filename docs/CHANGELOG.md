@@ -14,6 +14,10 @@ Newest first. Each entry names the release or branch, what changed, and the requ
 - Fixed card fees (newer Open Banking versions), dropped non-card products filed as cards (`BR-009`), and stopped a
   failed or empty fetch from retiring products (`BR-005`).
 - Comparison rows become labelled cards on phones.
+- The product hub is now the home page (`index.html`); the home loan board moved to `home-loans.html` and is one
+  product in the hub (`FEA-004`). Old root links with board filters, `#register`, `#join` or a password-reset
+  token forward to the board. Docs: REQ 1.1, ARC 1.1, FLW 1.1, PG 1.2. At production merge, consider renaming the
+  email footer "Find the Cheapest Home Loan" (it links to the site root, now the hub).
 - Documentation set created: requirements, processes, architecture, flows, designs, configuration, credentials,
   codebase (docs v1.0). Design set 1.1 adds credit cards and the phone card layout.
 

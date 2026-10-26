@@ -2,7 +2,7 @@
 
 | Document | ARC |
 | --- | --- |
-| Version | 1.0 |
+| Version | 1.1 |
 | Last updated | 26 Oct 2026 |
 
 A static website on GitHub Pages talks directly to Supabase (Postgres with row-level security, Auth and edge
@@ -51,8 +51,8 @@ flowchart LR
 
 | ID | Component | Technology | Responsibility | Code |
 | --- | --- | --- | --- | --- |
-| `ARC-02.1` | Home loan board | Static HTML/JS | Rate board, agent rates, sign-in, profile | `index.html`, `common.js`, `common.css` |
-| `ARC-02.2` | Super-app pages | Static HTML/JS | Product hub, comparisons, My money, calculators | `products.html`, `compare.html`, `my-money.html`, `calculators.html`, `app.js`, `catalog.js`, `app.css` |
+| `ARC-02.1` | Home loan board | Static HTML/JS | Rate board, agent rates, sign-in, profile | `home-loans.html`, `common.js`, `common.css` |
+| `ARC-02.2` | Super-app pages | Static HTML/JS | Product hub (home page), comparisons, My money, calculators | `index.html`, `compare.html`, `my-money.html`, `calculators.html`, `app.js`, `catalog.js`, `app.css` |
 | `ARC-02.3` | Agent portal | Static HTML/JS | Agent sign-up, rates, leads | `agent.html` |
 | `ARC-02.4` | Admin portal | Local HTML file (private repo) | Approve agents, view leads, operations | `rate-board-admin/index.html` |
 | `ARC-02.5` | `sync-rates` | Deno edge function | Home loan rates (Open Banking + scrapers), RBA cash rate | `supabase/functions/sync-rates` |

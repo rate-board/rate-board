@@ -2,9 +2,9 @@
 
 | Path | What it is |
 | --- | --- |
-| `index.html` | Home loan rate board, sign-in, account profile |
+| `index.html` | Home page: the product hub, every product by section. Forwards old board links to `home-loans.html` |
+| `home-loans.html` | Home loan rate board (Find the Cheapest Home Loan), sign-in, account profile |
 | `agent.html` | Mortgage agent portal |
-| `products.html` | Product hub: every product by section |
 | `compare.html` | One comparison page for every category (`?c=<category>`) |
 | `my-money.html` | Household, assets, holdings, savings, reminders, Beat Inflation check, Inflation Points |
 | `calculators.html` | Ten calculators |

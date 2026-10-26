@@ -1,4 +1,4 @@
-/* Shared by the board (index.html), the agent portal (agent.html) and the info pages.
+/* Shared by the board (home-loans.html), the agent portal (agent.html) and the info pages.
    Colours meet WCAG 2.2 AAA: 7:1 for text, 3:1 for control borders, on every background they're used on. */
 :root{
   --bg:#F6F7F9;

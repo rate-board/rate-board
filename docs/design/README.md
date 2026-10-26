@@ -2,7 +2,7 @@
 
 | Document | PG |
 | --- | --- |
-| Version | 1.1 |
+| Version | 1.2 |
 | Captured | 26 Oct 2026, from the test site |
 
 One screenshot set per page, captured from the running site (the design is the built page). Desktop is 1280 px wide;
@@ -14,8 +14,8 @@ themes) and `app.css`. Fonts: Fraunces (headings), Inter (text), IBM Plex Mono (
 
 | ID | Page | URL | Desktop | Mobile |
 | --- | --- | --- | --- | --- |
-| `PG-01` | Home loan rate board | `index.html` | [view](PG-01-home-loans-desktop.jpg) | Existing card layout (see production) |
-| `PG-02` | Product hub | `products.html` | [view](PG-02-product-hub-desktop.jpg) | [view](PG-02-product-hub-mobile.jpg) |
+| `PG-01` | Home loan rate board | `home-loans.html` | [view](PG-01-home-loans-desktop.jpg) | Existing card layout (see production) |
+| `PG-02` | Product hub (home page) | `index.html` | [view](PG-02-product-hub-desktop.jpg) | [view](PG-02-product-hub-mobile.jpg) |
 | `PG-03a` | Comparison table (savings) | `compare.html?c=savings` | [view](PG-03a-savings-desktop.jpg) | [view](PG-03a-savings-mobile.jpg) |
 | `PG-03b` | Comparison table (credit cards) | `compare.html?c=credit_cards` | [view](PG-03b-credit-cards-desktop.jpg) | Same card layout as PG-03a |
 | `PG-03e` | Energy plans for a postcode | `compare.html?c=energy` | [view](PG-03e-energy-desktop.jpg) | — |
@@ -34,5 +34,6 @@ themes) and `app.css`. Fonts: Fraunces (headings), Inter (text), IBM Plex Mono (
 
 ## History
 
+- 1.2: The product hub is the home page; home loans moved to `home-loans.html` (screens unchanged apart from the nav).
 - 1.1: PG-03a mobile recaptured with the phone card layout; PG-03b credit cards added.
 - 1.0: First capture set.

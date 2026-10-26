@@ -12,8 +12,8 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500..600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
 <script src="common.js?v=5"></script>
-<script src="app.js?v=2"></script>
-<script src="catalog.js?v=3"></script>
+<script src="app.js?v=3"></script>
+<script src="catalog.js?v=4"></script>
 
 <a class="skip-link" href="#main">Skip to My money</a>
 <nav class="site-nav" id="siteNav" aria-label="Main"></nav>
@@ -31,7 +31,7 @@
     <section class="card" id="signedOut" hidden>
       <h2>Sign in to see your money</h2>
       <p class="muted">Your profile is private: only you can see it, and we never sell it or share it without asking.</p>
-      <div class="row-actions"><button type="button" class="btn-primary" onclick="openSignin()">Sign in</button><a class="btn-ghost" href="index.html#register">Create free account</a></div>
+      <div class="row-actions"><button type="button" class="btn-primary" onclick="openSignin()">Sign in</button><a class="btn-ghost" href="home-loans.html#register">Create free account</a></div>
     </section>
 
     <div id="signedIn" class="stack" hidden>
@@ -443,7 +443,7 @@
   function renderQuotes(rows){
     $("quoteList").innerHTML = rows.length
       ? `<ul>${rows.map(q => `<li>${escapeHtml(categoryTitle(q.category))} · sent ${shortDate(q.created_at.slice(0, 10))} · ${q.status === "new" ? "waiting for a licensed partner" : escapeHtml(q.status)}</li>`).join("")}</ul>`
-      : `<p class="muted">None yet. Request insurance quotes from <a href="products.html#h-insurance">Insurance</a>.</p>`;
+      : `<p class="muted">None yet. Request insurance quotes from <a href="index.html#h-insurance">Insurance</a>.</p>`;
   }
 
   // --- Inflation Points --------------------------------------------------------------------------------------------

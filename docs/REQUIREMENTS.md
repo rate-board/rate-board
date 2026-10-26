@@ -2,7 +2,7 @@
 
 | Document | REQ |
 | --- | --- |
-| Version | 1.0 |
+| Version | 1.1 |
 | Status | Approved (all decisions approved 26 Oct 2026; all phases being built as P1) |
 | Owner | Varun (product owner) |
 | Last updated | 26 Oct 2026 |
@@ -32,7 +32,7 @@ tag vocabulary.
 | `PRD-002` | My money | Profile, assets, holdings | Customer-entered | — | `#status/test #source/user #licence/none` |
 | `PRD-003` | Inflation Points | Loyalty ledger | Ledger + ABS CPI | Redemption requests | `#status/test #source/abs #licence/none` (legal check open) |
 | `PRD-004` | Calculators | 10 calculators | Customer inputs | — | `#status/test #licence/none` |
-| `PRD-005` | Product hub | Index of all products | Catalogue config | — | `#status/test` |
+| `PRD-005` | Product hub | Home page: index of all products | Catalogue config | — | `#status/test` |
 | `PRD-101` | Home loans | Rate board | Open Banking + 3 scraped lenders | Go to lender; request an agent call | `#status/live #source/cdr #source/scrape #licence/none` |
 | `PRD-102` | Personal loans | Comparison table | Open Banking | Go to lender | `#status/test #source/cdr #licence/acl` (referral now) |
 | `PRD-103` | Car loans | Comparison table | Open Banking | Go to lender; broker (planned) | `#status/test #source/cdr #licence/acl` |
@@ -61,7 +61,7 @@ tag vocabulary.
 
 | ID | Capability | Used by | Implemented in | Tags |
 | --- | --- | --- | --- | --- |
-| `CAP-01` | Accounts and sign-in (email link, password, admin two-factor) | All | Supabase Auth; `index.html`, `app.js` | `#status/live` |
+| `CAP-01` | Accounts and sign-in (email link, password, admin two-factor) | All | Supabase Auth; `home-loans.html`, `app.js` | `#status/live` |
 | `CAP-02` | Comparison engine: config-driven table, inputs, filters, sortable columns, "I have this" | PRD-102–206, 402–404, 501–503 | `catalog.js`, `compare.html` | `#status/test #area/ui` |
 | `CAP-03` | Open Banking product sync | PRD-101–104, 201–206 | `sync-rates`, `sync-catalog` (jobs `banking`, `loans`) | `#status/test #source/cdr #area/fn` |
 | `CAP-04` | Energy plan sync and bill estimate | PRD-401 | `sync-catalog` (`energy1`, `energy2`), `catalog-live` (`energy`) | `#status/test #source/aer #area/fn` |
@@ -84,9 +84,10 @@ tag vocabulary.
 
 | ID | Feature | Product | Capability | Tags |
 | --- | --- | --- | --- | --- |
-| `FEA-001` | Site navigation: Home loans, All products, My money, Calculators | PRD-005 | — | `#status/test #area/ui` |
+| `FEA-001` | Site navigation: All products, Home loans, My money, Calculators | PRD-005 | — | `#status/test #area/ui` |
 | `FEA-002` | Sign in from any page (password or email link) | PRD-001 | CAP-01 | `#status/test` |
 | `FEA-003` | Product hub grouped by section with Live, Quotes and Sample badges | PRD-005 | CAP-02 | `#status/test` |
+| `FEA-004` | The product hub is the home page (site root); home loans is one product at `home-loans.html`. Older root links with board filters, `#register`, `#join` or a password-reset token forward to the board | PRD-005, PRD-101 | — | `#status/test #area/ui` |
 | `FEA-010` | Household: postcode, income band, adults, children, ages, pets | PRD-002 | CAP-07 | `#status/test` |
 | `FEA-011` | Add, edit and delete assets of 8 types with type-specific details | PRD-002 | CAP-07 | `#status/test` |
 | `FEA-012` | Add products held, linked to an asset, with rate, amount and renewal date | PRD-002 | CAP-08 | `#status/test` |

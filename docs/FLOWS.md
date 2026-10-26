@@ -2,7 +2,7 @@
 
 | Document | FLW |
 | --- | --- |
-| Version | 1.0 |
+| Version | 1.1 |
 | Last updated | 26 Oct 2026 |
 
 How customers, agents and the admin move through the product. Screens are referenced by their page ID in
@@ -12,7 +12,7 @@ How customers, agents and the admin move through the product. Screens are refere
 
 ```mermaid
 flowchart TD
-  a[Lands on product hub PG-02<br/>or home loan board PG-01] --> b{Signed in?}
+  a[Lands on the home page: product hub PG-02<br/>or goes to home loans PG-01] --> b{Signed in?}
   b -- No --> c[Browses any comparison PG-03<br/>no sign-in needed]
   c --> d[Clicks 'I have this', saves a quote<br/>or opens My money]
   d --> e[Sign-in dialog<br/>password or email link]

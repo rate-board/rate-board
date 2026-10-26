@@ -1,4 +1,4 @@
-// Shared by the super-app pages (products, compare, my money, calculators): site navigation, the account bar
+// Shared by the super-app pages (product hub, compare, my money, calculators): site navigation, the account bar
 // and sign-in dialog, number formatting and Inflation Points. Loads after common.js.
 
 let SESSION = null;
@@ -8,8 +8,8 @@ let SESSION = null;
 const FUNCTIONS_JWT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3amlvZmd3b2xvbnRsZ2x3cm9nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI2MjAzNTYsImV4cCI6MjEwODE5NjM1Nn0.RBMU-fcW-Lm7nQQb6rNXFQypls8lqNAh82ukwtZiVxc";
 
 const NAV = [
-  ["index.html", "Home loans"],
-  ["products.html", "All products"],
+  ["index.html", "All products"],
+  ["home-loans.html", "Home loans"],
   ["my-money.html", "My money"],
   ["calculators.html", "Calculators"],
 ];
@@ -18,7 +18,7 @@ function renderSiteNav(){
   const nav = document.getElementById("siteNav");
   if (!nav) return;
   const here = location.pathname.split("/").pop() || "index.html";
-  nav.innerHTML = `<a class="brand" href="products.html">BeatInflation</a>` + NAV.map(([href, label]) =>
+  nav.innerHTML = `<a class="brand" href="index.html">BeatInflation</a>` + NAV.map(([href, label]) =>
     `<a href="${href}"${href === here ? ' aria-current="page"' : ""}>${label}</a>`).join("");
 }
 
@@ -50,7 +50,7 @@ function ensureSigninDialog(){
   dlg.innerHTML = `
     <form id="signinForm" novalidate>
       <h2 id="signinTitle">Sign in</h2>
-      <p class="modal-sub">One account for every product. New here? <a href="index.html#register">Create a free account</a>.</p>
+      <p class="modal-sub">One account for every product. New here? <a href="home-loans.html#register">Create a free account</a>.</p>
       <label class="field" for="si-email">Email<input id="si-email" type="email" autocomplete="email" required></label>
       <label class="field" for="si-pw">Password<input id="si-pw" type="password" autocomplete="current-password"></label>
       <p class="form-msg" id="signinMsg" role="alert"></p>
@@ -95,7 +95,7 @@ function renderAccountBar(){
     const b = document.createElement("button");
     b.type = "button"; b.className = "btn-ghost"; b.textContent = "Sign in"; b.onclick = openSignin;
     const r = document.createElement("a");
-    r.className = "btn-primary"; r.href = "index.html#register"; r.textContent = "Create account";
+    r.className = "btn-primary"; r.href = "home-loans.html#register"; r.textContent = "Create account";
     bar.append(b, r);
     return;
   }

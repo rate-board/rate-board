@@ -71,7 +71,7 @@ const RENEWAL = { id: "renewal", label: "Your renewal premium, if you have one (
 const CURRENT = { id: "current", label: "Current insurer (optional)", type: "text" };
 
 const CATEGORIES = {
-  home_loans: { title: "Home loans", href: "index.html", badge: "Live" },
+  home_loans: { title: "Home loans", href: "home-loans.html", badge: "Live" },
 
   personal_loans: loanCategory("Personal loans", 20000, {
     tools: [["calculators.html#debt", "Debt consolidation calculator"]],
