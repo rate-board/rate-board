@@ -107,18 +107,21 @@ function renderAccountBar(){
   bar.append(who, out);
 }
 
-// Pages define onSession(session) to load their data; it runs once per user change.
+// Pages define onSession(session) to load their data; it runs once per user change. The first auth event can
+// arrive before the page's own script has run, so delivery waits for the document to finish parsing.
 let lastSessionUser;
+function deliverSession(){
+  renderAccountBar();
+  const uid = SESSION ? SESSION.user.id : null;
+  if (uid !== lastSessionUser){
+    lastSessionUser = uid;
+    if (typeof window.onSession === "function") window.onSession(SESSION);
+  }
+}
 sb.auth.onAuthStateChange((_event, session) => {
   SESSION = session;
-  const uid = session ? session.user.id : null;
-  setTimeout(() => {
-    renderAccountBar();
-    if (uid !== lastSessionUser){
-      lastSessionUser = uid;
-      if (typeof window.onSession === "function") window.onSession(session);
-    }
-  }, 0);
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => setTimeout(deliverSession, 0), { once: true });
+  else setTimeout(deliverSession, 0);
 });
 
 // --- Inflation Points ---------------------------------------------------------------------------------------
