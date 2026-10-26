@@ -3,7 +3,7 @@
 // caller's token itself.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
-const SITE = "https://beatinflation.com.au/";
+const SITE = "https://www.beatinflation.com.au/";
 const EMAIL_MAX_AGE_HOURS = 72;
 
 const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
