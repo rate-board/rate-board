@@ -84,7 +84,7 @@ tag vocabulary.
 
 | ID | Feature | Product | Capability | Tags |
 | --- | --- | --- | --- | --- |
-| `FEA-001` | Site navigation: All products, My money, Calculators. No product (home loans included) has its own menu item; every product is reached from the hub | PRD-005 | — | `#status/test #area/ui` |
+| `FEA-001` | Site navigation on every page, the home loan board included: BeatInflation (home), a Products menu listing all 29 products by section with the current one marked, My money, Calculators. No product has its own top-level item | PRD-005 | — | `#status/test #area/ui` |
 | `FEA-002` | Sign in from any page (password or email link) | PRD-001 | CAP-01 | `#status/test` |
 | `FEA-003` | Product hub grouped by section with Live, Quotes and Sample badges | PRD-005 | CAP-02 | `#status/test` |
 | `FEA-004` | The product hub is the home page (site root); home loans is one product at `home-loans.html`. Older root links with board filters, `#register`, `#join` or a password-reset token forward to the board | PRD-005, PRD-101 | — | `#status/test #area/ui` |

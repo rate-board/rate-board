@@ -1,4 +1,4 @@
-// Shared by the super-app pages (product hub, compare, my money, calculators): site navigation, the account bar
+// Shared by the super-app pages (product hub, compare, my money, calculators): the account bar
 // and sign-in dialog, number formatting and Inflation Points. Loads after common.js.
 
 let SESSION = null;
@@ -6,20 +6,6 @@ let SESSION = null;
 // The project's public anon key, a JWT. Edge functions keep "Verify JWT" on, and this key (or a signed-in
 // user's token) satisfies it; like the publishable key it is safe in browser code.
 const FUNCTIONS_JWT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3amlvZmd3b2xvbnRsZ2x3cm9nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI2MjAzNTYsImV4cCI6MjEwODE5NjM1Nn0.RBMU-fcW-Lm7nQQb6rNXFQypls8lqNAh82ukwtZiVxc";
-
-const NAV = [
-  ["index.html", "All products"],
-  ["my-money.html", "My money"],
-  ["calculators.html", "Calculators"],
-];
-
-function renderSiteNav(){
-  const nav = document.getElementById("siteNav");
-  if (!nav) return;
-  const here = location.pathname.split("/").pop() || "index.html";
-  nav.innerHTML = `<a class="brand" href="index.html">BeatInflation</a>` + NAV.map(([href, label]) =>
-    `<a href="${href}"${href === here ? ' aria-current="page"' : ""}>${label}</a>`).join("");
-}
 
 const pct = (n, dp = 2) => n === null || n === undefined || !Number.isFinite(Number(n)) ? "—" : Number(n).toFixed(dp) + "%";
 const money = (n, dp = 0) => n === null || n === undefined || !Number.isFinite(Number(n)) ? "—"
@@ -142,4 +128,4 @@ async function saveHolding(h){
   return true;
 }
 
-document.addEventListener("DOMContentLoaded", () => { renderSiteNav(); renderAccountBar(); });
+document.addEventListener("DOMContentLoaded", () => renderAccountBar());
