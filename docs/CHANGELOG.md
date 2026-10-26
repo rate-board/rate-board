@@ -11,6 +11,9 @@ Newest first. Each entry names the release or branch, what changed, and the requ
 - Added database tables for the catalogue, household, assets, holdings, quote requests and points
   (migrations `20261029000000`–`20261029020000`).
 - Sample data for internet, mobile, business NBN, share trading, ETFs and super (`BR-004`).
+- Fixed card fees (newer Open Banking versions), dropped non-card products filed as cards (`BR-009`), and stopped a
+  failed or empty fetch from retiring products (`BR-005`).
+- Comparison rows become labelled cards on phones.
 - Documentation set created: requirements, processes, architecture, flows, designs, configuration, credentials,
   codebase (docs v1.0).
 

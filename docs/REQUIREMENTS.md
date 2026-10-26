@@ -127,7 +127,7 @@ tag vocabulary.
 | `BR-002` | Sponsored products, if ever added, sit in a labelled box and never change the order of the neutral table. | All tables | `#status/planned` |
 | `BR-003` | Every table states how many products and providers it compares and that it doesn't cover the whole market. | All tables | `#status/test` |
 | `BR-004` | Sample data is labelled as unchecked on every page that shows it. | PRD-402–404, 501–503 | `#status/test` |
-| `BR-005` | Open Banking rows are retired (not deleted) when a bank stops publishing them. | CAP-03 | `#status/test` |
+| `BR-005` | Open Banking rows are retired (not deleted) when a bank stops publishing them. Nothing is retired from a category whose fetch had a failed request or came back empty that night. | CAP-03 | `#status/test` |
 | `BR-006` | A sync job runs at most once every 30 minutes, whoever triggers it. | CAP-03, CAP-04, CAP-11 | `#status/test` |
 | `BR-007` | Savings: bonus rates are margins over the base rate; intro rates are margins over the best ongoing rate; if the sum exceeds 9%, the bank published a total. | PRD-203 | `#status/test` |
 | `BR-008` | Products are business products when the bank's eligibility says BUSINESS or the name says business, corporate, commercial, SMSF, wholesale or farm. | PRD-201–206 | `#status/test` |

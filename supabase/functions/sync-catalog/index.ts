@@ -196,19 +196,22 @@ function loanRow(p: any, business: boolean): Partial<Row> | null {
   };
 }
 
-export const CDR_JOBS: Record<string, { category: string; version: number; map: (p: any) => Partial<Row> | null }[]> = {
+// outputs: the catalogue categories a CDR category can produce, so a failed fetch protects all of them.
+type CdrSpec = { category: string; version: number; outputs: string[]; map: (p: any) => Partial<Row> | null };
+export const CDR_JOBS: Record<string, CdrSpec[]> = {
   banking: [
-    { category: "CRED_AND_CHRG_CARDS", version: 7, map: cardRow },
-    { category: "TRANS_AND_SAVINGS_ACCOUNTS", version: 7, map: transAndSavingsRow },
-    { category: "TERM_DEPOSITS", version: 7, map: termDepositRow },
+    { category: "CRED_AND_CHRG_CARDS", version: 7, outputs: ["credit_cards"], map: cardRow },
+    { category: "TRANS_AND_SAVINGS_ACCOUNTS", version: 7, outputs: ["bank_accounts", "savings", "business_accounts"], map: transAndSavingsRow },
+    { category: "TERM_DEPOSITS", version: 7, outputs: ["term_deposits", "business_accounts"], map: termDepositRow },
   ],
   loans: [
-    { category: "PERS_LOANS", version: 7, map: (p) => loanRow(p, false) },
-    { category: "BUSINESS_LOANS", version: 7, map: (p) => loanRow(p, true) },
+    { category: "PERS_LOANS", version: 7, outputs: ["personal_loans", "car_loans", "business_loans"], map: (p) => loanRow(p, false) },
+    { category: "BUSINESS_LOANS", version: 7, outputs: ["business_loans"], map: (p) => loanRow(p, true) },
   ],
 };
 
-export async function fetchCategory(baseUri: string, category: string, version: number): Promise<any[]> {
+// Returns the product details plus how many detail requests failed; a failure means the list is incomplete.
+export async function fetchCategory(baseUri: string, category: string, version: number): Promise<{ details: any[]; failed: number }> {
   const ids: string[] = [];
   let url: string | undefined = `${baseUri}/cds-au/v1/banking/products?product-category=${category}&page-size=100`;
   while (url) {
@@ -223,7 +226,8 @@ export async function fetchCategory(baseUri: string, category: string, version: 
       return null;
     }
   });
-  return details.filter(Boolean);
+  const ok = details.filter(Boolean);
+  return { details: ok, failed: details.length - ok.length };
 }
 
 // Writes one provider's rows and retires that provider's rows in the same categories that weren't seen.
@@ -256,8 +260,14 @@ async function syncCdr(db: Db, job: string) {
   return mapLimit(lenders ?? [], LENDER_CONCURRENCY, async (lender) => {
     try {
       const rows: Row[] = [];
+      // A product missing because a request failed must not be retired as if the bank had withdrawn it. Banks'
+      // APIs also return an empty list now and then (Westpac, 26 Oct 2026), so an empty category retires nothing.
+      const incomplete = new Set<string>();
+      let failedDetails = 0;
       for (const spec of CDR_JOBS[job]) {
-        for (const p of await fetchCategory(lender.cdr_base_uri, spec.category, spec.version)) {
+        const { details, failed } = await fetchCategory(lender.cdr_base_uri, spec.category, spec.version);
+        if (failed || details.length === 0){ failedDetails += failed; spec.outputs.forEach(c => incomplete.add(c)); }
+        for (const p of details) {
           const mapped = spec.map(p);
           if (!mapped) continue;
           rows.push({
@@ -267,10 +277,10 @@ async function syncCdr(db: Db, job: string) {
           });
         }
       }
-      const retired = await writeRows(db, lender.name, OUTPUT_CATEGORIES[job], "cdr", rows);
+      const retired = await writeRows(db, lender.name, OUTPUT_CATEGORIES[job].filter(c => !incomplete.has(c)), "cdr", rows);
       const counts: Record<string, number> = {};
       for (const r of rows) counts[r.category] = (counts[r.category] ?? 0) + 1;
-      return { provider: lender.id, ok: true, counts, retired };
+      return { provider: lender.id, ok: true, counts, retired, ...(failedDetails ? { failedDetails, notRetired: [...incomplete] } : {}) };
     } catch (e) {
       return { provider: lender.id, ok: false, error: e instanceof Error ? e.message : String(e) };
     }
