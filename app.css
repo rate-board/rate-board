@@ -49,17 +49,18 @@
 table.compare{width:100%;border-collapse:collapse;font-size:14px;}
 table.compare caption{text-align:left;padding:12px 14px 0;font-size:13px;color:var(--ink-muted);}
 table.compare th, table.compare td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;}
-table.compare thead th{font-size:13px;color:var(--ink-muted);white-space:nowrap;}
+table.compare thead th, table.compare thead th.num{font-family:'Inter',sans-serif;font-size:13px;color:var(--ink-muted);white-space:nowrap;}
 table.compare th button{
   font:inherit;font-weight:600;color:inherit;background:none;border:none;padding:0;cursor:pointer;min-height:32px;
   text-decoration:underline;text-underline-offset:2px;
 }
 table.compare td.num, table.compare th.num{text-align:right;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;white-space:nowrap;}
-table.compare tbody tr:first-child td{background:var(--accent-soft);}
+table.compare tbody tr:first-child :is(th, td){background:var(--accent-soft);}
 table.compare .prov{font-weight:600;color:var(--ink);}
 table.compare .sub{display:block;font-size:13px;color:var(--ink-muted);font-weight:400;}
-table.compare .acts{white-space:nowrap;text-align:right;}
-table.compare .acts a, table.compare .acts button{margin-left:4px;}
+/* Actions stack in a narrow column so wide tables (energy) still fit without scrolling sideways. */
+table.compare .acts{text-align:right;width:1%;}
+table.compare .acts a, table.compare .acts button{display:flex;width:100%;margin:0 0 6px;white-space:nowrap;}
 .empty{padding:22px;text-align:center;color:var(--ink-muted);}
 .count-line{margin:8px 2px 0;font-size:13px;color:var(--ink-muted);}
 
