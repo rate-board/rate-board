@@ -2,7 +2,7 @@
 
 | Document | REQ |
 | --- | --- |
-| Version | 1.1 |
+| Version | 1.2 |
 | Status | Approved (all decisions approved 26 Oct 2026; all phases being built as P1) |
 | Owner | Varun (product owner) |
 | Last updated | 26 Oct 2026 |
@@ -88,6 +88,8 @@ tag vocabulary.
 | `FEA-002` | Sign in from any page (password or email link) | PRD-001 | CAP-01 | `#status/test` |
 | `FEA-003` | Product hub grouped by section with Live, Quotes and Sample badges | PRD-005 | CAP-02 | `#status/test` |
 | `FEA-004` | The product hub is the home page (site root); home loans is one product at `home-loans.html`. Older root links with board filters, `#register`, `#join` or a password-reset token forward to the board | PRD-005, PRD-101 | — | `#status/test #area/ui` |
+| `FEA-005` | "Boring by design" look on every page: one typeface (Inter, tabular figures), flat panels, 4 px corners, underlined links, a yellow-and-black focus ring, and the tagline "Boring by design. Better for your money." Patterns follow government design systems without imitating any government site | All | — | `#status/test #area/ui` |
+| `FEA-006` | Usage analytics with Microsoft Clarity (heatmaps, masked session replays) to find where people get stuck. Off until a project ID is set; Strict masking; account areas, My money, the agent portal and dialogs are masked in the page too; disclosed in the privacy policy | All | — | `#status/planned #area/ui #vendor/clarity` |
 | `FEA-010` | Household: postcode, income band, adults, children, ages, pets | PRD-002 | CAP-07 | `#status/test` |
 | `FEA-011` | Add, edit and delete assets of 8 types with type-specific details | PRD-002 | CAP-07 | `#status/test` |
 | `FEA-012` | Add products held, linked to an asset, with rate, amount and renewal date | PRD-002 | CAP-08 | `#status/test` |

@@ -10,7 +10,9 @@ mobile is 375 px. Screenshots show the first screen of each page. Recapture a pa
 bump this file's version.
 
 **Design system:** colours, type and controls come from `common.css` (WCAG 2.2 AAA contrast in light and dark
-themes) and `app.css`. Fonts: Fraunces (headings), Inter (text), IBM Plex Mono (figures).
+themes) and `app.css`. "Boring by design" (`FEA-005`): one typeface, Inter, with tabular figures; flat panels
+with no shadows; 4 px corners (`--radius`); underlined links; primary buttons with a darker bottom edge; a 3 px
+yellow focus ring inside a near-black halo (`--focus`, `--focus-halo`).
 
 | ID | Page | URL | Desktop | Mobile |
 | --- | --- | --- | --- | --- |

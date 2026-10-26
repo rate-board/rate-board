@@ -7,14 +7,14 @@
 <script>
   try { const t = localStorage.getItem("rb.theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (_) {}
 </script>
-<link rel="stylesheet" href="common.css?v=5">
-<link rel="stylesheet" href="app.css?v=5">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500..600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="common.css?v=6">
+<link rel="stylesheet" href="app.css?v=6">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
-<script src="common.js?v=5"></script>
-<script src="app.js?v=5"></script>
+<script src="common.js?v=6"></script>
+<script src="app.js?v=6"></script>
 <script src="catalog.js?v=4"></script>
-<script src="nav.js?v=1"></script>
+<script src="nav.js?v=2"></script>
 
 <a class="skip-link" href="#main">Skip to My money</a>
 <nav class="site-nav" id="siteNav" aria-label="Main"></nav>
@@ -24,11 +24,11 @@
       <h1>My money</h1>
       <p class="lede">Your household, what you own and the products attached to each, so we can show where you'd save and remind you before renewals.</p>
     </div>
-    <div class="header-right"><div class="account" id="accountBar"></div></div>
+    <div class="header-right"><div class="account" id="accountBar" data-clarity-mask="true"></div></div>
   </header>
   <div class="visually-hidden" id="srStatus" role="status" aria-live="polite"></div>
 
-  <main id="main" tabindex="-1" class="stack">
+  <main id="main" tabindex="-1" class="stack" data-clarity-mask="true">
     <section class="card" id="signedOut" hidden>
       <h2>Sign in to see your money</h2>
       <p class="muted">Your profile is private: only you can see it, and we never sell it or share it without asking.</p>
@@ -113,7 +113,7 @@
   </main>
 
   <footer>
-    <span>BeatInflation · general information, not advice.</span>
+    <span>BeatInflation · Boring by design · general information, not advice.</span>
     <nav aria-label="Site"><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="accessibility.html">Accessibility</a></nav>
   </footer>
 </div>

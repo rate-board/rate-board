@@ -31,6 +31,7 @@ function ensureSigninDialog(){
   const dlg = document.createElement("dialog");
   dlg.id = "signinDialog";
   dlg.className = "modal";
+  dlg.dataset.clarityMask = "true";
   dlg.setAttribute("aria-labelledby", "signinTitle");
   dlg.innerHTML = `
     <form id="signinForm" novalidate>

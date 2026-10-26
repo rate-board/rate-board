@@ -2,7 +2,7 @@
 
 | Document | CFG |
 | --- | --- |
-| Version | 1.0 |
+| Version | 1.1 |
 | Last updated | 26 Oct 2026 |
 
 Every setting outside the code that the system depends on. Change a setting and this file in the same commit.
@@ -88,4 +88,14 @@ Each catalogue job runs at most once every 30 minutes (BR-006).
 ## CFG-08 Cache-busting versions
 
 Static files are referenced with `?v=N`. Bump N in every page that includes a file when the file changes:
-`common.js?v=5`, `common.css?v=5`, `app.js?v=2`, `catalog.js?v=3`, `app.css?v=4`.
+`common.js?v=6`, `common.css?v=6`, `app.js?v=6`, `catalog.js?v=4`, `app.css?v=6`, `nav.js?v=2`.
+
+## CFG-09 Analytics (Microsoft Clarity)
+
+| Setting | Value | Where |
+| --- | --- | --- |
+| Project ID | Not set yet (analytics off) | `CLARITY_PROJECT_ID` in `common.js` |
+| Masking mode | Strict | Clarity dashboard → Settings → Masking |
+| Extra masking | `data-clarity-mask` on account bars, menus, dialogs, My money and the agent portal | Page markup |
+| Test site | Tagged `site=test` so its sessions can be filtered out | `common.js` |
+| Owner | Varun (Clarity sign-in with the owner's Microsoft or Google account) | — |

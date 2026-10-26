@@ -2,7 +2,7 @@
 
 | Document | ARC |
 | --- | --- |
-| Version | 1.1 |
+| Version | 1.2 |
 | Last updated | 26 Oct 2026 |
 
 A static website on GitHub Pages talks directly to Supabase (Postgres with row-level security, Auth and edge
@@ -35,6 +35,7 @@ flowchart LR
     wise[Wise comparisons]
   end
   resend[[Resend email<br/>not connected]]
+  clarity[[Microsoft Clarity<br/>analytics, off until set]]
   dns[[GoDaddy DNS]]
   customer --> prod & test
   agent --> prod
@@ -45,6 +46,7 @@ flowchart LR
   fns --> cdr & aer & abs & rba & lenders & fw & wise
   fns --> db
   fns -.-> resend
+  prod & test -.-> clarity
 ```
 
 ## ARC-02 Components

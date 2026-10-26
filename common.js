@@ -374,4 +374,16 @@ if (IS_TEST_SITE){
   });
 }
 
+// Microsoft Clarity (heatmaps and session replays) shows where people get stuck. Empty ID = off. The project's
+// masking mode is set to Strict in the Clarity dashboard, and account areas carry data-clarity-mask as well.
+const CLARITY_PROJECT_ID = "";
+if (CLARITY_PROJECT_ID){
+  (function(c, l, a, r, i, t, y){
+    c[a] = c[a] || function(){ (c[a].q = c[a].q || []).push(arguments); };
+    t = l.createElement(r); t.async = 1; t.src = "https://www.clarity.ms/tag/" + i;
+    y = l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t, y);
+  })(window, document, "clarity", "script", CLARITY_PROJECT_ID);
+  if (IS_TEST_SITE) window.clarity("set", "site", "test");
+}
+
 const AGENT_DISCLAIMER ="Agent rates are set by independent mortgage agents. We don't arrange loans or verify agent rates. Confirm details with the agent.";

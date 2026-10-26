@@ -1,5 +1,6 @@
-/* Shared by the board (home-loans.html), the agent portal (agent.html) and the info pages.
-   Colours meet WCAG 2.2 AAA: 7:1 for text, 3:1 for control borders, on every background they're used on. */
+/* Shared by every page. "Boring by design": one typeface, flat panels, small corners and a loud focus ring,
+   after the plain patterns of government design systems. Colours meet WCAG 2.2 AAA: 7:1 for text, 3:1 for
+   control borders, on every background they are used on. */
 :root{
   --bg:#F6F7F9;
   --surface:#FFFFFF;
@@ -16,8 +17,12 @@
   --gold-soft:#F6EFDD;
   --danger:#8C1D17;
   --danger-soft:#FBEBEA;
-  --focus:#165440;
-  --shadow: 0 1px 2px rgba(20,30,40,.04), 0 8px 24px rgba(20,30,40,.05);
+  --focus:#FFDD00;         /* focus ring: yellow with a near-black halo, visible on any background */
+  --focus-halo:#0B0C0C;
+  --accent-deep:#0B2F23;   /* the edge under primary buttons */
+  --font:'Inter',system-ui,-apple-system,"Segoe UI",sans-serif;
+  --radius:4px;
+  --shadow:none;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -36,8 +41,9 @@
     --gold-soft:#332A14;
     --danger:#F2B8B5;
     --danger-soft:#3A1E1D;
-    --focus:#6FCBA5;
-    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+    --focus:#FFDD00;
+    --accent-deep:#3B8A69;
+    --shadow:none;
   }
 }
 :root[data-theme="dark"]{
@@ -56,26 +62,31 @@
   --gold-soft:#332A14;
   --danger:#F2B8B5;
   --danger-soft:#3A1E1D;
-  --focus:#6FCBA5;
-  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+  --focus:#FFDD00;
+  --accent-deep:#3B8A69;
+  --shadow:none;
 }
 
 *{box-sizing:border-box;}
 [hidden]{display:none !important;}
+button, input, select, textarea{font-family:inherit;}
+a{color:var(--accent);text-underline-offset:2px;}
 body{
   margin:0;
   background:var(--bg);
   color:var(--ink);
-  font-family:'Inter',system-ui,-apple-system,Segoe UI,sans-serif;
+  font-family:var(--font);
   line-height:1.5;
+  font-variant-numeric:tabular-nums;
   padding:28px 16px 48px;
 }
 .wrap{max-width:980px;margin:0 auto;}
 
-h1,h2{font-family:'Fraunces',Georgia,serif;line-height:1.25;}
+h1,h2{font-family:var(--font);font-weight:700;line-height:1.25;letter-spacing:0;}
 
-/* One focus style everywhere: 3 px, high contrast against both the control and the page. */
-:focus-visible{outline:3px solid var(--focus);outline-offset:2px;}
+/* One focus style everywhere: a 3 px yellow ring inside a near-black halo, so it shows on light, dark and coloured
+   backgrounds alike. */
+:focus-visible{outline:3px solid var(--focus);outline-offset:0;box-shadow:0 0 0 6px var(--focus-halo) !important;}
 
 .visually-hidden{
   position:absolute !important;
@@ -97,7 +108,7 @@ h1,h2{font-family:'Fraunces',Georgia,serif;line-height:1.25;}
   color:var(--on-accent);
   font-weight:600;
   padding:12px 18px;
-  border-radius:8px;
+  border-radius:var(--radius);
   text-decoration:none;
 }
 .skip-link:focus{top:12px;}
@@ -107,7 +118,7 @@ h1,h2{font-family:'Fraunces',Georgia,serif;line-height:1.25;}
   margin:0 auto 18px;
   padding:10px 14px;
   border:1px solid var(--gold);
-  border-radius:8px;
+  border-radius:var(--radius);
   background:var(--gold-soft);
   color:var(--gold);
   font-size:14px;
@@ -125,8 +136,7 @@ header.page{
 }
 .title-block h1{
   font-size:30px;
-  font-weight:600;
-  letter-spacing:-0.01em;
+  font-weight:700;
   margin:0;
 }
 .header-right{display:flex;flex-direction:column;align-items:flex-end;gap:10px;}
@@ -150,7 +160,7 @@ header.page{
   color:var(--ink-muted);
   background:var(--surface);
   border:1px solid var(--line-strong);
-  border-radius:8px;
+  border-radius:var(--radius);
   padding:12px 14px;
   margin:0 0 18px;
 }
@@ -161,7 +171,7 @@ header.page{
   display:flex;
   background:var(--surface);
   border:1px solid var(--line-strong);
-  border-radius:8px;
+  border-radius:var(--radius);
   overflow:hidden;
 }
 .seg button{
@@ -183,7 +193,7 @@ header.page{
   font-weight:700;
   box-shadow:inset 0 -3px 0 var(--accent);
 }
-.seg button:focus-visible{outline-offset:-4px;}
+.seg button:focus-visible{outline:3px solid var(--focus-halo);outline-offset:-3px;box-shadow:inset 0 0 0 6px var(--focus) !important;}
 
 .rate{font-size:16px;font-weight:600;color:var(--ink);}
 .apr{display:block;font-size:13px;color:var(--ink-faint);margin-top:2px;font-weight:400;}
@@ -193,12 +203,12 @@ header.page{
 .hc-sub{margin:2px 0 8px;font-size:13px;color:var(--ink-muted);}
 .history svg{display:block;width:100%;height:auto;}
 .hc-grid{stroke:var(--line);stroke-width:1;}
-.hc-axis{font:11.5px 'IBM Plex Mono',monospace;fill:var(--ink-faint);}
+.hc-axis{font:11.5px var(--font);fill:var(--ink-faint);}
 .hc-line{fill:none;stroke:var(--accent);stroke-width:2;stroke-linejoin:round;stroke-linecap:round;}
 .hc-dot{fill:var(--accent);stroke:var(--surface);stroke-width:2;}
-.hc-end{font:600 12px 'IBM Plex Mono',monospace;fill:var(--ink);}
+.hc-end{font:600 12px var(--font);fill:var(--ink);}
 .hc-rba{stroke:var(--gold);stroke-width:1.5;}
-.hc-rba-label{font:600 11px 'IBM Plex Mono',monospace;fill:var(--ink-muted);}
+.hc-rba-label{font:600 11px var(--font);fill:var(--ink-muted);}
 .hc-legend{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:4px;font-size:13px;color:var(--ink-muted);}
 .hc-key-line{display:inline-block;width:14px;height:2px;margin-right:5px;vertical-align:middle;background:var(--accent);border-radius:1px;}
 .hc-key-rba{display:inline-block;width:2px;height:12px;margin-right:6px;vertical-align:middle;background:var(--gold);}
@@ -208,14 +218,14 @@ header.page{
   padding:5px 8px 5px 0;
   border-bottom:none;
   border-top:1px solid var(--line);
-  font:13px 'Inter',sans-serif;
+  font:13px var(--font);
   color:var(--ink);
   white-space:nowrap;
   vertical-align:top;
   background:none !important;
 }
 .history td:last-child{padding-right:0;}
-.history .num{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;}
+.history .num{font-family:var(--font);font-variant-numeric:tabular-nums;}
 .history .delta{color:var(--ink-muted);text-align:right;}
 .hc-note{display:block;margin-top:1px;font-size:13px;color:var(--ink-faint);white-space:normal;}
 .history .num .hc-note{white-space:nowrap;}
@@ -223,23 +233,23 @@ header.page{
 
 /* Agent rates listed under a lender rate. */
 .ar-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:14px 0 6px;padding-top:12px;border-top:1px solid var(--line);}
-.ar-head h3{margin:0;font:600 14px 'Inter',sans-serif;}
+.ar-head h3{margin:0;font:600 14px var(--font);}
 .ar-head span{font-size:13px;color:var(--ink-faint);}
 .ar-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;}
-.ar-item{border:1px solid var(--line-strong);border-radius:10px;padding:10px 11px;background:var(--bg);}
+.ar-item{border:1px solid var(--line-strong);border-radius:var(--radius);padding:10px 11px;background:var(--bg);}
 .ar-item.mine{border-color:var(--accent);border-width:2px;}
 .ar-top{display:flex;gap:10px;align-items:flex-start;}
-.ar-photo{width:36px;height:36px;border-radius:50%;object-fit:cover;flex:none;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;font:700 13px 'Inter',sans-serif;}
+.ar-photo{width:36px;height:36px;border-radius:50%;object-fit:cover;flex:none;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;font:700 13px var(--font);}
 .ar-main{flex:1;min-width:0;}
 .ar-rates{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;}
-.ar-rate{font:600 17px 'IBM Plex Mono',monospace;color:var(--accent);}
-.ar-comp{font:13px 'IBM Plex Mono',monospace;color:var(--ink-faint);}
+.ar-rate{font:600 17px var(--font);color:var(--accent);}
+.ar-comp{font:13px var(--font);color:var(--ink-faint);}
 .ar-below{font-size:13px;font-weight:600;color:var(--accent);}
 .ar-who{margin-top:2px;font-size:14px;font-weight:600;color:var(--ink);}
 .ar-who span{font-weight:400;color:var(--ink-muted);}
 .ar-meta{margin-top:3px;font-size:13px;line-height:1.5;color:var(--ink-muted);}
 .ar-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px;}
-.ar-actions a, .ar-actions button{font:600 13px 'Inter',sans-serif;}
+.ar-actions a, .ar-actions button{font:600 13px var(--font);}
 .ar-contact{margin-top:8px;font-size:14px;}
 .ar-contact a{color:var(--accent);font-weight:600;display:inline-flex;align-items:center;min-height:44px;}
 .ar-more{margin-top:8px;}
@@ -247,7 +257,7 @@ header.page{
 
 dialog.modal{
   border:1px solid var(--line-strong);
-  border-radius:14px;
+  border-radius:var(--radius);
   padding:0;
   background:var(--surface);
   color:var(--ink);
@@ -260,17 +270,17 @@ dialog.modal.wide{max-width:580px;}
 dialog.modal::backdrop{background:rgba(20,24,32,.55);}
 dialog.modal form, dialog.modal .modal-body{padding:22px;display:flex;flex-direction:column;gap:14px;}
 dialog.modal h2{margin:0;font-size:21px;font-weight:600;}
-dialog.modal h3{margin:6px 0 0;font:600 15px 'Inter',sans-serif;}
+dialog.modal h3{margin:6px 0 0;font:600 15px var(--font);}
 .modal-sub{margin:-6px 0 0;font-size:14px;color:var(--ink-muted);line-height:1.5;}
 .field{display:flex;flex-direction:column;gap:5px;font-size:14px;font-weight:600;color:var(--ink-muted);}
 .field-hint{font-weight:400;color:var(--ink-faint);font-size:13px;}
 .field input, .field textarea, .field select{
-  font:15px 'Inter',sans-serif;
+  font:15px var(--font);
   font-weight:400;
   color:var(--ink);
   background:var(--bg);
   border:1px solid var(--line-strong);
-  border-radius:7px;
+  border-radius:var(--radius);
   min-height:44px;
   padding:9px 10px;
   resize:vertical;
@@ -286,7 +296,7 @@ dialog.modal h3{margin:6px 0 0;font:600 15px 'Inter',sans-serif;}
   right:2px;
   top:50%;
   transform:translateY(-50%);
-  font:14px 'Inter',sans-serif;
+  font:14px var(--font);
   font-weight:600;
   color:var(--accent);
   background:none;
@@ -316,9 +326,9 @@ dialog.modal h3{margin:6px 0 0;font:600 15px 'Inter',sans-serif;}
 .link-btn.solo{display:inline-flex;align-items:center;min-height:44px;font-weight:600;}
 .dialog-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:4px;flex-wrap:wrap;}
 .btn-ghost, .btn-primary, .btn-danger{
-  font:14px 'Inter',sans-serif;
+  font:14px var(--font);
   font-weight:600;
-  border-radius:7px;
+  border-radius:var(--radius);
   min-height:44px;
   min-width:44px;
   padding:8px 16px;
@@ -331,7 +341,7 @@ dialog.modal h3{margin:6px 0 0;font:600 15px 'Inter',sans-serif;}
 }
 .btn-sm{padding:8px 12px;font-size:14px;}
 .btn-ghost{background:var(--surface);border:1px solid var(--line-strong);color:var(--ink-muted);}
-.btn-primary{background:var(--accent);border:1px solid var(--accent);color:var(--on-accent);}
+.btn-primary{background:var(--accent);border:1px solid var(--accent);color:var(--on-accent);box-shadow:0 2px 0 var(--accent-deep);}
 .btn-danger{background:none;border:1px solid var(--danger);color:var(--danger);}
 .btn-primary:disabled, .btn-ghost:disabled, .btn-danger:disabled{opacity:.6;cursor:not-allowed;}
 

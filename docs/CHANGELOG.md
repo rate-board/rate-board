@@ -23,6 +23,11 @@ Newest first. Each entry names the release or branch, what changed, and the requ
   home loan page has the same "All products" breadcrumb as other products (`FEA-001`).
 - Open Banking lists that come back empty are retried at older versions (Westpac returns an empty list for a
   version it does not support), restoring Westpac everyday and savings accounts (`CAP-03`).
+- "Boring by design" restyle (`FEA-005`): Inter only (Fraunces and IBM Plex Mono dropped, so pages load two fewer
+  font families), flat panels, 4 px corners, underlined links in the brand colour (fixes default-blue links in dark
+  mode), form controls in the site font, a yellow-and-black focus ring, and the tagline on the home page and footers.
+- Microsoft Clarity analytics wired in but off until a project ID is set (`FEA-006`, `CFG-09`); privacy policy
+  updated. Docs: REQ 1.2, ARC 1.2, CFG 1.1.
 - Documentation set created: requirements, processes, architecture, flows, designs, configuration, credentials,
   codebase (docs v1.0). Design set 1.1 adds credit cards and the phone card layout.
 
