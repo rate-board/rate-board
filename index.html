@@ -340,7 +340,7 @@
     padding:6px 8px;
   }
 
-  .mobile-sort{display:none;}
+  .mobile-sort, .mobile-product{display:none;}
 
   /* Account menu (phones) */
   .menu-wrap{display:none;position:relative;}
@@ -430,8 +430,9 @@
     .ctl-group .seg{flex:1;}
     .view-controls{font-size:14px;}
     .view-controls .ctl-group{flex:1;}
-    .mobile-sort{display:flex;align-items:center;gap:10px;width:100%;font-size:14px;font-weight:600;color:var(--ink-muted);}
-    .mobile-sort select{
+    .mobile-sort, .mobile-product{display:flex;align-items:center;gap:10px;width:100%;font-size:14px;font-weight:600;color:var(--ink-muted);}
+    .mobile-sort span, .mobile-product span{min-width:96px;}
+    .mobile-sort select, .mobile-product select{
       flex:1;
       min-width:0;
       min-height:44px;
@@ -448,42 +449,34 @@
     .table-shell :is(table, thead, tbody, tr, th, td){display:block;}
     .table-shell table{min-width:0;}
     .table-shell thead{display:none;}
+    /* One product per lender (chosen in Filters): lender on the left, its rate on the right. */
     .table-shell tbody tr{
       display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:8px 12px;
+      grid-template-columns:minmax(0, 1fr) auto;
+      align-items:center;
+      gap:4px 12px;
       background:var(--surface);
       border:1px solid var(--line-strong);
       border-radius:12px;
       box-shadow:var(--shadow);
-      padding:12px 12px 14px;
-      margin-bottom:12px;
+      padding:6px 12px;
+      margin-bottom:8px;
     }
     .table-shell tbody th, .table-shell tbody tr:last-child th{
-      grid-column:1 / -1;
       position:static;
-      padding:0 0 8px;
-      border-bottom:1px solid var(--line);
+      padding:0;
+      border-bottom:none;
       white-space:normal;
       font-size:16px;
       background:none;
     }
     .table-shell tbody td{border:none;white-space:normal;}
-    .table-shell tbody td:only-child{grid-column:1 / -1;}
-    .table-shell tbody td[data-label]::before{
-      content:attr(data-label);
-      display:block;
-      padding:0 4px;
-      font:700 13px 'Inter',sans-serif;
-      letter-spacing:.02em;
-      color:var(--ink-faint);
-    }
-    .table-shell tbody td.static{padding:4px;}
-    .rate-btn{padding:6px 4px 10px;min-height:56px;}
+    .table-shell tbody td.other-product{display:none;}
+    .table-shell tbody td.static{padding:4px 0;text-align:right;}
+    .rate-btn{padding:4px 0;min-height:44px;text-align:right;}
     .table-shell tbody tr:hover :is(td, th){background:none;}
     .rate{font-size:16px;}
-    .note-btn{display:none;}
-    .lender-note-text{display:block;max-width:none;}
+    .lender-note-text{max-width:none;}
     .gate-overlay{margin-top:-260px;}
     .repay-inputs{grid-template-columns:1fr;}
   }
@@ -545,6 +538,10 @@
       </div>
       <button type="button" class="help-btn" aria-expanded="false" aria-controls="help-lvr"><span aria-hidden="true">?</span><span class="visually-hidden">What is LVR?</span></button>
     </div>
+    <label class="mobile-product" for="mobileProduct">
+      <span>Loan product</span>
+      <select id="mobileProduct"></select>
+    </label>
     <label class="mobile-sort" for="mobileSort">
       <span>Sort by</span>
       <select id="mobileSort"></select>
@@ -761,6 +758,7 @@
   // Every visit opens on Owner Occupied, P&I, 60–80% LVR, cheapest Variable (Basic) first.
   let sortKey = "variable";
   let sortDir = "asc";
+  let product = "variable"; // the one product each lender card shows on phones
   let loan = { amount: 600000, years: 30 };
 
   // --- Shareable view: filters live in the page address, so a link opens the same view. -----------------
@@ -781,12 +779,13 @@
     const sort = q.get("sort");
     if (sort === "none") sortKey = null;
     else if (sort && /^[a-z0-9_]+:(asc|desc)$/.test(sort)) [sortKey, sortDir] = sort.split(":");
+    if (/^[a-z0-9_]+$/.test(q.get("product") || "")) product = q.get("product");
     const savedLoan = readStore("rb.loan");
     if (savedLoan && savedLoan.amount > 0 && savedLoan.years > 0) loan = savedLoan;
   }
 
   function saveView(){
-    const view = { purpose, repay, lvr, show: mode, sort: sortKey ? sortKey + ":" + sortDir : "none" };
+    const view = { purpose, repay, lvr, product, show: mode, sort: sortKey ? sortKey + ":" + sortDir : "none" };
     const q = new URLSearchParams(location.search);
     for (const [k, v] of Object.entries(view)) q.set(k, v);
     history.replaceState(null, "", location.pathname + "?" + q.toString() + location.hash);
@@ -797,8 +796,9 @@
   function updateAdvSummary(){
     const sortText = !sortKey ? "Lender order"
       : sortKey === "lender" ? "Lender A–Z"
-      : (sortDir === "asc" ? "Lowest " : "Highest ") + productLabel(sortKey);
-    $("advSummary").textContent = [PURPOSE_LABEL[purpose], REPAY_LABEL[repay], LVR_LABEL[lvr], sortText, mode === "rate" ? "Rate" : "Comp. rate"].join(" · ");
+      : sortDir === "asc" ? "Lowest rate first" : "Highest rate first";
+    $("advSummary").textContent = [PURPOSE_LABEL[purpose], REPAY_LABEL[repay], LVR_LABEL[lvr], productLabel(product), sortText,
+      mode === "rate" ? "Rate" : "Comp. rate"].join(" · ");
   }
 
   $("advToggle").addEventListener("click", () => {
@@ -950,24 +950,34 @@
     return `<th scope="col" role="columnheader" aria-sort="${ariaSort}"><button type="button" class="sort-btn" data-sort="${escapeHtml(key)}">${escapeHtml(label)}${arrow}</button></th>`;
   }
 
-  // On phones the column headers are hidden (each lender becomes a card), so sorting moves to a dropdown.
-  function renderMobileSort(){
-    const options = [["", "Lender order"], ["lender:asc", "Lender (A–Z)"]]
-      .concat(PRODUCTS.map(p => [p.key + ":asc", "Lowest " + p.label]));
-    const current = sortKey ? sortKey + ":" + sortDir : "";
-    $("mobileSort").innerHTML = options
+  // On phones each lender card shows one product, chosen in Filters, and sorting applies to that product.
+  function renderMobileFilters(){
+    if (!PRODUCTS.some(p => p.key === product)) product = PRODUCTS.length ? PRODUCTS[0].key : product;
+    const optionsHtml = (options, current) => options
       .map(([value, text]) => `<option value="${escapeHtml(value)}"${value === current ? " selected" : ""}>${escapeHtml(text)}</option>`)
       .join("");
+    $("mobileProduct").innerHTML = optionsHtml(PRODUCTS.map(p => [p.key, p.label]), product);
+    const sorts = [["rate:asc", "Lowest rate first"], ["rate:desc", "Highest rate first"], ["lender:asc", "Lender (A–Z)"], ["", "Lender order"]];
+    const current = !sortKey ? "" : sortKey === "lender" ? "lender:asc" : "rate:" + sortDir;
+    $("mobileSort").innerHTML = optionsHtml(sorts, current);
     updateAdvSummary();
   }
 
+  $("mobileProduct").addEventListener("change", (e) => {
+    product = e.target.value;
+    if (sortKey && sortKey !== "lender") sortKey = product;
+    saveView();
+    renderTable();
+    announce(`Showing ${productLabel(product)} rates`);
+  });
+
   $("mobileSort").addEventListener("change", (e) => {
     const [key, dir] = e.target.value.split(":");
-    sortKey = key || null;
+    sortKey = key === "rate" ? product : key || null;
     sortDir = dir || "asc";
     saveView();
     renderTable();
-    announce(sortKey ? "Sorted by " + e.target.selectedOptions[0].textContent : "Lender order");
+    announce(e.target.selectedOptions[0].textContent);
   });
 
   function agentTagText(list){
@@ -1003,7 +1013,7 @@
     }
 
     head.innerHTML = headCell("lender", "Lender") + PRODUCTS.map(p => headCell(p.key, p.label)).join("");
-    renderMobileSort();
+    renderMobileFilters();
 
     const bestByProduct = {};
     PRODUCTS.forEach(p => { bestByProduct[p.key] = bestLender(p.key); });
@@ -1035,19 +1045,21 @@
       let rowHtml = `<th scope="row" role="rowheader"><div class="lender-cell">${nameHtml}${noteBtn}${noteText}</div></th>`;
       PRODUCTS.forEach(p => {
         const label = `data-label="${escapeHtml(p.label)}"`;
+        // Phones show only the chosen product's cell; desktop shows every column.
+        const other = p.key === product ? "" : " other-product";
         if (locked){
-          rowHtml += `<td role="cell" class="static" ${label}><span class="rate">•.••%</span><span class="apr">Comp. rate •.••%</span></td>`;
+          rowHtml += `<td role="cell" class="static${other}" ${label}><span class="rate">•.••%</span><span class="apr">Comp. rate •.••%</span></td>`;
           return;
         }
         const cell = RATES[purpose][repay][lvr][p.key][lender.id];
         if (!cell){
-          rowHtml += `<td role="cell" class="unavailable static" ${label}><span class="rate" aria-hidden="true">—</span><span class="visually-hidden">Not offered</span></td>`;
+          rowHtml += `<td role="cell" class="unavailable static${other}" ${label}><span class="rate" aria-hidden="true">—</span><span class="visually-hidden">Not offered</span></td>`;
           return;
         }
         const [rate, apr] = cell;
         if (!session){
           // Sneak-peek rows: real figures, but history, repayments and agent rates need an account.
-          rowHtml += `<td role="cell" class="static" ${label}><span class="rate">${fmt(mode === "rate" ? rate : apr)}</span>`
+          rowHtml += `<td role="cell" class="static${other}" ${label}><span class="rate">${fmt(mode === "rate" ? rate : apr)}</span>`
             + `<span class="apr">${mode === "rate" ? "Comp. rate" : "Rate"} ${fmt(mode === "rate" ? apr : rate)}</span></td>`;
           return;
         }
@@ -1056,7 +1068,7 @@
         const secondary = mode === "rate" ? apr : rate;
         const secondaryLabel = mode === "rate" ? "Comp. rate" : "Rate";
         const tag = agentTagText(agentRatesFor(lender.id, p.key, purpose, repay, lvr));
-        rowHtml += `<td role="cell" class="rate-cell${isBest ? " best" : ""}" ${label} data-lender="${escapeHtml(lender.id)}" data-key="${escapeHtml(p.key)}">
+        rowHtml += `<td role="cell" class="rate-cell${isBest ? " best" : ""}${other}" ${label} data-lender="${escapeHtml(lender.id)}" data-key="${escapeHtml(p.key)}">
             <button type="button" class="rate-btn" aria-haspopup="dialog" aria-expanded="false">
               <span class="visually-hidden">${name}, ${escapeHtml(p.label)}: </span>
               <span class="rate">${fmt(shown)}${isBest ? '<span class="best-badge" aria-hidden="true">BEST</span>' : ""}</span>
@@ -1476,6 +1488,7 @@
     const key = btn.dataset.sort;
     sortDir = sortKey === key && sortDir === "asc" ? "desc" : "asc";
     sortKey = key;
+    if (key !== "lender") product = key;
     saveView();
     renderTable();
     const again = $("headRow").querySelector(`[data-sort="${key}"]`);
