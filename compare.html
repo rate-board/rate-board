@@ -256,6 +256,9 @@
   }
 
   function renderEnergy(r){
+    // Retailers publish near-identical variants (bundles, member offers); show one row per retailer and price.
+    const seen = new Set();
+    r.plans = r.plans.filter(p => { const k = p.provider + "|" + p.annual; if (seen.has(k)) return false; seen.add(k); return true; });
     if (!r.plans.length){ $("results").innerHTML = `<div class="table-wrap"><p class="empty">No single-rate plans could be priced for ${escapeHtml(r.postcode)}.</p></div>`; return; }
     $("results").innerHTML = `<div class="table-wrap"><table class="compare"><caption>${r.plans.length} plans for ${escapeHtml(r.postcode)} (${escapeHtml(r.distributors.join(", "))} network), ${r.kwh.toLocaleString()} kWh a year, cheapest first. Includes GST and guaranteed discounts; conditional discounts (e.g. pay on time) are listed but not taken off.</caption>
       <thead><tr><th scope="col">Retailer and plan</th><th scope="col" class="num">Est. yearly bill</th><th scope="col" class="num">Supply a day</th><th scope="col" class="num">Usage per kWh</th><th scope="col" class="num">Solar feed-in</th><th scope="col">Conditional discounts</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
