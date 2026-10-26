@@ -165,39 +165,6 @@
 
   .lender-cell{display:flex;align-items:center;flex-wrap:wrap;}
   .lender-name{display:inline-flex;align-items:center;min-height:44px;}
-  .note-btn{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    min-width:44px;
-    min-height:44px;
-    padding:0;
-    border:none;
-    background:none;
-    cursor:pointer;
-  }
-  .note-btn span{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    width:22px;
-    height:22px;
-    border-radius:50%;
-    background:var(--gold-soft);
-    color:var(--gold);
-    border:1px solid var(--gold);
-    font:700 13px 'Inter',sans-serif;
-  }
-  .lender-note-text{
-    display:none;
-    flex-basis:100%;
-    max-width:36ch;
-    margin:0 0 8px;
-    font:400 14px/1.5 'Inter',sans-serif;
-    color:var(--ink-muted);
-    white-space:normal;
-  }
-  .lender-note-text.open{display:block;}
   td.unavailable .rate{color:var(--ink-faint);font-weight:500;}
 
   /* Each rate is a real button filling its cell; the arrow says it opens the rate's details and history here. */
@@ -326,6 +293,8 @@
   .about details{margin-top:6px;}
   .about summary{display:inline-flex;align-items:center;min-height:44px;cursor:pointer;color:var(--accent);font-weight:600;}
   .about details p{margin:6px 0 0;color:var(--ink-muted);}
+  .about details h3{font-size:16px;margin:14px 0 4px;}
+  .about details ul{color:var(--ink-muted);}
 
   .theme-pick{display:inline-flex;align-items:center;gap:8px;font-size:14px;color:var(--ink-muted);}
   .theme-pick select{
@@ -474,7 +443,6 @@
     .rate-btn{padding:4px 0;min-height:44px;text-align:right;justify-content:flex-end;}
     .table-shell tbody tr:hover :is(td, th){background:none;}
     .rate{font-size:16px;}
-    .lender-note-text{max-width:none;}
     .gate-overlay{margin-top:-260px;}
     .repay-inputs{grid-template-columns:1fr;}
   }
@@ -597,6 +565,10 @@
     <details>
       <summary>Read the full assumptions</summary>
       <p>Comparison rate based on a $150,000 loan over 25 years — warning: this comparison rate is true only for this example and may not include all fees and charges. Fixed-rate comparison rates assume reversion to the lender's standard variable rate at term end, which is why some fixed comparison rates sit well above the fixed rate itself — expected ASIC methodology, not an error. Lenders Mortgage Insurance (LMI) typically applies above 80% LVR and isn't reflected in the rate shown. Interest-only figures show the rate during the IO period; repayments typically rise when the loan reverts to P&amp;I. "—" means that lender doesn't publish that term. Rates sourced from each lender's own basic/no-frills product where one exists; package or offset products may price differently. Agent rates are set by independent mortgage agents, not the lenders. Always confirm the current rate and your eligibility directly with the lender or agent before relying on these figures.</p>
+      <div id="lenderNotes" hidden>
+        <h3>Notes on individual lenders</h3>
+        <ul id="lenderNotesList"></ul>
+      </div>
     </details>
   </section>
   </main>
@@ -891,7 +863,15 @@
     $("gateText").firstChild.textContent = `You're seeing ${previewIds.size} of ${LENDERS.length} lenders. Create a free account to compare `;
     $("gateCount").textContent = "all " + LENDERS.length;
     setGated(!session);
+    renderLenderNotes();
     renderTable();
+  }
+
+  // Lender-specific caveats live with the rest of the assumptions rather than beside each name.
+  function renderLenderNotes(){
+    const noted = LENDERS.filter(l => l.note);
+    $("lenderNotesList").innerHTML = noted.map(l => `<li><strong>${escapeHtml(l.name)}:</strong> ${escapeHtml(l.note)}</li>`).join("");
+    $("lenderNotes").hidden = !noted.length;
   }
 
   function setGated(gated){
@@ -1033,12 +1013,7 @@
       // Lender names are plain text: people stay on this site, and each rate opens its own details here.
       const name = escapeHtml(lender.name);
       const nameHtml = `<span class="lender-name">${name}</span>`;
-      const noteId = "note-" + lender.id;
-      const noteBtn = lender.note
-        ? `<button type="button" class="note-btn" aria-expanded="false" aria-controls="${escapeHtml(noteId)}"><span aria-hidden="true">i</span><span class="visually-hidden">About ${name}'s rates</span></button>`
-        : "";
-      const noteText = lender.note ? `<span class="lender-note-text" id="${escapeHtml(noteId)}">${escapeHtml(lender.note)}</span>` : "";
-      let rowHtml = `<th scope="row" role="rowheader"><div class="lender-cell">${nameHtml}${noteBtn}${noteText}</div></th>`;
+      let rowHtml = `<th scope="row" role="rowheader"><div class="lender-cell">${nameHtml}</div></th>`;
       PRODUCTS.forEach(p => {
         const label = `data-label="${escapeHtml(p.label)}"`;
         // Phones show only the chosen product's cell; desktop shows every column.
@@ -1077,15 +1052,6 @@
     });
     if (!session) placeFade();
   }
-
-  // Lender notes open on click, tap or Enter (desktop); on phones the note is always shown.
-  $("bodyRows").addEventListener("click", (e) => {
-    const btn = e.target.closest(".note-btn");
-    if (!btn) return;
-    const open = btn.getAttribute("aria-expanded") !== "true";
-    btn.setAttribute("aria-expanded", String(open));
-    $(btn.getAttribute("aria-controls")).classList.toggle("open", open);
-  });
 
   // --- Help popovers next to each toggle ------------------------------------------------------
 
