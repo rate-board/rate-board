@@ -223,7 +223,7 @@
 
   async function live(params){
     const url = `${SUPABASE_URL}/functions/v1/catalog-live?${new URLSearchParams(params)}`;
-    const res = await fetch(url, { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } });
+    const res = await fetch(url, { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${FUNCTIONS_JWT}` } });
     const body = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(body.error || `Lookup failed (${res.status})`);
     return body;

@@ -1,6 +1,6 @@
 // Live lookups that can't be stored nightly: fuel prices near a suburb (WA FuelWatch), money transfer quotes
 // (Wise's public comparison of banks and transfer providers) and energy bill estimates for a postcode (AER plan
-// details, cached for 3 days). Public and read-only; "Verify JWT" is off.
+// details, cached for 3 days). Read-only; "Verify JWT" stays on and callers send the public anon key.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
@@ -159,6 +159,14 @@ function annualCost(detail: any, kwh: number, exportKwh: number) {
   };
 }
 
+// Plan IDs end in the comparator that holds them: @EME (Energy Made Easy, national) or @VEC (Victorian
+// Energy Compare, which has no per-plan links).
+function planUrl(planId: string, postcode: string): string {
+  const [id, home] = planId.split("@");
+  return home === "VEC" ? "https://compare.energy.vic.gov.au/"
+    : `https://www.energymadeeasy.gov.au/plan?id=${encodeURIComponent(id)}&postcode=${postcode}`;
+}
+
 async function energy(params: URLSearchParams) {
   const postcode = params.get("postcode") ?? "";
   if (!/^\d{4}$/.test(postcode)) throw new HttpError(400, "Enter a 4-digit postcode");
@@ -189,8 +197,7 @@ async function energy(params: URLSearchParams) {
     if (!cost) return null;
     return {
       provider: p.provider, name: p.name, planId: p.attrs.planId, ...cost,
-      url: String(p.attrs.planId).includes("@") ? null
-        : `https://www.energymadeeasy.gov.au/plan?id=${encodeURIComponent(p.attrs.planId)}&postcode=${postcode}`,
+      url: planUrl(String(p.attrs.planId), postcode),
     };
   });
   const results = priced.filter(Boolean).sort((a: any, b: any) => a.annual - b.annual);

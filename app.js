@@ -3,6 +3,10 @@
 
 let SESSION = null;
 
+// The project's public anon key, a JWT. Edge functions keep "Verify JWT" on, and this key (or a signed-in
+// user's token) satisfies it; like the publishable key it is safe in browser code.
+const FUNCTIONS_JWT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3amlvZmd3b2xvbnRsZ2x3cm9nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI2MjAzNTYsImV4cCI6MjEwODE5NjM1Nn0.RBMU-fcW-Lm7nQQb6rNXFQypls8lqNAh82ukwtZiVxc";
+
 const NAV = [
   ["index.html", "Home loans"],
   ["products.html", "All products"],

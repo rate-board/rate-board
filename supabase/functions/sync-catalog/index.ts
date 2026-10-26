@@ -346,7 +346,7 @@ async function handler(req: Request): Promise<Response> {
   }
   const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
-  // The endpoint is public (cron calls it without a token), so cap how often anyone can trigger each job.
+  // Anyone holding the public anon key can call this, so cap how often each job can be triggered.
   const { data: last } = await db.from("catalog_runs").select("started_at").eq("job", job)
     .order("started_at", { ascending: false }).limit(1).maybeSingle();
   if (last && Date.now() - Date.parse(last.started_at) < MIN_MINUTES_BETWEEN_RUNS * 60_000) {
