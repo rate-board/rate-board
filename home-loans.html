@@ -9,7 +9,7 @@
   try { const t = localStorage.getItem("rb.theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (_) {}
 </script>
 <link rel="stylesheet" href="common.css?v=6">
-<link rel="stylesheet" href="app.css?v=6">
+<link rel="stylesheet" href="app.css?v=7">
 <style>
   .rates-area{position:relative;}
   /* Signed out: the first half of the lenders show real rates at full contrast; from the first locked row the
@@ -310,53 +310,6 @@
 
   .mobile-sort, .mobile-product{display:none;}
 
-  /* Account menu (phones) */
-  .menu-wrap{display:none;position:relative;}
-  .menu-btn{
-    width:44px;
-    height:44px;
-    border:1px solid var(--line-strong);
-    border-radius:var(--radius);
-    background:var(--surface);
-    color:var(--ink);
-    font-size:24px;
-    line-height:1;
-    cursor:pointer;
-  }
-  .account-menu{
-    position:absolute;
-    right:0;
-    top:calc(100% + 6px);
-    z-index:60;
-    width:260px;
-    max-width:calc(100vw - 32px);
-    background:var(--surface);
-    border:1px solid var(--line-strong);
-    border-radius:var(--radius);
-    box-shadow:var(--shadow);
-    padding:6px;
-    display:flex;
-    flex-direction:column;
-  }
-  .account-menu[hidden]{display:none;}
-  .menu-who{margin:0 0 4px;padding:10px 12px;font-size:14px;color:var(--ink-muted);border-bottom:1px solid var(--line);overflow-wrap:anywhere;}
-  .account-menu a, .account-menu button{
-    display:flex;
-    align-items:center;
-    width:100%;
-    min-height:44px;
-    padding:8px 12px;
-    border:none;
-    border-radius:var(--radius);
-    background:none;
-    font:600 15px var(--font);
-    color:var(--ink);
-    text-align:left;
-    text-decoration:none;
-    cursor:pointer;
-  }
-  .account-menu a:hover, .account-menu button:hover{background:var(--accent-soft);}
-
   /* Filters panel: on desktop it is invisible and its filters sit in the controls row. */
   .adv-toggle{display:none;}
   .adv-panel{display:contents;}
@@ -366,9 +319,6 @@
   @media (max-width:640px){
     header.page{flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:space-between;margin-bottom:16px;}
     .title-block h1{font-size:clamp(18px, 5.2vw, 22px);}
-    .header-right{align-items:flex-end;}
-    .account{display:none;}
-    .menu-wrap{display:block;}
 
     .adv-toggle{
       display:flex;
@@ -452,7 +402,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
 <script src="common.js?v=6"></script>
 <script src="catalog.js?v=4"></script>
-<script src="nav.js?v=2"></script>
+<script src="nav.js?v=3"></script>
 
 <a class="skip-link" href="#ratesArea">Skip to rates</a>
 
@@ -462,13 +412,6 @@
     <div class="title-block">
       <p class="small muted" id="crumb"><a href="index.html">All products</a></p>
       <h1>Find the Cheapest Home Loan</h1>
-    </div>
-    <div class="header-right">
-      <div class="account" id="accountBar" data-clarity-mask="true"></div>
-      <div class="menu-wrap">
-        <button type="button" class="menu-btn" id="menuBtn" aria-expanded="false" aria-controls="accountMenu"><span aria-hidden="true">⋮</span><span class="visually-hidden">Account menu</span></button>
-        <div class="account-menu" id="accountMenu" data-clarity-mask="true" hidden></div>
-      </div>
     </div>
   </header>
 
@@ -1631,91 +1574,6 @@
     }
   });
 
-  // --- Account menu (phones): the same actions as the header bar, behind a ⋮ button. ---------------------
-
-  function closeMenu(returnFocus){
-    $("accountMenu").hidden = true;
-    $("menuBtn").setAttribute("aria-expanded", "false");
-    if (returnFocus) $("menuBtn").focus();
-  }
-
-  $("menuBtn").addEventListener("click", () => {
-    const open = $("accountMenu").hidden;
-    $("accountMenu").hidden = !open;
-    $("menuBtn").setAttribute("aria-expanded", String(open));
-    if (open){
-      const first = $("accountMenu").querySelector("a, button");
-      if (first) first.focus();
-    }
-  });
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !$("accountMenu").hidden) closeMenu(true);
-  });
-  document.addEventListener("pointerdown", (e) => {
-    if (!$("accountMenu").hidden && e.target instanceof Element && !e.target.closest(".menu-wrap")) closeMenu(false);
-  });
-
-  function renderMenu(){
-    const menu = $("accountMenu");
-    menu.textContent = "";
-    const item = (label, onClick, href) => {
-      const el = document.createElement(href ? "a" : "button");
-      if (href) el.href = href;
-      else {
-        el.type = "button";
-        el.addEventListener("click", () => { closeMenu(false); onClick(); });
-      }
-      el.textContent = label;
-      return el;
-    };
-    if (!session){
-      menu.append(item("Sign in", () => openAuth("signin")), item("Create account", () => openAuth("register")));
-      return;
-    }
-    const who = document.createElement("p");
-    who.className = "menu-who";
-    who.textContent = "Signed in as " + session.user.email;
-    menu.append(who);
-    if (myAgent) menu.append(item("Switch to agent", null, AGENT_URL));
-    menu.append(item("Profile", openProfile), item("Sign out", async () => { await sb.auth.signOut(); }));
-  }
-
-  function renderAccount(){
-    renderMenu();
-    const bar = $("accountBar");
-    bar.textContent = "";
-    const button = (label, cls, onClick) => {
-      const b = document.createElement("button");
-      b.type = "button";
-      b.className = cls + " btn-sm";
-      b.textContent = label;
-      b.addEventListener("click", onClick);
-      return b;
-    };
-    if (!session){
-      bar.append(
-        button("Sign in", "btn-ghost", () => openAuth("signin")),
-        button("Create account", "btn-primary", () => openAuth("register")),
-      );
-      return;
-    }
-    const who = document.createElement("span");
-    who.className = "who";
-    who.textContent = session.user.email;
-    bar.append(who);
-    if (myAgent){
-      const toAgent = document.createElement("a");
-      toAgent.className = "btn-ghost btn-sm";
-      toAgent.href = AGENT_URL;
-      toAgent.textContent = "Switch to agent";
-      bar.append(toAgent);
-    }
-    bar.append(
-      button("Profile", "btn-ghost", openProfile),
-      button("Sign out", "btn-ghost", async () => { await sb.auth.signOut(); }),
-    );
-  }
-
   async function refreshAccount(){
     profile = null;
     myAgent = null;
@@ -1730,7 +1588,11 @@
       myAgent = agentRes.data;
       myRequested = new Set((requestsRes.data || []).map(r => r.agent_rate_id));
     }
-    renderAccount();
+    // Other pages send "Account details" here as #profile, since the profile dialog lives on this page.
+    if (session && location.hash === "#profile"){
+      history.replaceState(null, "", location.pathname + location.search);
+      openProfile();
+    }
   }
 
   // Fires INITIAL_SESSION on load, then on every sign-in/out. Reload data only when the user actually changes
@@ -1743,8 +1605,6 @@
     if (userId !== lastUserId){
       lastUserId = userId;
       setTimeout(async () => { await refreshAccount(); await loadData(); }, 0);
-    } else {
-      setTimeout(renderAccount, 0);
     }
   });
 
@@ -1831,7 +1691,6 @@
   restoreView();
   syncSegs();
   placeViewControls();
-  if (location.hash === "#register" || location.hash === "#join") openAuth(location.hash.slice(1));
-  renderAccount();
+  if (["#register", "#join", "#signin"].includes(location.hash)) openAuth(location.hash.slice(1));
   renderTable();
 </script>

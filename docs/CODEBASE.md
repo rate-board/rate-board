@@ -9,7 +9,7 @@
 | `my-money.html` | Household, assets, holdings, savings, reminders, Beat Inflation check, Inflation Points |
 | `calculators.html` | Ten calculators |
 | `privacy.html`, `terms.html`, `accessibility.html` | Policies |
-| `nav.js` | Site navigation for every page: the Products menu built from `catalog.js` sections |
+| `nav.js` | Site navigation for every page: the Products menu built from `catalog.js` sections and the My account menu |
 | `common.js` / `common.css` | Shared by every page: Supabase client, formatting, rate history, theme tokens (WCAG AAA) |
 | `app.js` / `app.css` | Shared by the super-app pages: navigation, sign-in dialog, points helpers |
 | `catalog.js` | Every product category: section, data source, inputs, columns, ranking |

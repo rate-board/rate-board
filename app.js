@@ -1,5 +1,5 @@
-// Shared by the super-app pages (product hub, compare, my money, calculators): the account bar
-// and sign-in dialog, number formatting and Inflation Points. Loads after common.js.
+// Shared by the super-app pages (product hub, compare, my money, calculators): the sign-in dialog,
+// number formatting and Inflation Points. Loads after common.js; the account menu itself is in nav.js.
 
 let SESSION = null;
 
@@ -73,31 +73,10 @@ function openSignin(){
   document.getElementById("si-email").focus();
 }
 
-function renderAccountBar(){
-  const bar = document.getElementById("accountBar");
-  if (!bar) return;
-  bar.innerHTML = "";
-  if (!SESSION){
-    const b = document.createElement("button");
-    b.type = "button"; b.className = "btn-ghost"; b.textContent = "Sign in"; b.onclick = openSignin;
-    const r = document.createElement("a");
-    r.className = "btn-primary"; r.href = "home-loans.html#register"; r.textContent = "Create account";
-    bar.append(b, r);
-    return;
-  }
-  const who = document.createElement("span");
-  who.className = "who"; who.textContent = SESSION.user.email;
-  const out = document.createElement("button");
-  out.type = "button"; out.className = "btn-ghost"; out.textContent = "Sign out";
-  out.onclick = () => sb.auth.signOut();
-  bar.append(who, out);
-}
-
 // Pages define onSession(session) to load their data; it runs once per user change. The first auth event can
 // arrive before the page's own script has run, so delivery waits for the document to finish parsing.
 let lastSessionUser;
 function deliverSession(){
-  renderAccountBar();
   const uid = SESSION ? SESSION.user.id : null;
   if (uid !== lastSessionUser){
     lastSessionUser = uid;
@@ -129,4 +108,3 @@ async function saveHolding(h){
   return true;
 }
 
-document.addEventListener("DOMContentLoaded", () => renderAccountBar());

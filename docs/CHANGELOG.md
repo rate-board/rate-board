@@ -28,6 +28,10 @@ Newest first. Each entry names the release or branch, what changed, and the requ
   mode), form controls in the site font, a yellow-and-black focus ring, and the tagline on the home page and footers.
 - Microsoft Clarity analytics wired in but off until a project ID is set (`FEA-006`, `CFG-09`); privacy policy
   updated. Docs: REQ 1.2, ARC 1.2, CFG 1.1.
+- Account items moved into a My account menu in the nav on every page (`FEA-002`); the header sign-in buttons, the
+  board's ⋮ menu and the home page's "Start with your money profile" panel are gone. Account details opens the profile
+  dialog on the home loans page (`home-loans.html#profile`).
+- Westpac everyday, savings and business accounts restored after the version-retry fix.
 - Documentation set created: requirements, processes, architecture, flows, designs, configuration, credentials,
   codebase (docs v1.0). Design set 1.1 adds credit cards and the phone card layout.
 
