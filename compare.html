@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en-AU">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Compare · BeatInflation</title>
+<meta name="description" content="Compare money products by what they cost you, not the headline rate.">
+<script>
+  try { const t = localStorage.getItem("rb.theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (_) {}
+</script>
+<link rel="stylesheet" href="common.css?v=5">
+<link rel="stylesheet" href="app.css?v=1">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500..600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
+<script src="common.js?v=5"></script>
+<script src="app.js?v=1"></script>
+<script src="catalog.js?v=1"></script>
+
+<a class="skip-link" href="#main">Skip to results</a>
+<nav class="site-nav" id="siteNav" aria-label="Main"></nav>
+<div class="wrap">
+  <header class="page">
+    <div class="title-block">
+      <p class="small muted" id="crumb"><a href="products.html">All products</a></p>
+      <h1 id="title">Compare</h1>
+      <p class="lede" id="lede"></p>
+    </div>
+    <div class="header-right"><div class="account" id="accountBar"></div></div>
+  </header>
+  <div class="visually-hidden" id="srStatus" role="status" aria-live="polite"></div>
+
+  <main id="main" tabindex="-1">
+    <p class="notice" id="notice" hidden></p>
+    <form class="inputs" id="inputs" hidden></form>
+    <div id="results"></div>
+    <p class="count-line" id="countLine"></p>
+    <div id="extra"></div>
+    <section class="card" id="toolsCard" hidden><h2 class="small" style="font:600 15px Inter,sans-serif">Related</h2><ul id="toolsList"></ul></section>
+    <p class="small muted" id="sourceLine"></p>
+  </main>
+
+  <footer>
+    <span>BeatInflation · general information, not advice. Confirm details with the provider.</span>
+    <nav aria-label="Site">
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Terms</a>
+      <a href="accessibility.html">Accessibility</a>
+    </nav>
+  </footer>
+</div>
+
+<script>
+  const key = new URLSearchParams(location.search).get("c") || "";
+  const cat = CATEGORIES[key];
+  let ITEMS = [];
+  let sortCol = null;
+  let profile = null;
+
+  if (!cat){
+    $("title").textContent = "Product not found";
+    $("lede").innerHTML = `Choose a product from <a href="products.html">all products</a>.`;
+  } else if (cat.href){
+    location.replace(cat.href);
+  } else {
+    document.title = `${cat.title} · BeatInflation`;
+    $("title").textContent = cat.title;
+    $("lede").textContent = cat.lede || "";
+    if (cat.sample) showNotice($("notice"), "Sample data: these figures are illustrative placeholders for the test site and haven't been checked. Don't rely on them.");
+    if (cat.tools){
+      $("toolsCard").hidden = false;
+      $("toolsList").innerHTML = cat.tools.map(([href, label]) =>
+        `<li><a href="${escapeHtml(href)}"${/^https:/.test(href) ? ' rel="noopener" target="_blank"' : ""}>${escapeHtml(label)}</a></li>`).join("");
+    }
+    if (cat.source) $("sourceLine").textContent = "Source: " + cat.source + ".";
+  }
+
+  window.onSession = async (session) => {
+    profile = null;
+    if (session){
+      const { data } = await sb.from("customer_profiles").select("postcode,household").maybeSingle();
+      profile = data;
+    }
+    if (!cat || cat.href) return;
+    if (cat.mode === "table") await loadTable();
+    else if (cat.mode === "quote") renderQuote();
+    else if (cat.mode === "energy") renderEnergyForm();
+    else if (cat.mode === "fx") renderFxForm();
+    else if (cat.mode === "fuel") renderFuelForm();
+  };
+
+  // --- Inputs ------------------------------------------------------------------------------------------------
+
+  function inputHtml(f, value){
+    const id = "in-" + f.id;
+    if (f.type === "check"){
+      return `<label class="check-row" for="${id}"><input type="checkbox" id="${id}" name="${f.id}"${value ? " checked" : ""}> ${escapeHtml(f.label)}</label>`;
+    }
+    if (f.type === "select"){
+      return `<label class="field" for="${id}">${escapeHtml(f.label)}<select id="${id}" name="${f.id}">${f.options.map(([v, l]) =>
+        `<option value="${escapeHtml(v)}"${String(value) === v ? " selected" : ""}>${escapeHtml(l)}</option>`).join("")}</select></label>`;
+    }
+    const attrs = f.type === "number" ? ` inputmode="decimal"${f.min !== undefined ? ` min="${f.min}"` : ""}` : f.pattern ? ` pattern="${f.pattern}" inputmode="numeric"` : "";
+    return `<label class="field" for="${id}">${escapeHtml(f.label)}<input id="${id}" name="${f.id}" type="${f.type === "number" ? "number" : f.type || "text"}"${attrs} value="${escapeHtml(value ?? "")}"></label>`;
+  }
+
+  function readInputs(fields){
+    const out = {};
+    for (const f of fields){
+      const el = $("in-" + f.id);
+      if (!el) continue;
+      out[f.id] = f.type === "check" ? el.checked : f.type === "number" ? numberOr(el.value, f.value ?? 0) : el.value;
+    }
+    return out;
+  }
+
+  // --- Table categories (catalogue) ----------------------------------------------------------------------------
+
+  async function loadTable(){
+    $("results").innerHTML = `<p class="empty">Loading…</p>`;
+    const { data, error } = await sb.from("catalog_items")
+      .select("id,provider,name,url,rate,attrs,source,updated_at").eq("category", key).eq("active", true).limit(2000);
+    if (error){ $("results").innerHTML = `<p class="empty">${escapeHtml(friendlyError(error))}</p>`; return; }
+    ITEMS = data.map(r => ({ ...r, rate: r.rate === null ? null : Number(r.rate) }));
+    const form = $("inputs");
+    form.innerHTML = cat.inputs.map(f => inputHtml(f, f.value)).join("");
+    form.hidden = !cat.inputs.length;
+    form.oninput = () => renderTable();
+    form.onsubmit = (e) => e.preventDefault();
+    if (cat.brokerRequest) renderBrokerRequest();
+    renderTable();
+  }
+
+  function renderTable(){
+    const c = readInputs(cat.inputs);
+    let rows = ITEMS.filter(it => !cat.filter || cat.filter(it, c));
+    const rankFn = sortCol !== null && cat.columns[sortCol].sort ? (it) => cat.columns[sortCol].sort(it, c) : (it) => cat.rank(it, c);
+    rows = rows.map(it => ({ it, k: rankFn(it) })).sort((a, b) => (a.k ?? 1e9) - (b.k ?? 1e9) || a.it.provider.localeCompare(b.it.provider)).map(x => x.it);
+    if (!ITEMS.length){
+      $("results").innerHTML = `<div class="table-wrap"><p class="empty">No products loaded yet. The nightly sync fills this in; check back tomorrow.</p></div>`;
+      $("countLine").textContent = "";
+      return;
+    }
+    const providers = new Set(ITEMS.map(i => i.provider)).size;
+    const head = cat.columns.map((col, i) => `<th scope="col"${col.num ? ' class="num"' : ""}>${col.sort
+      ? `<button type="button" data-sort="${i}" aria-label="Sort by ${escapeHtml(col.label)}">${escapeHtml(col.label)}${sortCol === i ? " ▲" : ""}</button>` : escapeHtml(col.label)}</th>`).join("");
+    const body = rows.map(it => `<tr>${cat.columns.map((col, i) => i === 0
+      ? `<th scope="row">${col.html(it, c)}</th>` : `<td${col.num ? ' class="num"' : ""}>${col.html(it, c)}</td>`).join("")}
+      <td class="acts">${safeUrl(it.url) ? `<a class="btn-ghost btn-sm" href="${escapeHtml(it.url)}" rel="noopener" target="_blank">Go to site<span class="visually-hidden"> for ${escapeHtml(it.provider)} ${escapeHtml(it.name)} (opens in a new tab)</span></a>` : ""}
+        <button type="button" class="btn-ghost btn-sm" data-have="${it.id}">I have this<span class="visually-hidden">: ${escapeHtml(it.provider)} ${escapeHtml(it.name)}</span></button></td></tr>`).join("");
+    $("results").innerHTML = rows.length
+      ? `<div class="table-wrap"><table class="compare"><caption>${rows.length} products, best match first${sortCol !== null ? " (sorted by " + escapeHtml(cat.columns[sortCol].label) + ")" : ""}. The top row is highlighted.</caption>
+          <thead><tr>${head}<th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead><tbody>${body}</tbody></table></div>`
+      : `<div class="table-wrap"><p class="empty">Nothing matches those choices. Try widening them.</p></div>`;
+    $("countLine").textContent = `Comparing ${ITEMS.length} products from ${providers} providers. We don't compare every product in the market.`;
+  }
+
+  $("results").addEventListener("click", async (e) => {
+    const s = e.target.closest("[data-sort]");
+    if (s){ const i = Number(s.dataset.sort); sortCol = sortCol === i ? null : i; renderTable(); return; }
+    const h = e.target.closest("[data-have]");
+    if (h){
+      const it = ITEMS.find(x => String(x.id) === h.dataset.have);
+      if (await saveHolding(cat.holding(it, readInputs(cat.inputs)))){ h.textContent = "Saved to My money"; h.disabled = true; }
+    }
+  });
+
+  // --- Quote-based products (insurance) ------------------------------------------------------------------------
+
+  function renderQuote(){
+    const insurers = INSURERS[key] || [];
+    const prefill = (f) => f.profile && profile ? profile[f.profile] : "";
+    $("results").innerHTML = `
+      <section class="card">
+        <h2>${cat.adviser ? "Ask an adviser to contact you" : "Request quotes"}</h2>
+        <p class="muted">${cat.adviser ? "Only a licensed adviser can recommend this cover." : "One form, sent to the insurers our licensed partner works with."}
+          No licensed partner is connected on this test site yet, so your request is saved and you'll be contacted when one is.</p>
+        <form id="quoteForm" class="stack" novalidate>
+          <div class="inputs" style="margin:0">${cat.fields.map(f => inputHtml(f, prefill(f))).join("")}</div>
+          <p class="form-msg" id="quoteMsg" role="alert"></p>
+          <div><button type="submit" class="btn-primary">${cat.adviser ? "Ask an adviser to contact me" : "Request quotes"}</button></div>
+        </form>
+      </section>
+      <section class="card"><h2>Insurers we plan to compare</h2>
+        <p class="muted">${insurers.length} insurers. The partner's panel may differ; we'll show the final list with prices.</p>
+        <p>${insurers.map(escapeHtml).join(" · ")}</p></section>`;
+    $("quoteForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const msg = $("quoteMsg");
+      if (!SESSION){ msg.className = "form-msg error"; msg.textContent = "Sign in first so we can contact you."; openSignin(); return; }
+      const details = readInputs(cat.fields);
+      const { error } = await sb.from("quote_requests").insert({ category: key, details });
+      if (error){ msg.className = "form-msg error"; msg.textContent = friendlyError(error); return; }
+      msg.className = "form-msg ok";
+      msg.textContent = "Saved. You'll find it in My money, and we'll be in touch once a licensed partner is connected.";
+    });
+  }
+
+  function renderBrokerRequest(){
+    $("extra").innerHTML = `
+      <section class="card"><h2>Talk to a business finance broker</h2>
+        <p class="muted">Specialist business lenders price each business individually. Leave your details and a commercial broker will call you once our broker marketplace for business finance opens.</p>
+        <form id="brokerForm" class="stack" novalidate>
+          <div class="inputs" style="margin:0">
+            ${inputHtml({ id: "bAmount", label: "Amount ($)", type: "number" }, 100000)}
+            ${inputHtml({ id: "bPurpose", label: "Purpose", type: "select", options: [["working_capital", "Working capital"], ["equipment", "Equipment or vehicle"], ["buy_business", "Buying a business"], ["refinance", "Refinance"], ["other", "Other"]] }, "working_capital")}
+            ${inputHtml({ id: "bTrading", label: "Months trading", type: "number" }, "")}
+            ${inputHtml({ id: "bTurnover", label: "Monthly turnover ($)", type: "number" }, "")}
+          </div>
+          <p class="form-msg" id="brokerMsg" role="alert"></p>
+          <div><button type="submit" class="btn-primary">Ask a broker to call me</button></div>
+        </form></section>`;
+    $("brokerForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const msg = $("brokerMsg");
+      if (!SESSION){ openSignin(); return; }
+      const details = readInputs([{ id: "bAmount", type: "number" }, { id: "bPurpose" }, { id: "bTrading", type: "number" }, { id: "bTurnover", type: "number" }]);
+      const { error } = await sb.from("quote_requests").insert({ category: "business_loans", details });
+      msg.className = "form-msg " + (error ? "error" : "ok");
+      msg.textContent = error ? friendlyError(error) : "Saved. A broker will be in touch once business finance brokers join.";
+    });
+  }
+
+  // --- Live lookups ------------------------------------------------------------------------------------------------
+
+  async function live(params){
+    const url = `${SUPABASE_URL}/functions/v1/catalog-live?${new URLSearchParams(params)}`;
+    const res = await fetch(url, { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(body.error || `Lookup failed (${res.status})`);
+    return body;
+  }
+
+  const HOUSEHOLD_KWH = { "1": 2800, "2": 4000, "3": 5000, "4": 6000, "5": 7000 };
+
+  function renderEnergyForm(){
+    const size = profile?.household?.people?.length ? String(Math.min(5, profile.household.people.length)) : "2";
+    const form = $("inputs");
+    form.hidden = false;
+    form.innerHTML = inputHtml({ id: "postcode", label: "Postcode", type: "text", pattern: "\\d{4}" }, profile?.postcode || "")
+      + inputHtml({ id: "people", label: "People at home", type: "select", options: [["1", "1"], ["2", "2"], ["3", "3"], ["4", "4"], ["5", "5 or more"]] }, size)
+      + inputHtml({ id: "kwh", label: "Yearly use (kWh)", type: "number" }, HOUSEHOLD_KWH[size])
+      + inputHtml({ id: "export", label: "Solar exported a year (kWh)", type: "number" }, 0)
+      + `<button type="submit" class="btn-primary">Compare plans</button>`;
+    $("in-people").addEventListener("change", () => { $("in-kwh").value = HOUSEHOLD_KWH[$("in-people").value]; });
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      const postcode = $("in-postcode").value.trim();
+      if (!/^\d{4}$/.test(postcode)){ showNotice($("notice"), "Enter a 4-digit postcode."); return; }
+      showNotice($("notice"), "");
+      $("results").innerHTML = `<p class="empty">Pricing every plan for ${escapeHtml(postcode)}… the first search for a postcode can take 20 seconds.</p>`;
+      try {
+        const r = await live({ type: "energy", postcode, kwh: $("in-kwh").value, export: $("in-export").value });
+        renderEnergy(r);
+      } catch (err){ $("results").innerHTML = `<div class="table-wrap"><p class="empty">${escapeHtml(err.message)}</p></div>`; }
+    };
+    if (profile?.postcode) form.requestSubmit();
+  }
+
+  function renderEnergy(r){
+    if (!r.plans.length){ $("results").innerHTML = `<div class="table-wrap"><p class="empty">No single-rate plans could be priced for ${escapeHtml(r.postcode)}.</p></div>`; return; }
+    $("results").innerHTML = `<div class="table-wrap"><table class="compare"><caption>${r.plans.length} plans for ${escapeHtml(r.postcode)} (${escapeHtml(r.distributors.join(", "))} network), ${r.kwh.toLocaleString()} kWh a year, cheapest first. Includes GST and guaranteed discounts; conditional discounts (e.g. pay on time) are listed but not taken off.</caption>
+      <thead><tr><th scope="col">Retailer and plan</th><th scope="col" class="num">Est. yearly bill</th><th scope="col" class="num">Supply a day</th><th scope="col" class="num">Usage per kWh</th><th scope="col" class="num">Solar feed-in</th><th scope="col">Conditional discounts</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+      <tbody>${r.plans.map((p, i) => `<tr><th scope="row"><span class="prov">${escapeHtml(p.provider)}</span><span class="sub">${escapeHtml(p.name)}</span></th>
+        <td class="num">${money(p.annual)}</td><td class="num">${money(p.supplyPerDay, 2)}</td><td class="num">${p.usageCentsPerKwh.toFixed(2)}c</td>
+        <td class="num">${p.fitCents ? p.fitCents + "c" : "—"}</td><td><span class="sub">${escapeHtml(p.conditionalDiscounts.join(", ") || "None")}</span></td>
+        <td class="acts">${p.url ? `<a class="btn-ghost btn-sm" href="${escapeHtml(p.url)}" rel="noopener" target="_blank">Plan details<span class="visually-hidden"> for ${escapeHtml(p.name)} (Energy Made Easy, new tab)</span></a>` : ""}
+          <button type="button" class="btn-ghost btn-sm" data-energy="${i}">I'm on this plan</button></td></tr>`).join("")}</tbody></table></div>`;
+    $("countLine").textContent = `Checked ${r.checked} plans from the energy regulator's data. Estimates for comparison only; your bill depends on when you use power.`;
+    $("results").onclick = async (e) => {
+      const b = e.target.closest("[data-energy]");
+      if (!b) return;
+      const p = r.plans[Number(b.dataset.energy)];
+      if (await saveHolding({ category: "energy", provider: p.provider, product_name: p.name, amount: p.annual, details: { postcode: r.postcode, kwh: r.kwh } })){ b.textContent = "Saved"; b.disabled = true; }
+    };
+  }
+
+  const CURRENCIES = [["INR", "Indian rupee"], ["CNY", "Chinese yuan"], ["GBP", "British pound"], ["NZD", "New Zealand dollar"], ["USD", "US dollar"], ["PHP", "Philippine peso"], ["EUR", "Euro"], ["VND", "Vietnamese dong"], ["LKR", "Sri Lankan rupee"], ["NPR", "Nepalese rupee"], ["PKR", "Pakistani rupee"]];
+
+  function renderFxForm(){
+    const form = $("inputs");
+    form.hidden = false;
+    form.innerHTML = inputHtml({ id: "amount", label: "You send (AUD)", type: "number" }, 1000)
+      + inputHtml({ id: "to", label: "They receive", type: "select", options: CURRENCIES.map(([c, n]) => [c, `${c} · ${n}`]) }, "INR")
+      + `<button type="submit" class="btn-primary">Compare</button>`;
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      $("results").innerHTML = `<p class="empty">Getting quotes…</p>`;
+      try {
+        const r = await live({ type: "fx", to: $("in-to").value, amount: $("in-amount").value });
+        const best = r.providers[0];
+        $("results").innerHTML = r.providers.length ? `<div class="table-wrap"><table class="compare"><caption>Sending ${money(r.amount)} AUD to ${escapeHtml(r.to)}, most received first.</caption>
+          <thead><tr><th scope="col">Provider</th><th scope="col" class="num">They receive</th><th scope="col" class="num">Fee</th><th scope="col" class="num">Exchange rate</th><th scope="col" class="num">Less than best</th></tr></thead>
+          <tbody>${r.providers.map(p => `<tr><th scope="row"><span class="prov">${escapeHtml(p.name)}</span></th>
+            <td class="num">${Number(p.received).toLocaleString("en-AU", { maximumFractionDigits: 2 })} ${escapeHtml(r.to)}</td><td class="num">${money(p.fee, 2)}</td>
+            <td class="num">${Number(p.rate).toFixed(4)}</td><td class="num">${p === best ? "Best" : (best.received - p.received).toLocaleString("en-AU", { maximumFractionDigits: 0 }) + " " + escapeHtml(r.to)}</td></tr>`).join("")}</tbody></table></div>`
+          : `<div class="table-wrap"><p class="empty">No quotes for that currency right now.</p></div>`;
+        $("countLine").textContent = `${r.providers.length} providers. Source: ${r.source}, collected moments ago.`;
+      } catch (err){ $("results").innerHTML = `<div class="table-wrap"><p class="empty">${escapeHtml(err.message)}</p></div>`; }
+    };
+    form.requestSubmit();
+  }
+
+  function renderFuelForm(){
+    const form = $("inputs");
+    form.hidden = false;
+    form.innerHTML = inputHtml({ id: "state", label: "State", type: "select", options: [["WA", "WA (live)"], ["NSW", "NSW / ACT"], ["VIC", "VIC"], ["QLD", "QLD"], ["SA", "SA"], ["TAS", "TAS"], ["NT", "NT"]] }, "WA")
+      + inputHtml({ id: "suburb", label: "Suburb", type: "text" }, "Perth")
+      + inputHtml({ id: "fuel", label: "Fuel", type: "select", options: [["ulp", "Unleaded 91"], ["premium95", "Premium 95"], ["premium98", "Premium 98"], ["diesel", "Diesel"], ["lpg", "LPG"], ["e85", "E85"]] }, "ulp")
+      + `<button type="submit" class="btn-primary">Find fuel</button>`;
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      $("results").innerHTML = `<p class="empty">Checking prices…</p>`;
+      try {
+        const r = await live({ type: "fuel", state: $("in-state").value, suburb: $("in-suburb").value, fuel: $("in-fuel").value });
+        $("results").innerHTML = r.stations.length ? `<div class="table-wrap"><table class="compare"><caption>Today's prices in and around ${escapeHtml(r.suburb)}, cheapest first.</caption>
+          <thead><tr><th scope="col">Station</th><th scope="col" class="num">Price (c/L)</th><th scope="col">Address</th><th scope="col"><span class="visually-hidden">Map</span></th></tr></thead>
+          <tbody>${r.stations.map(s => `<tr><th scope="row"><span class="prov">${escapeHtml(s.station)}</span><span class="sub">${escapeHtml(s.brand)}</span></th>
+            <td class="num">${s.price.toFixed(1)}</td><td>${escapeHtml(s.address)}, ${escapeHtml(s.suburb)}</td>
+            <td class="acts"><a class="btn-ghost btn-sm" href="https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lng}" rel="noopener" target="_blank">Map<span class="visually-hidden"> for ${escapeHtml(s.station)} (new tab)</span></a></td></tr>`).join("")}</tbody></table></div>`
+          : `<div class="table-wrap"><p class="empty">No stations found. Check the suburb spelling.</p></div>`;
+        $("countLine").textContent = `Source: ${r.source}.`;
+      } catch (err){ $("results").innerHTML = `<div class="table-wrap"><p class="empty">${escapeHtml(err.message)}</p></div>`; }
+    };
+    form.requestSubmit();
+  }
+</script>

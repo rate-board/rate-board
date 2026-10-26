@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="en-AU">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>My money · BeatInflation</title>
+<meta name="description" content="Your household, assets and the products you hold, with savings, reminders and Inflation Points.">
+<script>
+  try { const t = localStorage.getItem("rb.theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (_) {}
+</script>
+<link rel="stylesheet" href="common.css?v=5">
+<link rel="stylesheet" href="app.css?v=1">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500..600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
+<script src="common.js?v=5"></script>
+<script src="app.js?v=1"></script>
+<script src="catalog.js?v=1"></script>
+
+<a class="skip-link" href="#main">Skip to My money</a>
+<nav class="site-nav" id="siteNav" aria-label="Main"></nav>
+<div class="wrap">
+  <header class="page">
+    <div class="title-block">
+      <h1>My money</h1>
+      <p class="lede">Your household, what you own and the products attached to each, so we can show where you'd save and remind you before renewals.</p>
+    </div>
+    <div class="header-right"><div class="account" id="accountBar"></div></div>
+  </header>
+  <div class="visually-hidden" id="srStatus" role="status" aria-live="polite"></div>
+
+  <main id="main" tabindex="-1" class="stack">
+    <section class="card" id="signedOut" hidden>
+      <h2>Sign in to see your money</h2>
+      <p class="muted">Your profile is private: only you can see it, and we never sell it or share it without asking.</p>
+      <div class="row-actions"><button type="button" class="btn-primary" onclick="openSignin()">Sign in</button><a class="btn-ghost" href="index.html#register">Create free account</a></div>
+    </section>
+
+    <div id="signedIn" class="stack" hidden>
+      <section class="card" aria-labelledby="ptsHeading">
+        <div class="points-hero">
+          <div><h2 id="ptsHeading">Inflation Points</h2>
+            <p class="muted small" id="ptsValueLine"></p></div>
+          <div><div class="points-big" id="ptsBalance">0</div><span class="small muted" id="ptsDollars"></span></div>
+        </div>
+        <div class="kv">
+          <div><b id="ptsPending">0</b><span>Pending</span></div>
+          <div><b id="ptsLifetime">0</b><span>Earned so far</span></div>
+          <div><b id="ptsCents">1.00c</b><span>Value of one point</span></div>
+        </div>
+        <div class="row-actions">
+          <button type="button" class="btn-ghost" id="checkinBtn">Quarterly check-in (+100)</button>
+          <button type="button" class="btn-ghost" id="redeemBtn">Use points</button>
+        </div>
+        <details style="margin-top:10px"><summary>How to earn and history</summary>
+          <h3>Ways to earn</h3><ul id="earnList" class="small"></ul>
+          <h3>History</h3><table class="ledger"><tbody id="ledgerRows"></tbody></table>
+        </details>
+      </section>
+
+      <section class="card" aria-labelledby="beatHeading">
+        <h2 id="beatHeading">Beat Inflation check</h2>
+        <p class="muted" id="beatLine"></p>
+        <div id="beatBody"></div>
+      </section>
+
+      <section class="card" aria-labelledby="oppHeading">
+        <h2 id="oppHeading">Where you could save</h2>
+        <div id="oppBody"></div>
+      </section>
+
+      <section class="card" aria-labelledby="remHeading">
+        <h2 id="remHeading">Coming up</h2>
+        <div id="remBody"></div>
+      </section>
+
+      <section class="card" aria-labelledby="assetsHeading">
+        <div class="asset-head"><h2 id="assetsHeading">Assets and debts</h2>
+          <button type="button" class="btn-primary" id="addAssetBtn">Add an asset</button></div>
+        <p class="muted small">Each product you hold sits under the asset it belongs to: the home loan under the home, the policy under the car.</p>
+        <div id="assetList"></div>
+        <div id="looseList"></div>
+      </section>
+
+      <section class="card" aria-labelledby="hhHeading">
+        <h2 id="hhHeading">Household</h2>
+        <form id="profileForm" class="stack" novalidate>
+          <div class="inputs" style="margin:0">
+            <label class="field" for="pf-postcode">Postcode<input id="pf-postcode" inputmode="numeric" pattern="\d{4}" maxlength="4"></label>
+            <label class="field" for="pf-income">Household income<select id="pf-income">
+              <option value="">Prefer not to say</option><option value="under_50k">Under $50k</option><option value="50k_100k">$50k–$100k</option>
+              <option value="100k_150k">$100k–$150k</option><option value="150k_200k">$150k–$200k</option><option value="over_200k">Over $200k</option></select></label>
+            <label class="field" for="pf-adults">Adults<input id="pf-adults" type="number" min="1" max="10" inputmode="numeric"></label>
+            <label class="field" for="pf-ages">Ages (optional, e.g. 42, 40, 9)<input id="pf-ages"></label>
+            <label class="field" for="pf-kids">Children<input id="pf-kids" type="number" min="0" max="12" inputmode="numeric"></label>
+            <label class="field" for="pf-pets">Pets (e.g. dog 3, cat 7)<input id="pf-pets"></label>
+          </div>
+          <p class="form-msg" id="profileMsg" role="alert"></p>
+          <div><button type="submit" class="btn-primary">Save household</button></div>
+        </form>
+      </section>
+
+      <section class="card" aria-labelledby="qHeading">
+        <h2 id="qHeading">Your quote requests</h2>
+        <div id="quoteList"></div>
+      </section>
+
+      <section class="card" aria-labelledby="dataHeading">
+        <h2 id="dataHeading">Your data</h2>
+        <p class="muted small">Only you can see this profile. We never sell it, and an agent or partner sees it only if you send them a request.</p>
+        <div class="row-actions"><button type="button" class="btn-ghost" id="exportBtn">Download my data</button></div>
+      </section>
+    </div>
+  </main>
+
+  <footer>
+    <span>BeatInflation · general information, not advice.</span>
+    <nav aria-label="Site"><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="accessibility.html">Accessibility</a></nav>
+  </footer>
+</div>
+
+<dialog id="assetDialog" class="modal wide" aria-labelledby="assetTitle">
+  <form id="assetForm" novalidate>
+    <h2 id="assetTitle">Add an asset</h2>
+    <label class="field" for="as-kind">Type<select id="as-kind"></select></label>
+    <label class="field" for="as-label">Name<span class="field-hint">e.g. "Our home", "Brunswick unit", "Corolla"</span><input id="as-label" maxlength="80" required></label>
+    <label class="field" for="as-value">Value or balance ($, optional)<input id="as-value" type="number" min="0" inputmode="decimal"></label>
+    <div id="as-details" class="stack"></div>
+    <p class="form-msg" id="assetMsg" role="alert"></p>
+    <div class="dialog-actions">
+      <button type="button" class="btn-danger" id="as-delete" hidden>Delete</button>
+      <button type="button" class="btn-ghost" id="as-cancel">Cancel</button>
+      <button type="submit" class="btn-primary">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="holdingDialog" class="modal wide" aria-labelledby="holdingTitle">
+  <form id="holdingForm" novalidate>
+    <h2 id="holdingTitle">Add a product you hold</h2>
+    <label class="field" for="ho-asset">Belongs to<select id="ho-asset"></select></label>
+    <label class="field" for="ho-category">Product<select id="ho-category"></select></label>
+    <div class="field-row">
+      <label class="field" for="ho-provider">Provider<input id="ho-provider" maxlength="80"></label>
+      <label class="field" for="ho-product">Product name (optional)<input id="ho-product" maxlength="120"></label>
+    </div>
+    <div class="field-row">
+      <label class="field" for="ho-rate">Interest rate (% a year, if any)<input id="ho-rate" type="number" step="0.01" min="0" inputmode="decimal"></label>
+      <label class="field" for="ho-amount">Balance, amount or yearly cost ($)<input id="ho-amount" type="number" min="0" inputmode="decimal"></label>
+    </div>
+    <label class="field" for="ho-renewal">Renewal, expiry or maturity date (optional)<input id="ho-renewal" type="date"></label>
+    <p class="form-msg" id="holdingMsg" role="alert"></p>
+    <div class="dialog-actions">
+      <button type="button" class="btn-danger" id="ho-delete" hidden>Delete</button>
+      <button type="button" class="btn-ghost" id="ho-cancel">Cancel</button>
+      <button type="submit" class="btn-primary">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="redeemDialog" class="modal" aria-labelledby="redeemTitle">
+  <form id="redeemForm" novalidate>
+    <h2 id="redeemTitle">Use Inflation Points</h2>
+    <p class="modal-sub">Minimum 2,000 points. Gift cards and donations are paid at full value; cash and home loan repayments at 90%.</p>
+    <label class="field" for="rd-option">How<select id="rd-option">
+      <option value="gift_card">Gift card</option><option value="cash">Cash to my bank account</option>
+      <option value="home_loan">Extra repayment to my home loan</option><option value="charity">Donate to charity</option></select></label>
+    <label class="field" for="rd-points">Points<input id="rd-points" type="number" min="2000" step="100" inputmode="numeric"></label>
+    <p class="form-msg" id="redeemMsg" role="alert"></p>
+    <div class="dialog-actions"><button type="button" class="btn-ghost" id="rd-cancel">Cancel</button><button type="submit" class="btn-primary">Request</button></div>
+  </form>
+</dialog>
+
+<script>
+  const ASSET_FIELDS = {
+    home: [["suburb", "Suburb"], ["postcode", "Postcode"], ["bought", "Year bought"]],
+    investment_property: [["suburb", "Suburb"], ["postcode", "Postcode"], ["rent", "Weekly rent ($)"]],
+    vehicle: [["make", "Make"], ["model", "Model"], ["year", "Year"]],
+    cash: [["bank", "Main bank"]],
+    super: [["fund", "Fund"]],
+    investments: [["platform", "Platform or broker"]],
+    debt: [["type", "Type (credit card, personal loan, buy now pay later)"]],
+    business: [["abn", "ABN"], ["industry", "Industry"]],
+  };
+  // Rate-based products where a lower (loans) or higher (deposits) rate in the catalogue means a saving.
+  const DEPOSIT = ["savings", "term_deposits"];
+  const BORROW = ["home_loans", "personal_loans", "car_loans", "credit_cards", "business_loans"];
+
+  let PROFILE = null, ASSETS = [], HOLDINGS = [], CPI = null, BEST = {};
+  let editingAsset = null, editingHolding = null;
+
+  window.onSession = async (session) => {
+    $("signedOut").hidden = !!session;
+    $("signedIn").hidden = !session;
+    if (!session) return;
+    await awardPoints("join");
+    await loadAll();
+  };
+
+  async function loadAll(){
+    const [prof, assets, holdings, quotes, cpi] = await Promise.all([
+      sb.from("customer_profiles").select("*").maybeSingle(),
+      sb.from("assets").select("*").order("created_at"),
+      sb.from("holdings").select("*").order("created_at"),
+      sb.from("quote_requests").select("id,category,status,created_at").order("created_at", { ascending: false }),
+      sb.from("cpi_quarters").select("quarter,index_value").order("quarter", { ascending: false }).limit(5),
+    ]);
+    PROFILE = prof.data;
+    ASSETS = assets.data || [];
+    HOLDINGS = (holdings.data || []).map(h => ({ ...h, rate: h.rate === null ? null : Number(h.rate), amount: h.amount === null ? null : Number(h.amount) }));
+    const q = cpi.data || [];
+    CPI = q.length >= 5 ? { rate: (Number(q[0].index_value) / Number(q[4].index_value) - 1) * 100, quarter: q[0].quarter } : null;
+    await loadBest();
+    renderProfile();
+    renderAssets();
+    renderQuotes(quotes.data || []);
+    renderInsights();
+    await renderPoints();
+  }
+
+  // Best current rates in the catalogue for the categories people hold, for "you could save" figures.
+  async function loadBest(){
+    const cats = [...new Set(HOLDINGS.map(h => h.category))].filter(c => DEPOSIT.includes(c) || BORROW.includes(c));
+    BEST = {};
+    await Promise.all(cats.map(async (c) => {
+      if (c === "home_loans"){
+        const { data } = await sb.from("rates").select("rate,lender_id,product_key").eq("product_key", "variable").order("rate").limit(1);
+        if (data && data[0]) BEST[c] = { rate: Number(data[0].rate), label: `${lenderLabel(data[0].lender_id)} variable` };
+        return;
+      }
+      const { data } = await sb.from("catalog_items").select("provider,name,rate,attrs").eq("category", c).eq("active", true).limit(2000);
+      const items = (data || []).filter(i => i.rate !== null && !i.attrs.business);
+      if (!items.length) return;
+      if (c === "savings"){
+        const best = items.map(i => ({ i, r: Math.max(i.attrs.base ?? 0, i.attrs.bonus ?? 0) })).sort((a, b) => b.r - a.r)[0];
+        BEST[c] = { rate: best.r, label: `${best.i.provider} ${best.i.name}` };
+      } else if (c === "term_deposits"){
+        const best = items.filter(i => i.attrs.terms && i.attrs.terms["12"]).sort((a, b) => b.attrs.terms["12"] - a.attrs.terms["12"])[0];
+        if (best) BEST[c] = { rate: best.attrs.terms["12"], label: `${best.provider} 12 months` };
+      } else {
+        const best = items.filter(i => Number(i.rate) > 0).sort((a, b) => a.rate - b.rate)[0];
+        if (best) BEST[c] = { rate: Number(best.rate), label: `${best.provider} ${best.name}` };
+      }
+    }));
+  }
+
+  function lenderLabel(id){ return id.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase()); }
+
+  // --- Profile ---------------------------------------------------------------------------------------------------
+
+  function renderProfile(){
+    const hh = PROFILE?.household || {};
+    $("pf-postcode").value = PROFILE?.postcode || "";
+    $("pf-income").value = PROFILE?.income_band || "";
+    $("pf-adults").value = hh.adults ?? "";
+    $("pf-kids").value = hh.children ?? "";
+    $("pf-ages").value = (hh.ages || []).join(", ");
+    $("pf-pets").value = (hh.pets || []).map(p => `${p.species} ${p.age ?? ""}`.trim()).join(", ");
+  }
+
+  $("profileForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = $("profileMsg");
+    const postcode = $("pf-postcode").value.trim() || null;
+    if (postcode && !/^\d{4}$/.test(postcode)){ msg.className = "form-msg error"; msg.textContent = "Postcode must be 4 digits."; return; }
+    const ages = $("pf-ages").value.split(/[,\s]+/).map(Number).filter(n => n > 0 && n < 120);
+    const pets = $("pf-pets").value.split(",").map(s => s.trim()).filter(Boolean).map(s => {
+      const m = s.match(/^([A-Za-z ]+?)\s*(\d+)?$/);
+      return m ? { species: m[1].toLowerCase(), age: m[2] ? Number(m[2]) : null } : { species: s.toLowerCase(), age: null };
+    });
+    const household = {
+      adults: numberOr($("pf-adults").value, null), children: numberOr($("pf-kids").value, null), ages, pets,
+      people: Array.from({ length: (numberOr($("pf-adults").value, 0) || 0) + (numberOr($("pf-kids").value, 0) || 0) }, () => ({})),
+    };
+    const { error } = await sb.from("customer_profiles").upsert({ user_id: SESSION.user.id, postcode, income_band: $("pf-income").value || null, household });
+    msg.className = "form-msg " + (error ? "error" : "ok");
+    msg.textContent = error ? friendlyError(error) : "Saved.";
+    if (!error){ PROFILE = { ...(PROFILE || {}), postcode, household }; }
+  });
+
+  // --- Assets and holdings ---------------------------------------------------------------------------------------
+
+  function holdingLine(h){
+    const bits = [escapeHtml(categoryTitle(h.category))];
+    if (h.provider) bits.push(escapeHtml(h.provider) + (h.product_name ? " " + escapeHtml(h.product_name) : ""));
+    if (h.rate !== null) bits.push(pct(h.rate));
+    if (h.amount !== null) bits.push(money(h.amount));
+    if (h.renewal_date) bits.push("renews " + shortDate(h.renewal_date));
+    const opp = opportunity(h);
+    return `<li>${bits.join(" · ")} ${opp ? `<span class="opp">· could save ${money(opp.saving)}/yr</span>` : ""}
+      <button type="button" class="link-btn" data-edit-holding="${h.id}">Edit<span class="visually-hidden"> ${escapeHtml(categoryTitle(h.category))}</span></button></li>`;
+  }
+
+  function renderAssets(){
+    $("assetList").innerHTML = ASSETS.length ? ASSETS.map(a => {
+      const mine = HOLDINGS.filter(h => h.asset_id === a.id);
+      const d = a.details || {};
+      const facts = Object.entries(ASSET_FIELDS[a.kind] || []).map(([, [k, label]]) => d[k] ? `${label.split(" (")[0]}: ${escapeHtml(d[k])}` : "").filter(Boolean);
+      return `<div class="asset"><div class="asset-head">
+          <div><h3>${escapeHtml(a.label)}</h3><span class="small muted">${escapeHtml(ASSET_KINDS[a.kind].label)}${a.value ? " · " + money(a.value) : ""}${facts.length ? " · " + facts.join(" · ") : ""}</span></div>
+          <div class="row-actions" style="margin:0"><button type="button" class="btn-ghost btn-sm" data-add-holding="${a.id}">Add a product<span class="visually-hidden"> to ${escapeHtml(a.label)}</span></button>
+            <button type="button" class="btn-ghost btn-sm" data-edit-asset="${a.id}">Edit<span class="visually-hidden"> ${escapeHtml(a.label)}</span></button></div></div>
+        ${mine.length ? `<ul>${mine.map(holdingLine).join("")}</ul>` : `<p class="small muted" style="margin:8px 0 0">No products yet. Typical: ${ASSET_KINDS[a.kind].categories.map(categoryTitle).join(", ")}.</p>`}
+      </div>`;
+    }).join("") : `<p class="muted">Nothing yet. Start with your home, car or savings.</p>`;
+    const loose = HOLDINGS.filter(h => !h.asset_id);
+    $("looseList").innerHTML = loose.length ? `<h3>Not linked to an asset yet</h3><ul>${loose.map(holdingLine).join("")}</ul>` : "";
+  }
+
+  function detailInputs(kind, details = {}){
+    $("as-details").innerHTML = (ASSET_FIELDS[kind] || []).map(([k, label]) =>
+      `<label class="field" for="asd-${k}">${escapeHtml(label)}<input id="asd-${k}" data-detail="${k}" maxlength="80" value="${escapeHtml(details[k] ?? "")}"></label>`).join("");
+  }
+
+  $("as-kind").innerHTML = Object.entries(ASSET_KINDS).map(([k, v]) => `<option value="${k}">${escapeHtml(v.label)}</option>`).join("");
+  $("as-kind").addEventListener("change", () => detailInputs($("as-kind").value));
+
+  function openAsset(a = null){
+    editingAsset = a;
+    $("assetTitle").textContent = a ? "Edit asset" : "Add an asset";
+    $("as-kind").value = a ? a.kind : "home";
+    $("as-kind").disabled = !!a;
+    $("as-label").value = a ? a.label : "";
+    $("as-value").value = a && a.value !== null ? a.value : "";
+    detailInputs($("as-kind").value, a ? a.details : {});
+    $("as-delete").hidden = !a;
+    $("assetMsg").textContent = "";
+    $("assetDialog").showModal();
+  }
+
+  $("addAssetBtn").addEventListener("click", () => openAsset());
+  $("as-cancel").addEventListener("click", () => $("assetDialog").close());
+  $("assetForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const label = $("as-label").value.trim();
+    if (!label){ $("assetMsg").className = "form-msg error"; $("assetMsg").textContent = "Give it a name."; return; }
+    const details = {};
+    document.querySelectorAll("[data-detail]").forEach(i => { if (i.value.trim()) details[i.dataset.detail] = i.value.trim(); });
+    const row = { kind: $("as-kind").value, label, value: numberOr($("as-value").value, null), details };
+    const res = editingAsset ? await sb.from("assets").update(row).eq("id", editingAsset.id) : await sb.from("assets").insert(row);
+    if (res.error){ $("assetMsg").className = "form-msg error"; $("assetMsg").textContent = friendlyError(res.error); return; }
+    $("assetDialog").close();
+    if (!editingAsset){
+      const pts = await awardPoints("add_asset", row.kind);
+      if (pts) say(`Asset added. You earned ${pts} Inflation Points.`);
+    }
+    await loadAll();
+  });
+  $("as-delete").addEventListener("click", async () => {
+    if (!editingAsset || !confirm(`Delete ${editingAsset.label} and the products under it?`)) return;
+    const { error } = await sb.from("assets").delete().eq("id", editingAsset.id);
+    if (error){ $("assetMsg").textContent = friendlyError(error); return; }
+    $("assetDialog").close();
+    await loadAll();
+  });
+
+  function openHolding(h = null, assetId = null){
+    editingHolding = h;
+    const asset = ASSETS.find(a => a.id === (h ? h.asset_id : assetId));
+    $("ho-asset").innerHTML = `<option value="">Not linked</option>` + ASSETS.map(a => `<option value="${a.id}">${escapeHtml(a.label)}</option>`).join("");
+    $("ho-asset").value = asset ? asset.id : "";
+    const suggested = asset ? ASSET_KINDS[asset.kind].categories : [];
+    const all = Object.keys(CATEGORIES);
+    const order = [...suggested, ...all.filter(k => !suggested.includes(k))];
+    $("ho-category").innerHTML = order.map(k => `<option value="${k}">${escapeHtml(categoryTitle(k))}</option>`).join("");
+    $("ho-category").value = h ? h.category : order[0];
+    $("ho-provider").value = h?.provider || "";
+    $("ho-product").value = h?.product_name || "";
+    $("ho-rate").value = h && h.rate !== null ? h.rate : "";
+    $("ho-amount").value = h && h.amount !== null ? h.amount : "";
+    $("ho-renewal").value = h?.renewal_date || "";
+    $("holdingTitle").textContent = h ? "Edit product" : "Add a product you hold";
+    $("ho-delete").hidden = !h;
+    $("holdingMsg").textContent = "";
+    $("holdingDialog").showModal();
+  }
+
+  $("ho-cancel").addEventListener("click", () => $("holdingDialog").close());
+  $("holdingForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const row = {
+      asset_id: $("ho-asset").value || null, category: $("ho-category").value,
+      provider: $("ho-provider").value.trim() || null, product_name: $("ho-product").value.trim() || null,
+      rate: numberOr($("ho-rate").value, null), amount: numberOr($("ho-amount").value, null), renewal_date: $("ho-renewal").value || null,
+    };
+    const res = editingHolding ? await sb.from("holdings").update(row).eq("id", editingHolding.id) : await sb.from("holdings").insert(row);
+    if (res.error){ $("holdingMsg").className = "form-msg error"; $("holdingMsg").textContent = friendlyError(res.error); return; }
+    $("holdingDialog").close();
+    await loadAll();
+  });
+  $("ho-delete").addEventListener("click", async () => {
+    if (!editingHolding || !confirm("Delete this product?")) return;
+    await sb.from("holdings").delete().eq("id", editingHolding.id);
+    $("holdingDialog").close();
+    await loadAll();
+  });
+
+  $("main").addEventListener("click", (e) => {
+    const ea = e.target.closest("[data-edit-asset]");
+    if (ea) return openAsset(ASSETS.find(a => a.id === ea.dataset.editAsset));
+    const ah = e.target.closest("[data-add-holding]");
+    if (ah) return openHolding(null, ah.dataset.addHolding);
+    const eh = e.target.closest("[data-edit-holding]");
+    if (eh) return openHolding(HOLDINGS.find(h => h.id === eh.dataset.editHolding));
+  });
+
+  // --- Savings, Beat Inflation and reminders ----------------------------------------------------------------------
+
+  function opportunity(h){
+    const best = BEST[h.category];
+    if (!best || h.rate === null || !h.amount) return null;
+    const gap = DEPOSIT.includes(h.category) ? best.rate - h.rate : h.rate - best.rate;
+    if (gap <= 0.05) return null;
+    return { saving: h.amount * gap / 100, best };
+  }
+
+  function renderInsights(){
+    const opps = HOLDINGS.map(h => ({ h, o: opportunity(h) })).filter(x => x.o).sort((a, b) => b.o.saving - a.o.saving);
+    $("oppBody").innerHTML = opps.length
+      ? `<ul>${opps.map(({ h, o }) => `<li><strong>${money(o.saving)} a year</strong> on your ${escapeHtml(categoryTitle(h.category).toLowerCase())}
+          (${pct(h.rate)} now; ${escapeHtml(o.best.label)} is ${pct(o.best.rate)}). <a href="${CATEGORIES[h.category].href || "compare.html?c=" + h.category}">Compare</a></li>`).join("")}</ul>
+         <p class="small muted">Based on the rate and balance you entered and today's best published rate. Check eligibility and fees before switching.</p>`
+      : `<p class="muted">Add the rate and balance of your loans, cards and savings to see what you could save.</p>`;
+
+    const soon = HOLDINGS.filter(h => h.renewal_date).map(h => ({ h, days: Math.round((Date.parse(h.renewal_date) - Date.now()) / 86400000) }))
+      .filter(x => x.days >= -7 && x.days <= 90).sort((a, b) => a.days - b.days);
+    $("remBody").innerHTML = soon.length
+      ? `<ul>${soon.map(({ h, days }) => `<li>${escapeHtml(categoryTitle(h.category))}${h.provider ? " with " + escapeHtml(h.provider) : ""}: ${days < 0 ? "renewed " + (-days) + " days ago" : days === 0 ? "today" : "in " + days + " days"} (${shortDate(h.renewal_date)}).
+          <a href="${CATEGORIES[h.category]?.href || "compare.html?c=" + h.category}">Compare before it renews</a></li>`).join("")}</ul>`
+      : `<p class="muted">No renewals, maturities or fixed-rate expiries in the next 90 days.</p>`;
+
+    if (!CPI){ $("beatLine").textContent = "Inflation figures aren't loaded yet; they arrive with the next nightly update."; $("beatBody").innerHTML = ""; return; }
+    const deposits = HOLDINGS.filter(h => DEPOSIT.includes(h.category) && h.rate !== null);
+    const debts = HOLDINGS.filter(h => BORROW.includes(h.category) && h.rate !== null);
+    const beating = deposits.filter(h => h.rate > CPI.rate).length;
+    $("beatLine").textContent = `Inflation is ${pct(CPI.rate, 1)} over the year to ${CPI.quarter.replace("-", " ")} (ABS CPI). Money earning less than that is losing buying power.`;
+    $("beatBody").innerHTML = (deposits.length || debts.length) ? `
+      <div class="kv"><div><b>${deposits.length ? Math.round(beating / deposits.length * 100) + "%" : "—"}</b><span>Beat Inflation score: savings beating CPI</span></div></div>
+      <ul>${deposits.map(h => `<li>${escapeHtml(categoryTitle(h.category))}${h.provider ? " · " + escapeHtml(h.provider) : ""}: ${pct(h.rate)} is
+          <strong>${h.rate > CPI.rate ? pct(h.rate - CPI.rate) + " above" : pct(CPI.rate - h.rate) + " below"}</strong> inflation.</li>`).join("")}
+        ${debts.map(h => `<li>${escapeHtml(categoryTitle(h.category))}${h.provider ? " · " + escapeHtml(h.provider) : ""}: costs ${pct(h.rate - CPI.rate)} a year above inflation in real terms.</li>`).join("")}</ul>`
+      : `<p class="muted">Add your savings and loans with their rates to get your Beat Inflation score.</p>`;
+  }
+
+  function renderQuotes(rows){
+    $("quoteList").innerHTML = rows.length
+      ? `<ul>${rows.map(q => `<li>${escapeHtml(categoryTitle(q.category))} · sent ${shortDate(q.created_at.slice(0, 10))} · ${q.status === "new" ? "waiting for a licensed partner" : escapeHtml(q.status)}</li>`).join("")}</ul>`
+      : `<p class="muted">None yet. Request insurance quotes from <a href="products.html#h-insurance">Insurance</a>.</p>`;
+  }
+
+  // --- Inflation Points --------------------------------------------------------------------------------------------
+
+  async function renderPoints(){
+    const [{ data: sum }, { data: ledger }, { data: actions }] = await Promise.all([
+      sb.rpc("points_summary"),
+      sb.from("points_ledger").select("points,status,action,ref,created_at").order("created_at", { ascending: false }).limit(30),
+      sb.from("points_actions").select("action,points,per,label").order("points", { ascending: false }),
+    ]);
+    const s = (sum && sum[0]) || { balance: 0, pending: 0, lifetime: 0, cents_per_point: 1, dollar_value: 0 };
+    $("ptsBalance").textContent = s.balance.toLocaleString();
+    $("ptsDollars").textContent = `worth ${money(s.dollar_value, 2)} today`;
+    $("ptsPending").textContent = s.pending.toLocaleString();
+    $("ptsLifetime").textContent = s.lifetime.toLocaleString();
+    $("ptsCents").textContent = Number(s.cents_per_point).toFixed(4).replace(/0+$/, "").replace(/\.$/, ".0") + "c";
+    $("ptsValueLine").textContent = "A point is worth 1 cent at launch and rises with CPI each quarter (capped at 5% a year), so saved points keep up with inflation.";
+    const PER = { once: "once", once_per_ref: "once each", quarter: "each quarter", four_a_year: "up to 4 times a year" };
+    $("earnList").innerHTML = (actions || []).filter(a => a.points > 0).map(a => `<li>${escapeHtml(a.label)}: ${a.points.toLocaleString()} points ${PER[a.per]}</li>`).join("")
+      + `<li>Switching a product through BeatInflation: points set per product once commission is confirmed</li><li>No points on super, life insurance or income protection</li>`;
+    const LABEL = Object.fromEntries((actions || []).map(a => [a.action, a.label]));
+    $("ledgerRows").innerHTML = (ledger || []).length ? ledger.map(l => `<tr><td>${shortDate(l.created_at.slice(0, 10))}</td>
+      <td>${escapeHtml(LABEL[l.action] || (l.action === "redeem" ? "Used points (" + (l.ref || "").replace("_", " ") + ")" : l.action))}${l.status === "pending" ? " (pending)" : ""}</td>
+      <td class="num">${l.points > 0 ? "+" : ""}${l.points.toLocaleString()}</td></tr>`).join("") : `<tr><td>No points yet.</td></tr>`;
+  }
+
+  $("checkinBtn").addEventListener("click", async () => {
+    const pts = await awardPoints("quarterly_checkin");
+    alert(pts ? `Thanks for checking your details. +${pts} Inflation Points.` : "You've already checked in this quarter.");
+    await renderPoints();
+  });
+  $("redeemBtn").addEventListener("click", () => { $("redeemMsg").textContent = ""; $("rd-points").value = 2000; $("redeemDialog").showModal(); });
+  $("rd-cancel").addEventListener("click", () => $("redeemDialog").close());
+  $("redeemForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const { error } = await sb.rpc("redeem_points", { p_option: $("rd-option").value, p_points: Math.round(numberOr($("rd-points").value, 0)) });
+    if (error){ $("redeemMsg").className = "form-msg error"; $("redeemMsg").textContent = friendlyError(error); return; }
+    $("redeemMsg").className = "form-msg ok";
+    $("redeemMsg").textContent = "Requested. On the test site redemptions are paid by hand from the admin portal.";
+    await renderPoints();
+  });
+
+  $("exportBtn").addEventListener("click", () => {
+    const blob = new Blob([JSON.stringify({ profile: PROFILE, assets: ASSETS, holdings: HOLDINGS }, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "beatinflation-my-money.json";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+</script>

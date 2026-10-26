@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en-AU">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Calculators · BeatInflation</title>
+<meta name="description" content="Repayments, borrowing power, refinancing, debt consolidation, balance transfers, Medicare levy surcharge, lifetime health cover loading and super fees.">
+<script>
+  try { const t = localStorage.getItem("rb.theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (_) {}
+</script>
+<link rel="stylesheet" href="common.css?v=5">
+<link rel="stylesheet" href="app.css?v=1">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500..600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
+<script src="common.js?v=5"></script>
+<script src="app.js?v=1"></script>
+
+<a class="skip-link" href="#main">Skip to calculators</a>
+<nav class="site-nav" id="siteNav" aria-label="Main"></nav>
+<div class="wrap">
+  <header class="page">
+    <div class="title-block">
+      <h1>Calculators</h1>
+      <p class="lede">Quick estimates to check before you switch. They're general information only and use simplified assumptions noted under each one.</p>
+    </div>
+    <div class="header-right"><div class="account" id="accountBar"></div></div>
+  </header>
+  <div class="visually-hidden" id="srStatus" role="status" aria-live="polite"></div>
+
+  <main id="main" tabindex="-1" class="calc-grid"></main>
+
+  <footer>
+    <span>BeatInflation · estimates only, not advice.</span>
+    <nav aria-label="Site"><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="accessibility.html">Accessibility</a></nav>
+  </footer>
+</div>
+
+<script>
+  // Each calculator: inputs (id, label, default) and a function from values to an HTML result.
+  const CALCS = [
+    { id: "repay", title: "Loan repayments", note: "Principal and interest, monthly.",
+      inputs: [["amount", "Loan amount ($)", 600000], ["rate", "Interest rate (%)", 6.2], ["years", "Term (years)", 30]],
+      run: (v) => {
+        const m = monthlyRepayment(v.rate, v.amount, v.years, false);
+        return `Monthly repayment <strong>${money(m)}</strong>. Total interest over ${v.years} years: <strong>${money(m * v.years * 12 - v.amount)}</strong>.`;
+      } },
+    { id: "power", title: "Borrowing power (rough)", note: "Assumes lenders test repayments at your rate plus 3%, allow about 30% of gross income for repayments after other debts, and $400 a month per dependant. Lenders' own calculators differ.",
+      inputs: [["income", "Household income before tax ($ a year)", 150000], ["debts", "Other debt repayments ($ a month)", 0], ["deps", "Dependants", 0], ["rate", "Interest rate (%)", 6.2], ["years", "Term (years)", 30]],
+      run: (v) => {
+        const room = v.income / 12 * 0.3 - v.debts - v.deps * 400;
+        if (room <= 0) return "Your other commitments use up the repayment room in this simple estimate.";
+        const r = (v.rate + 3) / 100 / 12, n = v.years * 12;
+        const max = room * (1 - Math.pow(1 + r, -n)) / r;
+        return `You might borrow around <strong>${money(Math.round(max / 1000) * 1000)}</strong>. Talk to a lender or agent for a real assessment.`;
+      } },
+    { id: "refi", title: "Refinance savings", note: "Same balance and remaining term; switching costs are paid upfront.",
+      inputs: [["balance", "Loan balance ($)", 550000], ["now", "Current rate (%)", 6.6], ["new", "New rate (%)", 6.1], ["years", "Years left", 25], ["cost", "Switching costs ($)", 800]],
+      run: (v) => {
+        const a = monthlyRepayment(v.now, v.balance, v.years), b = monthlyRepayment(v.new, v.balance, v.years);
+        const save = a - b;
+        if (save <= 0) return "The new rate isn't lower, so switching wouldn't reduce repayments.";
+        return `You'd save <strong>${money(save)} a month</strong> (${money(save * 12)} a year). Switching costs are covered after <strong>${Math.ceil(v.cost / save)} months</strong>.`;
+      } },
+    { id: "debt", title: "Debt consolidation", note: "Compares paying each debt at its current repayment with one loan over the term you choose.",
+      inputs: [["b1", "Debt 1 balance ($)", 8000], ["r1", "Debt 1 rate (%)", 20.99], ["b2", "Debt 2 balance ($)", 5000], ["r2", "Debt 2 rate (%)", 14], ["rate", "Consolidation loan rate (%)", 9.5], ["years", "Loan term (years)", 3]],
+      run: (v) => {
+        const total = v.b1 + v.b2;
+        const now = (v.b1 * v.r1 + v.b2 * v.r2) / 100;
+        const loanMonthly = monthlyRepayment(v.rate, total, v.years);
+        const loanInterest = loanMonthly * v.years * 12 - total;
+        return `Interest now: about <strong>${money(now)} a year</strong>. One loan: <strong>${money(loanMonthly)} a month</strong>, ${money(loanInterest / v.years)} interest a year on average. <a href="compare.html?c=personal_loans">Compare personal loans</a>.`;
+      } },
+    { id: "bt", title: "Balance transfer", note: "Assumes you pay the balance off evenly over the promo period, with the transfer fee added upfront.",
+      inputs: [["balance", "Card balance ($)", 6000], ["rate", "Current card rate (%)", 20.99], ["btRate", "Balance transfer rate (%)", 0], ["months", "Promo months", 24], ["fee", "Transfer fee (%)", 2]],
+      run: (v) => {
+        const avg = v.balance / 2, years = v.months / 12;
+        const stay = avg * v.rate / 100 * years;
+        const move = avg * v.btRate / 100 * years + v.balance * v.fee / 100;
+        return `Staying costs about <strong>${money(stay)}</strong> in interest over ${v.months} months; transferring costs <strong>${money(move)}</strong> including the fee. Saving: <strong>${money(stay - move)}</strong>. <a href="compare.html?c=credit_cards">Compare cards</a>.`;
+      } },
+    { id: "mls", title: "Medicare levy surcharge", note: "Thresholds are editable: check the ATO for the current year's figures. Families: threshold rises $1,500 for each dependent child after the first.",
+      inputs: [["income", "Income for MLS purposes ($)", 120000], ["family", "Family? (1 = yes, 0 = no)", 0], ["base", "Base threshold, singles ($)", 101000]],
+      run: (v) => {
+        // Tier 2 and tier 3 start about 16.5% and 55.5% above the base threshold.
+        const base = v.family ? v.base * 2 : v.base;
+        let rate = 0;
+        if (v.income > base * 1.555) rate = 0.015; else if (v.income > base * 1.165) rate = 0.0125; else if (v.income > base) rate = 0.01;
+        return rate ? `Without hospital cover you'd pay about <strong>${money(v.income * rate)}</strong> a year (${(rate * 100).toFixed(2)}%). Basic hospital cover may cost less. <a href="compare.html?c=health_insurance">Get health quotes</a>.`
+          : "Below the threshold: no surcharge.";
+      } },
+    { id: "lhc", title: "Lifetime health cover loading", note: "2% for every year over 30 when you first take hospital cover, up to 70%; removed after 10 continuous years of cover.",
+      inputs: [["age", "Age when you take hospital cover", 38], ["premium", "Hospital premium before loading ($ a year)", 1600]],
+      run: (v) => {
+        const loading = Math.min(70, Math.max(0, (Math.floor(v.age) - 30) * 2));
+        return loading ? `Loading <strong>${loading}%</strong>: about <strong>${money(v.premium * loading / 100)}</strong> extra a year for 10 years.` : "No loading if you take cover before 31.";
+      } },
+    { id: "feedrag", title: "Super fee drag", note: "Compares two yearly fee levels with the same return and contributions, to age 67.",
+      inputs: [["age", "Your age", 35], ["balance", "Super balance ($)", 80000], ["contrib", "Yearly contributions ($)", 12000], ["ret", "Return before fees (%)", 7.5], ["feeA", "Your fees (% a year)", 1.2], ["feeB", "Cheaper fund's fees (% a year)", 0.6]],
+      run: (v) => {
+        const grow = (fee) => { let b = v.balance; for (let a = v.age; a < 67; a++) b = (b + v.contrib) * (1 + (v.ret - fee) / 100); return b; };
+        const a = grow(v.feeA), b = grow(v.feeB);
+        return `At 67: <strong>${money(a)}</strong> with your fees, <strong>${money(b)}</strong> with lower fees. Difference: <strong>${money(b - a)}</strong>. <a href="compare.html?c=super">Compare super</a>.`;
+      } },
+    { id: "trade", title: "Share trading costs", note: "Brokerage only; foreign exchange fees on US trades are extra.",
+      inputs: [["trades", "Trades a month", 2], ["fee", "Brokerage per trade ($)", 5]],
+      run: (v) => `About <strong>${money(v.trades * 12 * v.fee)}</strong> a year in brokerage. <a href="compare.html?c=share_trading">Compare platforms</a>.` },
+    { id: "real", title: "Real return (beat inflation?)", note: "Uses the inflation rate you enter; the ABS CPI over the past year is shown in My money.",
+      inputs: [["rate", "Your return or savings rate (%)", 5], ["cpi", "Inflation (%)", 3.5], ["balance", "Balance ($)", 20000]],
+      run: (v) => {
+        const real = (1 + v.rate / 100) / (1 + v.cpi / 100) - 1;
+        return real > 0 ? `You're beating inflation by <strong>${(real * 100).toFixed(2)}%</strong>: about <strong>${money(v.balance * real)}</strong> of real buying power a year.`
+          : `You're losing about <strong>${money(-v.balance * real)}</strong> of buying power a year (${(real * 100).toFixed(2)}% real). <a href="compare.html?c=savings">Compare savings</a>.`;
+      } },
+  ];
+
+  $("main").innerHTML = CALCS.map(c => `
+    <section class="card" id="${c.id}" aria-labelledby="${c.id}-h">
+      <h2 id="${c.id}-h">${escapeHtml(c.title)}</h2>
+      <form class="stack" data-calc="${c.id}" novalidate>
+        ${c.inputs.map(([k, label, def]) => `<label class="field" for="${c.id}-${k}">${escapeHtml(label)}<input id="${c.id}-${k}" name="${k}" type="number" step="any" inputmode="decimal" value="${def}"></label>`).join("")}
+      </form>
+      <div class="calc-out" id="${c.id}-out" role="status" aria-live="polite"></div>
+      <p class="small muted">${escapeHtml(c.note)}</p>
+    </section>`).join("");
+
+  function runCalc(c){
+    const v = {};
+    for (const [k, , def] of c.inputs) v[k] = numberOr($(`${c.id}-${k}`).value, def);
+    $(`${c.id}-out`).innerHTML = c.run(v);
+  }
+  for (const c of CALCS){
+    document.querySelector(`[data-calc="${c.id}"]`).addEventListener("input", () => runCalc(c));
+    document.querySelector(`[data-calc="${c.id}"]`).addEventListener("submit", (e) => e.preventDefault());
+    runCalc(c);
+  }
+</script>

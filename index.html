@@ -9,6 +9,7 @@
   try { const t = localStorage.getItem("rb.theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (_) {}
 </script>
 <link rel="stylesheet" href="common.css?v=5">
+<link rel="stylesheet" href="app.css?v=1">
 <style>
   .rates-area{position:relative;}
   /* Signed out: the first half of the lenders show real rates at full contrast; from the first locked row the
@@ -453,6 +454,13 @@
 
 <a class="skip-link" href="#ratesArea">Skip to rates</a>
 
+<nav class="site-nav" aria-label="Main">
+  <a class="brand" href="products.html">BeatInflation</a>
+  <a href="index.html" aria-current="page">Home loans</a>
+  <a href="products.html">All products</a>
+  <a href="my-money.html">My money</a>
+  <a href="calculators.html">Calculators</a>
+</nav>
 <div class="wrap">
   <header class="page">
     <div class="title-block">

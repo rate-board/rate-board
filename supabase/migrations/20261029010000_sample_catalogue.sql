@@ -1,0 +1,61 @@
+-- Placeholder rows for categories with no open data feed (internet, mobile, business NBN, share trading, ETFs,
+-- super). Marked source = 'sample' and shown on the site with a "sample data, not checked" label until a data
+-- partner or admin-entered figures replace them. Figures are illustrative only.
+
+insert into public.catalog_items (category, provider, name, url, rate, attrs, source, source_ref) values
+  -- Internet: rate = monthly price ($) after any promotion
+  ('internet', 'Aussie Broadband', 'NBN 100', 'https://www.aussiebroadband.com.au/', 99, '{"speed": 100, "eveningSpeed": 100, "promoPrice": 89, "promoMonths": 6, "contract": "Month to month", "tech": "NBN"}', 'sample', 'abb-100'),
+  ('internet', 'Superloop', 'NBN 100', 'https://www.superloop.com/', 95, '{"speed": 100, "eveningSpeed": 100, "promoPrice": 75, "promoMonths": 6, "contract": "Month to month", "tech": "NBN"}', 'sample', 'sl-100'),
+  ('internet', 'Telstra', 'Premium NBN 100', 'https://www.telstra.com.au/internet', 125, '{"speed": 100, "eveningSpeed": 100, "promoPrice": null, "promoMonths": null, "contract": "Month to month", "tech": "NBN"}', 'sample', 'tel-100'),
+  ('internet', 'Optus', 'NBN Super Fast', 'https://www.optus.com.au/internet', 109, '{"speed": 100, "eveningSpeed": 96, "promoPrice": 89, "promoMonths": 6, "contract": "Month to month", "tech": "NBN"}', 'sample', 'opt-100'),
+  ('internet', 'TPG', 'NBN 100', 'https://www.tpg.com.au/nbn', 89, '{"speed": 100, "eveningSpeed": 99, "promoPrice": 74, "promoMonths": 6, "contract": "Month to month", "tech": "NBN"}', 'sample', 'tpg-100'),
+  ('internet', 'Leaptel', 'NBN 100', 'https://www.leaptel.com.au/', 85, '{"speed": 100, "eveningSpeed": 99, "promoPrice": 69, "promoMonths": 6, "contract": "Month to month", "tech": "NBN"}', 'sample', 'lt-100'),
+  ('internet', 'Aussie Broadband', 'NBN 50', 'https://www.aussiebroadband.com.au/', 85, '{"speed": 50, "eveningSpeed": 50, "promoPrice": null, "promoMonths": null, "contract": "Month to month", "tech": "NBN"}', 'sample', 'abb-50'),
+  ('internet', 'Dodo', 'NBN 50', 'https://www.dodo.com/nbn', 75, '{"speed": 50, "eveningSpeed": 48, "promoPrice": 65, "promoMonths": 6, "contract": "Month to month", "tech": "NBN"}', 'sample', 'dodo-50'),
+  ('internet', 'Superloop', 'NBN 1000', 'https://www.superloop.com/', 129, '{"speed": 1000, "eveningSpeed": 600, "promoPrice": 99, "promoMonths": 6, "contract": "Month to month", "tech": "NBN"}', 'sample', 'sl-1000'),
+  ('internet', 'Optus', '5G Home Internet', 'https://www.optus.com.au/internet/5g', 85, '{"speed": null, "eveningSpeed": 230, "promoPrice": 75, "promoMonths": 6, "contract": "Month to month", "tech": "5G home"}', 'sample', 'opt-5g'),
+  ('internet', 'Telstra', '5G Home Internet', 'https://www.telstra.com.au/internet/5g', 95, '{"speed": null, "eveningSpeed": 100, "promoPrice": null, "promoMonths": null, "contract": "Month to month", "tech": "5G home"}', 'sample', 'tel-5g'),
+  ('internet', 'Starlink', 'Residential', 'https://www.starlink.com/', 139, '{"speed": null, "eveningSpeed": 100, "promoPrice": null, "promoMonths": null, "contract": "Month to month", "tech": "Satellite"}', 'sample', 'sl-sat'),
+  -- Mobile: rate = monthly price ($)
+  ('mobile', 'Boost Mobile', '35GB prepaid (28 days)', 'https://boost.com.au/', 30, '{"dataGb": 35, "network": "Telstra", "fiveG": true, "contract": "Prepaid", "intlCalls": false}', 'sample', 'boost-35'),
+  ('mobile', 'Amaysim', '40GB', 'https://www.amaysim.com.au/', 25, '{"dataGb": 40, "network": "Optus", "fiveG": true, "contract": "Month to month", "intlCalls": false}', 'sample', 'amaysim-40'),
+  ('mobile', 'Felix', 'Unlimited', 'https://felixmobile.com.au/', 35, '{"dataGb": 999, "network": "TPG", "fiveG": false, "contract": "Month to month", "intlCalls": false}', 'sample', 'felix-unl'),
+  ('mobile', 'Telstra', 'Upfront Medium 120GB', 'https://www.telstra.com.au/mobile-phones', 62, '{"dataGb": 120, "network": "Telstra", "fiveG": true, "contract": "Month to month", "intlCalls": true}', 'sample', 'tel-m'),
+  ('mobile', 'Optus', 'Choice Plus 100GB', 'https://www.optus.com.au/mobile', 59, '{"dataGb": 100, "network": "Optus", "fiveG": true, "contract": "Month to month", "intlCalls": true}', 'sample', 'opt-m'),
+  ('mobile', 'Vodafone', 'Infinite Plus', 'https://www.vodafone.com.au/', 55, '{"dataGb": 140, "network": "Vodafone", "fiveG": true, "contract": "Month to month", "intlCalls": true}', 'sample', 'voda-m'),
+  ('mobile', 'Belong', '40GB', 'https://www.belong.com.au/', 35, '{"dataGb": 40, "network": "Telstra", "fiveG": true, "contract": "Month to month", "intlCalls": false}', 'sample', 'belong-40'),
+  ('mobile', 'Lebara', '20GB', 'https://www.lebara.com.au/', 20, '{"dataGb": 20, "network": "Vodafone", "fiveG": false, "contract": "Prepaid", "intlCalls": true}', 'sample', 'lebara-20'),
+  -- Business NBN: rate = monthly price ($)
+  ('business_nbn', 'Aussie Broadband', 'Business NBN 100 with static IP', 'https://www.aussiebroadband.com.au/business/', 109, '{"speed": 100, "staticIp": true, "sla": "Standard", "backup4g": false}', 'sample', 'abb-b100'),
+  ('business_nbn', 'Telstra', 'Business Internet 100', 'https://www.telstra.com.au/small-business/internet', 135, '{"speed": 100, "staticIp": true, "sla": "Business-grade", "backup4g": true}', 'sample', 'tel-b100'),
+  ('business_nbn', 'Superloop', 'Business NBN 100', 'https://www.superloop.com/business/', 99, '{"speed": 100, "staticIp": true, "sla": "Standard", "backup4g": false}', 'sample', 'sl-b100'),
+  ('business_nbn', 'Optus', 'Business Fibre 100', 'https://www.optus.com.au/business/internet', 119, '{"speed": 100, "staticIp": false, "sla": "Standard", "backup4g": true}', 'sample', 'opt-b100'),
+  -- Share trading: rate = brokerage ($) on a $1,000 ASX trade
+  ('share_trading', 'CommSec', 'CommSec Pocket / Trading', 'https://www.commsec.com.au/', 5, '{"usBrokerage": null, "fxFee": 0.6, "chess": true, "inactivityFee": false, "fractional": false}', 'sample', 'commsec'),
+  ('share_trading', 'Stake', 'Stake AUS', 'https://hellostake.com/au', 3, '{"usBrokerage": 3, "fxFee": 0.7, "chess": true, "inactivityFee": false, "fractional": true}', 'sample', 'stake'),
+  ('share_trading', 'Superhero', 'Superhero', 'https://www.superhero.com.au/', 2, '{"usBrokerage": 2, "fxFee": 0.5, "chess": false, "inactivityFee": false, "fractional": true}', 'sample', 'superhero'),
+  ('share_trading', 'moomoo', 'moomoo AU', 'https://www.moomoo.com/au', 3, '{"usBrokerage": 0.99, "fxFee": 0.08, "chess": false, "inactivityFee": false, "fractional": true}', 'sample', 'moomoo'),
+  ('share_trading', 'CMC Invest', 'CMC Invest', 'https://www.cmcinvest.com/en-au', 0, '{"usBrokerage": 0, "fxFee": 0.6, "chess": true, "inactivityFee": false, "fractional": false}', 'sample', 'cmc'),
+  ('share_trading', 'Pearler', 'Pearler', 'https://pearler.com/', 6.5, '{"usBrokerage": 6.5, "fxFee": 0.5, "chess": true, "inactivityFee": false, "fractional": false, "autoInvest": true}', 'sample', 'pearler'),
+  ('share_trading', 'SelfWealth', 'SelfWealth', 'https://www.selfwealth.com.au/', 9.5, '{"usBrokerage": 9.5, "fxFee": 0.6, "chess": true, "inactivityFee": false, "fractional": false}', 'sample', 'selfwealth'),
+  ('share_trading', 'nabtrade', 'nabtrade', 'https://www.nabtrade.com.au/', 14.95, '{"usBrokerage": 14.95, "fxFee": 0.6, "chess": true, "inactivityFee": false, "fractional": false}', 'sample', 'nabtrade'),
+  -- ETFs: rate = management fee (% a year)
+  ('etfs', 'Vanguard', 'VAS · Australian Shares Index', 'https://www.vanguard.com.au/', 0.07, '{"code": "VAS", "theme": "Australian shares", "index": "S&P/ASX 300"}', 'sample', 'VAS'),
+  ('etfs', 'BetaShares', 'A200 · Australia 200', 'https://www.betashares.com.au/', 0.04, '{"code": "A200", "theme": "Australian shares", "index": "Solactive Australia 200"}', 'sample', 'A200'),
+  ('etfs', 'iShares', 'IOZ · Core S&P/ASX 200', 'https://www.blackrock.com/au/', 0.05, '{"code": "IOZ", "theme": "Australian shares", "index": "S&P/ASX 200"}', 'sample', 'IOZ'),
+  ('etfs', 'Vanguard', 'VGS · International Shares', 'https://www.vanguard.com.au/', 0.18, '{"code": "VGS", "theme": "Global shares", "index": "MSCI World ex Australia"}', 'sample', 'VGS'),
+  ('etfs', 'iShares', 'IVV · S&P 500', 'https://www.blackrock.com/au/', 0.04, '{"code": "IVV", "theme": "US shares", "index": "S&P 500"}', 'sample', 'IVV'),
+  ('etfs', 'BetaShares', 'NDQ · Nasdaq 100', 'https://www.betashares.com.au/', 0.48, '{"code": "NDQ", "theme": "US technology", "index": "Nasdaq-100"}', 'sample', 'NDQ'),
+  ('etfs', 'Vanguard', 'VDHG · Diversified High Growth', 'https://www.vanguard.com.au/', 0.27, '{"code": "VDHG", "theme": "Diversified", "index": "Multi-asset (90% growth)"}', 'sample', 'VDHG'),
+  ('etfs', 'BetaShares', 'ETHI · Global Sustainability Leaders', 'https://www.betashares.com.au/', 0.59, '{"code": "ETHI", "theme": "Ethical", "index": "Nasdaq Future Global Sustainability Leaders"}', 'sample', 'ETHI'),
+  ('etfs', 'Vanguard', 'VAF · Australian Fixed Interest', 'https://www.vanguard.com.au/', 0.10, '{"code": "VAF", "theme": "Bonds", "index": "Bloomberg AusBond Composite"}', 'sample', 'VAF'),
+  ('etfs', 'Global X', 'GOLD · Physical Gold', 'https://www.globalxetfs.com.au/', 0.40, '{"code": "GOLD", "theme": "Gold", "index": "Gold spot price"}', 'sample', 'GOLD'),
+  -- Super: rate = total fees ($ a year) on a $50,000 balance in the default (MySuper) option
+  ('super', 'AustralianSuper', 'Balanced (MySuper)', 'https://www.australiansuper.com/', 470, '{"return10y": 8.2, "performanceTest": "Pass", "members": "3.5m"}', 'sample', 'ausuper'),
+  ('super', 'Australian Retirement Trust', 'Lifecycle Balanced', 'https://www.australianretirementtrust.com.au/', 450, '{"return10y": 7.6, "performanceTest": "Pass", "members": "2.4m"}', 'sample', 'art'),
+  ('super', 'UniSuper', 'Balanced', 'https://www.unisuper.com.au/', 380, '{"return10y": 7.9, "performanceTest": "Pass", "members": "0.6m"}', 'sample', 'unisuper'),
+  ('super', 'Hostplus', 'Balanced', 'https://hostplus.com.au/', 520, '{"return10y": 8.3, "performanceTest": "Pass", "members": "1.7m"}', 'sample', 'hostplus'),
+  ('super', 'Aware Super', 'High Growth', 'https://aware.com.au/', 440, '{"return10y": 8.0, "performanceTest": "Pass", "members": "1.2m"}', 'sample', 'aware'),
+  ('super', 'Vanguard Super', 'Lifecycle', 'https://www.vanguard.com.au/super', 300, '{"return10y": null, "performanceTest": "Pass", "members": "0.1m"}', 'sample', 'vanguard-super'),
+  ('super', 'Rest', 'Growth', 'https://rest.com.au/', 430, '{"return10y": 7.4, "performanceTest": "Pass", "members": "2.0m"}', 'sample', 'rest'),
+  ('super', 'HESTA', 'Balanced Growth', 'https://www.hesta.com.au/', 460, '{"return10y": 7.8, "performanceTest": "Pass", "members": "1.0m"}', 'sample', 'hesta');
