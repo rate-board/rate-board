@@ -133,7 +133,7 @@ export async function fetchLenderProducts(baseUri: string): Promise<ProductDetai
 
 // --- Lenders outside Open Banking: read from their own websites -------------------------------
 
-const SCRAPE_UA = "RateBoard/1.0 (+https://rate-board.github.io/rate-board/; nightly rate check)";
+const SCRAPE_UA = "RateBoard/1.0 (+https://beatinflation.com.au/; nightly rate check)";
 
 async function getText(url: string): Promise<string> {
   const res = await fetch(url, {
