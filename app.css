@@ -98,6 +98,8 @@ table.compare .acts a, table.compare .acts button{display:flex;width:100%;margin
   table.compare tbody th, table.compare tbody td{border:none;padding:3px 0;}
   table.compare td[data-label]{display:flex;justify-content:space-between;gap:12px;text-align:right;}
   table.compare td[data-label]::before{content:attr(data-label);font:600 13px 'Inter',sans-serif;color:var(--ink-muted);text-align:left;}
+  table.compare caption{display:block;width:100%;padding:12px 14px;}
+  table.compare td[data-label] .sub{display:inline;margin-left:6px;}
   table.compare .acts{display:flex;gap:8px;width:100%;padding-top:8px;}
   table.compare .acts a, table.compare .acts button{flex:1;width:auto;margin:0;}
 }
