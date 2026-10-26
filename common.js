@@ -374,4 +374,4 @@ if (IS_TEST_SITE){
   });
 }
 
-const AGENT_DISCLAIMER ="Agent rates are set by independent mortgage agents. Home Loan Interest Rates does not arrange loans or verify them. Confirm details with the agent.";
+const AGENT_DISCLAIMER ="Agent rates are set by independent mortgage agents. We don't arrange loans or verify agent rates. Confirm details with the agent.";
