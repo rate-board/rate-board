@@ -2,7 +2,7 @@
 
 | Document | PG |
 | --- | --- |
-| Version | 1.2 |
+| Version | 2.0 |
 | Captured | 26 Oct 2026, from the test site |
 
 One screenshot set per page, captured from the running site (the design is the built page). Desktop is 1280 px wide;
@@ -36,6 +36,8 @@ yellow focus ring inside a near-black halo (`--focus`, `--focus-halo`).
 
 ## History
 
+- 2.0: "Boring by design" restyle (`FEA-005`). Recaptured PG-01, PG-02, PG-03a, PG-03b, PG-04 and PG-05; the other
+  pages (PG-03e, PG-03f, PG-03m, PG-03q, PG-03s, PG-07) still show the 1.x look until recaptured.
 - 1.2: The product hub is the home page; home loans moved to `home-loans.html` (screens unchanged apart from the nav).
 - 1.1: PG-03a mobile recaptured with the phone card layout; PG-03b credit cards added.
 - 1.0: First capture set.
