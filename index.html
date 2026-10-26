@@ -389,7 +389,7 @@
   }
   .account-menu a:hover, .account-menu button:hover{background:var(--accent-soft);}
 
-  /* Advanced search: on desktop the panel is invisible and its filters sit in the controls row. */
+  /* Filters panel: on desktop it is invisible and its filters sit in the controls row. */
   .adv-toggle{display:none;}
   .adv-panel{display:contents;}
 
@@ -517,6 +517,12 @@
   <div class="gate-content" id="gateContent">
   <h3 class="visually-hidden">Choose your loan</h3>
   <div class="controls">
+    <!-- On phones all filters fold into Filters; on desktop the panel is invisible and they sit in this row. -->
+    <button type="button" class="adv-toggle" id="advToggle" aria-expanded="false" aria-controls="advPanel">
+      <span class="adv-label">Filters</span>
+      <span class="adv-summary" id="advSummary"></span>
+    </button>
+    <div class="adv-panel" id="advPanel">
     <div class="ctl-group">
       <div class="seg" id="purposeSeg" role="group" aria-label="Loan purpose">
         <button type="button" data-purpose="owner" class="active" aria-pressed="true">Owner Occupied</button>
@@ -524,12 +530,6 @@
       </div>
       <button type="button" class="help-btn" aria-expanded="false" aria-controls="help-purpose"><span aria-hidden="true">?</span><span class="visually-hidden">What is loan purpose?</span></button>
     </div>
-    <!-- On phones the remaining filters fold into Advanced search; on desktop the panel is invisible and they sit in this row. -->
-    <button type="button" class="adv-toggle" id="advToggle" aria-expanded="false" aria-controls="advPanel">
-      <span class="adv-label">Advanced search</span>
-      <span class="adv-summary" id="advSummary"></span>
-    </button>
-    <div class="adv-panel" id="advPanel">
     <div class="ctl-group">
       <div class="seg" id="repaySeg" role="group" aria-label="Repayment type">
         <button type="button" data-repay="pi" class="active" aria-pressed="true"><abbr title="Principal and interest">P&amp;I</abbr></button>
@@ -793,12 +793,12 @@
     updateAdvSummary();
   }
 
-  // The Advanced search button shows what's set inside it, so nothing changes out of sight.
+  // The Filters button shows what's set inside it, so nothing changes out of sight.
   function updateAdvSummary(){
     const sortText = !sortKey ? "Lender order"
       : sortKey === "lender" ? "Lender A–Z"
       : (sortDir === "asc" ? "Lowest " : "Highest ") + productLabel(sortKey);
-    $("advSummary").textContent = [REPAY_LABEL[repay], LVR_LABEL[lvr], sortText, mode === "rate" ? "Rate" : "Comp. rate"].join(" · ");
+    $("advSummary").textContent = [PURPOSE_LABEL[purpose], REPAY_LABEL[repay], LVR_LABEL[lvr], sortText, mode === "rate" ? "Rate" : "Comp. rate"].join(" · ");
   }
 
   $("advToggle").addEventListener("click", () => {
@@ -807,7 +807,7 @@
     $("advToggle").setAttribute("aria-expanded", String(open));
     $("advPanel").classList.toggle("open", open);
     if (!open){
-      for (const id of ["help-repay", "help-lvr", "help-view"]){
+      for (const id of ["help-purpose", "help-repay", "help-lvr", "help-view"]){
         $(id).hidden = true;
         const btn = document.querySelector(`[aria-controls="${id}"]`);
         if (btn) btn.setAttribute("aria-expanded", "false");
@@ -815,7 +815,7 @@
     }
   });
 
-  // On phones the Rate / Comp. Rate switch lives in Advanced search; on desktop it stays under the table.
+  // On phones the Rate / Comp. Rate switch lives in Filters; on desktop it stays under the table.
   const phoneQuery = window.matchMedia("(max-width: 640px)");
   function placeViewControls(){
     const view = document.querySelector(".view-controls");
