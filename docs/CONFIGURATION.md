@@ -88,4 +88,4 @@ Each catalogue job runs at most once every 30 minutes (BR-006).
 ## CFG-08 Cache-busting versions
 
 Static files are referenced with `?v=N`. Bump N in every page that includes a file when the file changes:
-`common.js?v=5`, `common.css?v=5`, `app.js?v=2`, `catalog.js?v=2`, `app.css?v=4`.
+`common.js?v=5`, `common.css?v=5`, `app.js?v=2`, `catalog.js?v=3`, `app.css?v=4`.

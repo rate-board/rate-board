@@ -13,7 +13,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
 <script src="common.js?v=5"></script>
 <script src="app.js?v=2"></script>
-<script src="catalog.js?v=2"></script>
+<script src="catalog.js?v=3"></script>
 
 <a class="skip-link" href="#main">Skip to results</a>
 <nav class="site-nav" id="siteNav" aria-label="Main"></nav>
@@ -143,7 +143,7 @@
     const head = cat.columns.map((col, i) => `<th scope="col"${col.num ? ' class="num"' : ""}>${col.sort
       ? `<button type="button" data-sort="${i}" aria-label="Sort by ${escapeHtml(col.label)}">${escapeHtml(col.label)}${sortCol === i ? " ▲" : ""}</button>` : escapeHtml(col.label)}</th>`).join("");
     const body = rows.map(it => `<tr>${cat.columns.map((col, i) => i === 0
-      ? `<th scope="row">${col.html(it, c)}</th>` : `<td${col.num ? ' class="num"' : ""} data-label="${escapeHtml(col.label)}">${col.html(it, c)}</td>`).join("")}
+      ? `<th scope="row">${col.html(it, c)}</th>` : `<td${col.num ? ' class="num"' : ""} data-label="${escapeHtml(col.label)}"><span>${col.html(it, c)}</span></td>`).join("")}
       <td class="acts">${safeUrl(it.url) ? `<a class="btn-ghost btn-sm" href="${escapeHtml(it.url)}" rel="noopener" target="_blank">Go to site<span class="visually-hidden"> for ${escapeHtml(it.provider)} ${escapeHtml(it.name)} (opens in a new tab)</span></a>` : ""}
         <button type="button" class="btn-ghost btn-sm" data-have="${it.id}">I have this<span class="visually-hidden">: ${escapeHtml(it.provider)} ${escapeHtml(it.name)}</span></button></td></tr>`).join("");
     $("results").innerHTML = rows.length

@@ -16,6 +16,7 @@ const SAMPLE = "Sample data for the test site: illustrative figures that have no
 const repayment = (rate, amount, years) => monthlyRepayment(rate, amount, years, false);
 const termOptions = (from, to) => Array.from({ length: to - from + 1 }, (_, i) => [String(from + i), `${from + i} year${from + i === 1 ? "" : "s"}`]);
 const yesNo = (b) => b === true ? "Yes" : b === false ? "No" : "—";
+const plural = (n, word) => `${n} ${word}${Number(n) === 1 ? "" : "s"}`;
 const nameCell = (it, extra = "") => `<span class="prov">${escapeHtml(it.provider)}</span><span class="sub">${escapeHtml(it.name)}${extra}</span>`;
 
 // Loans published through Open Banking: shown with the "from" rate, since actual rates depend on the borrower.
@@ -99,7 +100,7 @@ const CATEGORIES = {
       { label: "Purchase rate", num: true, html: (it) => it.rate === 0 ? "No interest" : pct(it.rate), sort: (it) => it.rate ?? 99 },
       { label: "Annual fee", num: true, html: (it) => it.attrs.annualFee === null || it.attrs.annualFee === undefined ? "Not published" : money(it.attrs.annualFee), sort: (it) => it.attrs.annualFee ?? 1e6 },
       { label: "Interest-free days", num: true, html: (it) => it.attrs.interestFreeDays ?? "—", sort: (it) => -(it.attrs.interestFreeDays ?? 0) },
-      { label: "Balance transfer", num: true, html: (it) => it.attrs.btRate === null || it.attrs.btRate === undefined ? "—" : `${pct(it.attrs.btRate)}${it.attrs.btMonths ? `<span class="sub">for ${it.attrs.btMonths} months</span>` : ""}`, sort: (it) => it.attrs.btRate ?? 99 },
+      { label: "Balance transfer", num: true, html: (it) => it.attrs.btRate === null || it.attrs.btRate === undefined ? "—" : `${pct(it.attrs.btRate)}${it.attrs.btMonths ? `<span class="sub">for ${plural(it.attrs.btMonths, "month")}</span>` : ""}`, sort: (it) => it.attrs.btRate ?? 99 },
       { label: "2-year cost", num: true, html: (it, c) => it.attrs.annualFee === null || it.attrs.annualFee === undefined ? "—" : money(twoYearCardCost(it, c)), sort: (it, c) => it.attrs.annualFee == null ? 1e6 : twoYearCardCost(it, c) },
     ],
     holding: (it, c) => ({ category: "credit_cards", provider: it.provider, product_name: it.name, rate: it.rate, amount: c.balance }),
@@ -131,7 +132,7 @@ const CATEGORIES = {
     columns: [
       { label: "Account", html: (it) => nameCell(it) },
       { label: "Ongoing rate", num: true, html: (it, c) => pct(ongoingSavingsRate(it, c)), sort: (it, c) => -ongoingSavingsRate(it, c) },
-      { label: "Intro rate", num: true, html: (it) => it.attrs.intro ? `${pct(it.attrs.intro)}${it.attrs.introMonths ? `<span class="sub">${it.attrs.introMonths} months</span>` : ""}` : "—", sort: (it) => -(it.attrs.intro ?? 0) },
+      { label: "Intro rate", num: true, html: (it) => it.attrs.intro ? `${pct(it.attrs.intro)}${it.attrs.introMonths ? `<span class="sub">${plural(it.attrs.introMonths, "month")}</span>` : ""}` : "—", sort: (it) => -(it.attrs.intro ?? 0) },
       { label: "Interest in year 1", num: true, html: (it, c) => money(firstYearInterest(it, c)), sort: (it, c) => -firstYearInterest(it, c) },
       { label: "Bonus conditions", html: (it) => it.attrs.conditions ? `<span class="sub">${escapeHtml(it.attrs.conditions.slice(0, 140))}${it.attrs.conditions.length > 140 ? "…" : ""}</span>` : "<span class=\"sub\">None published</span>" },
     ],
@@ -248,7 +249,7 @@ const CATEGORIES = {
       { label: "Provider and plan", html: (it) => nameCell(it) },
       { label: "Speed", num: true, html: (it) => it.attrs.speed ? `${it.attrs.speed} Mbps` : "—", sort: (it) => -(it.attrs.speed ?? 0) },
       { label: "Typical evening", num: true, html: (it) => it.attrs.eveningSpeed ? `${it.attrs.eveningSpeed} Mbps` : "—", sort: (it) => -(it.attrs.eveningSpeed ?? 0) },
-      { label: "Monthly price", num: true, html: (it) => money(it.rate) + (it.attrs.promoPrice ? `<span class="sub">${money(it.attrs.promoPrice)} for ${it.attrs.promoMonths} months</span>` : ""), sort: (it) => it.rate },
+      { label: "Monthly price", num: true, html: (it) => money(it.rate) + (it.attrs.promoPrice ? `<span class="sub">${money(it.attrs.promoPrice)} for ${plural(it.attrs.promoMonths, "month")}</span>` : ""), sort: (it) => it.rate },
       { label: "First-year cost", num: true, html: (it) => money(firstYearPlanCost(it)), sort: (it) => firstYearPlanCost(it) },
     ],
     holding: (it) => ({ category: "internet", provider: it.provider, product_name: it.name, amount: it.rate }),
