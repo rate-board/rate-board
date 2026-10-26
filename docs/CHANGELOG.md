@@ -15,7 +15,7 @@ Newest first. Each entry names the release or branch, what changed, and the requ
   failed or empty fetch from retiring products (`BR-005`).
 - Comparison rows become labelled cards on phones.
 - Documentation set created: requirements, processes, architecture, flows, designs, configuration, credentials,
-  codebase (docs v1.0).
+  codebase (docs v1.0). Design set 1.1 adds credit cards and the phone card layout.
 
 ## release-2026-10-26: production
 

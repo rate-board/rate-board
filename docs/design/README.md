@@ -2,7 +2,7 @@
 
 | Document | PG |
 | --- | --- |
-| Version | 1.0 |
+| Version | 1.1 |
 | Captured | 26 Oct 2026, from the test site |
 
 One screenshot set per page, captured from the running site (the design is the built page). Desktop is 1280 px wide;
@@ -17,7 +17,7 @@ themes) and `app.css`. Fonts: Fraunces (headings), Inter (text), IBM Plex Mono (
 | `PG-01` | Home loan rate board | `index.html` | [view](PG-01-home-loans-desktop.jpg) | Existing card layout (see production) |
 | `PG-02` | Product hub | `products.html` | [view](PG-02-product-hub-desktop.jpg) | [view](PG-02-product-hub-mobile.jpg) |
 | `PG-03a` | Comparison table (savings) | `compare.html?c=savings` | [view](PG-03a-savings-desktop.jpg) | [view](PG-03a-savings-mobile.jpg) |
-| `PG-03b` | Comparison table (credit cards) | `compare.html?c=credit_cards` | To capture after the card data fix syncs | — |
+| `PG-03b` | Comparison table (credit cards) | `compare.html?c=credit_cards` | [view](PG-03b-credit-cards-desktop.jpg) | Same card layout as PG-03a |
 | `PG-03e` | Energy plans for a postcode | `compare.html?c=energy` | [view](PG-03e-energy-desktop.jpg) | — |
 | `PG-03f` | Fuel prices | `compare.html?c=fuel` | [view](PG-03f-fuel-desktop.jpg) | — |
 | `PG-03m` | Money transfers | `compare.html?c=money_transfers` | [view](PG-03m-money-transfers-desktop.jpg) | — |
@@ -30,7 +30,9 @@ themes) and `app.css`. Fonts: Fraunces (headings), Inter (text), IBM Plex Mono (
 
 ## Open design items
 
-- **Comparison tables on phones** (`PG-03*` mobile): fixed after capture. Below 640 px each product is now a card
-  with labelled figures, like the home loan board; `PG-03a-savings-mobile.jpg` shows the earlier sideways-scrolling
-  table and should be recaptured.
 - **Signed-in My money** (`PG-05s`): capture once the owner signs in on the test site.
+
+## History
+
+- 1.1: PG-03a mobile recaptured with the phone card layout; PG-03b credit cards added.
+- 1.0: First capture set.
