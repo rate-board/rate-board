@@ -91,7 +91,15 @@ table.compare .acts a, table.compare .acts button{display:flex;width:100%;margin
 @media (max-width:640px){
   .site-nav .brand{width:100%;}
   .inputs .field{flex:1 1 140px;}
-  table.compare .acts{white-space:normal;}
+  /* Phones: each product becomes a card with labelled figures (cells carry data-label), like the home loan board. */
+  table.compare thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);}
+  table.compare, table.compare tbody, table.compare tr, table.compare th, table.compare td{display:block;width:100%;}
+  table.compare tr{padding:12px 14px;border-bottom:1px solid var(--line-strong);}
+  table.compare tbody th, table.compare tbody td{border:none;padding:3px 0;}
+  table.compare td[data-label]{display:flex;justify-content:space-between;gap:12px;text-align:right;}
+  table.compare td[data-label]::before{content:attr(data-label);font:600 13px 'Inter',sans-serif;color:var(--ink-muted);text-align:left;}
+  table.compare .acts{display:flex;gap:8px;width:100%;padding-top:8px;}
+  table.compare .acts a, table.compare .acts button{flex:1;width:auto;margin:0;}
 }
 @media (forced-colors: active){
   .card, .hub a.tile, .table-wrap, .asset, .notice{border:1px solid CanvasText;}

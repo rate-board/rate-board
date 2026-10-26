@@ -30,6 +30,7 @@ themes) and `app.css`. Fonts: Fraunces (headings), Inter (text), IBM Plex Mono (
 
 ## Open design items
 
-- **Comparison tables on phones** (`PG-03*` mobile): tables scroll sideways inside their frame. The home loan board
-  switches to one card per lender on phones; the comparison tables should do the same.
+- **Comparison tables on phones** (`PG-03*` mobile): fixed after capture. Below 640 px each product is now a card
+  with labelled figures, like the home loan board; `PG-03a-savings-mobile.jpg` shows the earlier sideways-scrolling
+  table and should be recaptured.
 - **Signed-in My money** (`PG-05s`): capture once the owner signs in on the test site.
