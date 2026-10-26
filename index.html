@@ -342,9 +342,89 @@
 
   .mobile-sort{display:none;}
 
+  /* Account menu (phones) */
+  .menu-wrap{display:none;position:relative;}
+  .menu-btn{
+    width:44px;
+    height:44px;
+    border:1px solid var(--line-strong);
+    border-radius:8px;
+    background:var(--surface);
+    color:var(--ink);
+    font-size:24px;
+    line-height:1;
+    cursor:pointer;
+  }
+  .account-menu{
+    position:absolute;
+    right:0;
+    top:calc(100% + 6px);
+    z-index:60;
+    width:260px;
+    max-width:calc(100vw - 32px);
+    background:var(--surface);
+    border:1px solid var(--line-strong);
+    border-radius:12px;
+    box-shadow:var(--shadow);
+    padding:6px;
+    display:flex;
+    flex-direction:column;
+  }
+  .account-menu[hidden]{display:none;}
+  .menu-who{margin:0 0 4px;padding:10px 12px;font-size:14px;color:var(--ink-muted);border-bottom:1px solid var(--line);overflow-wrap:anywhere;}
+  .account-menu a, .account-menu button{
+    display:flex;
+    align-items:center;
+    width:100%;
+    min-height:44px;
+    padding:8px 12px;
+    border:none;
+    border-radius:8px;
+    background:none;
+    font:600 15px 'Inter',sans-serif;
+    color:var(--ink);
+    text-align:left;
+    text-decoration:none;
+    cursor:pointer;
+  }
+  .account-menu a:hover, .account-menu button:hover{background:var(--accent-soft);}
+
+  /* Advanced search: on desktop the panel is invisible and its filters sit in the controls row. */
+  .adv-toggle{display:none;}
+  .adv-panel{display:contents;}
+
   /* Phones: each lender becomes a card with labelled rates, instead of a wide table to scroll sideways.
      The table roles are set in the markup, so screen readers still read it as a table. */
   @media (max-width:640px){
+    header.page{flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:space-between;margin-bottom:16px;}
+    .title-block h1{font-size:22px;}
+    .header-right{align-items:flex-end;}
+    .account{display:none;}
+    .menu-wrap{display:block;}
+
+    .adv-toggle{
+      display:flex;
+      flex-direction:column;
+      align-items:flex-start;
+      gap:2px;
+      width:100%;
+      min-height:44px;
+      padding:8px 12px;
+      border:1px solid var(--line-strong);
+      border-radius:8px;
+      background:var(--surface);
+      color:var(--ink);
+      font:600 15px 'Inter',sans-serif;
+      text-align:left;
+      cursor:pointer;
+    }
+    .adv-label::after{content:" ▾";color:var(--ink-muted);}
+    .adv-toggle[aria-expanded="true"] .adv-label::after{content:" ▴";}
+    .adv-summary{font-size:13px;font-weight:400;color:var(--ink-muted);}
+    .adv-panel{display:none;width:100%;flex-direction:column;gap:8px;}
+    .adv-panel.open{display:flex;}
+    .adv-panel .view-controls{margin-top:0;}
+
     .controls{gap:8px;}
     .ctl-group{width:100%;}
     .ctl-group .seg{flex:1;}
@@ -421,6 +501,10 @@
     </div>
     <div class="header-right">
       <div class="account" id="accountBar"></div>
+      <div class="menu-wrap">
+        <button type="button" class="menu-btn" id="menuBtn" aria-expanded="false" aria-controls="accountMenu"><span aria-hidden="true">⋮</span><span class="visually-hidden">Account menu</span></button>
+        <div class="account-menu" id="accountMenu" hidden></div>
+      </div>
     </div>
   </header>
 
@@ -440,6 +524,12 @@
       </div>
       <button type="button" class="help-btn" aria-expanded="false" aria-controls="help-purpose"><span aria-hidden="true">?</span><span class="visually-hidden">What is loan purpose?</span></button>
     </div>
+    <!-- On phones the remaining filters fold into Advanced search; on desktop the panel is invisible and they sit in this row. -->
+    <button type="button" class="adv-toggle" id="advToggle" aria-expanded="false" aria-controls="advPanel">
+      <span class="adv-label">Advanced search</span>
+      <span class="adv-summary" id="advSummary"></span>
+    </button>
+    <div class="adv-panel" id="advPanel">
     <div class="ctl-group">
       <div class="seg" id="repaySeg" role="group" aria-label="Repayment type">
         <button type="button" data-repay="pi" class="active" aria-pressed="true"><abbr title="Principal and interest">P&amp;I</abbr></button>
@@ -459,6 +549,8 @@
       <span>Sort by</span>
       <select id="mobileSort"></select>
     </label>
+    <div id="advViewSlot"></div>
+    </div>
   </div>
   <p class="help-pop" id="help-purpose" hidden><strong>Loan purpose.</strong> Owner Occupied is a home you'll live in. Investment is a property you'll rent out; lenders usually charge a little more for investment loans.</p>
   <p class="help-pop" id="help-repay" hidden><strong>Repayment type.</strong> Principal and interest (P&amp;I) repayments pay off the loan as well as the interest. Interest Only repayments cover just the interest for a set period, then rise when you start paying off the loan.</p>
@@ -666,11 +758,12 @@
   let purpose = "owner";
   let repay = "pi";
   let lvr = "80";
-  let sortKey = null;
+  // Every visit opens on Owner Occupied, P&I, 60–80% LVR, cheapest Variable (Basic) first.
+  let sortKey = "variable";
   let sortDir = "asc";
   let loan = { amount: 600000, years: 30 };
 
-  // --- Remembered and shareable view: the page address wins, then this browser's last choice. ---------
+  // --- Shareable view: filters live in the page address, so a link opens the same view. -----------------
 
   const VALID = { purpose: ["owner", "investor"], repay: ["pi", "io"], lvr: ["60", "80", "90"], show: ["rate", "apr"] };
 
@@ -678,29 +771,58 @@
   function writeStore(key, value){ try { localStorage.setItem(key, JSON.stringify(value)); } catch (_) {} }
 
   function restoreView(){
-    const saved = readStore("rb.view") || {};
+    try { localStorage.removeItem("rb.view"); } catch (_) {} // filters are no longer remembered between visits
     const q = new URLSearchParams(location.search);
-    const pick = (name, current) => {
-      const v = q.get(name) || saved[name];
-      return VALID[name].includes(v) ? v : current;
-    };
+    const pick = (name, current) => (VALID[name].includes(q.get(name)) ? q.get(name) : current);
     purpose = pick("purpose", purpose);
     repay = pick("repay", repay);
     lvr = pick("lvr", lvr);
     mode = pick("show", mode);
-    const sort = q.get("sort") || saved.sort;
-    if (sort && /^[a-z0-9_]+:(asc|desc)$/.test(sort)) [sortKey, sortDir] = sort.split(":");
+    const sort = q.get("sort");
+    if (sort === "none") sortKey = null;
+    else if (sort && /^[a-z0-9_]+:(asc|desc)$/.test(sort)) [sortKey, sortDir] = sort.split(":");
     const savedLoan = readStore("rb.loan");
     if (savedLoan && savedLoan.amount > 0 && savedLoan.years > 0) loan = savedLoan;
   }
 
   function saveView(){
-    const view = { purpose, repay, lvr, show: mode, sort: sortKey ? sortKey + ":" + sortDir : "" };
-    writeStore("rb.view", view);
+    const view = { purpose, repay, lvr, show: mode, sort: sortKey ? sortKey + ":" + sortDir : "none" };
     const q = new URLSearchParams(location.search);
-    for (const [k, v] of Object.entries(view)) v ? q.set(k, v) : q.delete(k);
+    for (const [k, v] of Object.entries(view)) q.set(k, v);
     history.replaceState(null, "", location.pathname + "?" + q.toString() + location.hash);
+    updateAdvSummary();
   }
+
+  // The Advanced search button shows what's set inside it, so nothing changes out of sight.
+  function updateAdvSummary(){
+    const sortText = !sortKey ? "Lender order"
+      : sortKey === "lender" ? "Lender A–Z"
+      : (sortDir === "asc" ? "Lowest " : "Highest ") + productLabel(sortKey);
+    $("advSummary").textContent = [REPAY_LABEL[repay], LVR_LABEL[lvr], sortText, mode === "rate" ? "Rate" : "Comp. rate"].join(" · ");
+  }
+
+  $("advToggle").addEventListener("click", () => {
+    const open = $("advToggle").getAttribute("aria-expanded") !== "true";
+    placeViewControls();
+    $("advToggle").setAttribute("aria-expanded", String(open));
+    $("advPanel").classList.toggle("open", open);
+    if (!open){
+      for (const id of ["help-repay", "help-lvr", "help-view"]){
+        $(id).hidden = true;
+        const btn = document.querySelector(`[aria-controls="${id}"]`);
+        if (btn) btn.setAttribute("aria-expanded", "false");
+      }
+    }
+  });
+
+  // On phones the Rate / Comp. Rate switch lives in Advanced search; on desktop it stays under the table.
+  const phoneQuery = window.matchMedia("(max-width: 640px)");
+  function placeViewControls(){
+    const view = document.querySelector(".view-controls");
+    if (phoneQuery.matches) $("advViewSlot").append(view); else $("help-view").before(view);
+  }
+  phoneQuery.addEventListener("change", placeViewControls);
+  window.addEventListener("resize", placeViewControls);
 
   function syncSegs(){
     const set = (id, attr, value) => document.querySelectorAll(`#${id} button`).forEach(b => {
@@ -712,6 +834,7 @@
     set("repaySeg", "repay", repay);
     set("lvrSeg", "lvr", lvr);
     set("viewSeg", "mode", mode);
+    updateAdvSummary();
   }
 
   // --- Status and announcements ------------------------------------------------------------
@@ -829,12 +952,13 @@
 
   // On phones the column headers are hidden (each lender becomes a card), so sorting moves to a dropdown.
   function renderMobileSort(){
-    const options = [["", "Default order"], ["lender:asc", "Lender (A–Z)"]]
+    const options = [["", "Lender order"], ["lender:asc", "Lender (A–Z)"]]
       .concat(PRODUCTS.map(p => [p.key + ":asc", "Lowest " + p.label]));
     const current = sortKey ? sortKey + ":" + sortDir : "";
     $("mobileSort").innerHTML = options
       .map(([value, text]) => `<option value="${escapeHtml(value)}"${value === current ? " selected" : ""}>${escapeHtml(text)}</option>`)
       .join("");
+    updateAdvSummary();
   }
 
   $("mobileSort").addEventListener("change", (e) => {
@@ -843,7 +967,7 @@
     sortDir = dir || "asc";
     saveView();
     renderTable();
-    announce(sortKey ? "Sorted by " + e.target.selectedOptions[0].textContent : "Default order");
+    announce(sortKey ? "Sorted by " + e.target.selectedOptions[0].textContent : "Lender order");
   });
 
   function agentTagText(list){
@@ -1512,7 +1636,57 @@
     }
   });
 
+  // --- Account menu (phones): the same actions as the header bar, behind a ⋮ button. ---------------------
+
+  function closeMenu(returnFocus){
+    $("accountMenu").hidden = true;
+    $("menuBtn").setAttribute("aria-expanded", "false");
+    if (returnFocus) $("menuBtn").focus();
+  }
+
+  $("menuBtn").addEventListener("click", () => {
+    const open = $("accountMenu").hidden;
+    $("accountMenu").hidden = !open;
+    $("menuBtn").setAttribute("aria-expanded", String(open));
+    if (open){
+      const first = $("accountMenu").querySelector("a, button");
+      if (first) first.focus();
+    }
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !$("accountMenu").hidden) closeMenu(true);
+  });
+  document.addEventListener("pointerdown", (e) => {
+    if (!$("accountMenu").hidden && e.target instanceof Element && !e.target.closest(".menu-wrap")) closeMenu(false);
+  });
+
+  function renderMenu(){
+    const menu = $("accountMenu");
+    menu.textContent = "";
+    const item = (label, onClick, href) => {
+      const el = document.createElement(href ? "a" : "button");
+      if (href) el.href = href;
+      else {
+        el.type = "button";
+        el.addEventListener("click", () => { closeMenu(false); onClick(); });
+      }
+      el.textContent = label;
+      return el;
+    };
+    if (!session){
+      menu.append(item("Sign in", () => openAuth("signin")), item("Create account", () => openAuth("register")));
+      return;
+    }
+    const who = document.createElement("p");
+    who.className = "menu-who";
+    who.textContent = "Signed in as " + session.user.email;
+    menu.append(who);
+    if (myAgent) menu.append(item("Switch to agent", null, AGENT_URL));
+    menu.append(item("Profile", openProfile), item("Sign out", async () => { await sb.auth.signOut(); }));
+  }
+
   function renderAccount(){
+    renderMenu();
     const bar = $("accountBar");
     bar.textContent = "";
     const button = (label, cls, onClick) => {
@@ -1661,6 +1835,7 @@
   $("todayLine").textContent = "Viewed " + new Date().toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" });
   restoreView();
   syncSegs();
+  placeViewControls();
   if (location.hash === "#register" || location.hash === "#join") openAuth(location.hash.slice(1));
   renderAccount();
   renderTable();
