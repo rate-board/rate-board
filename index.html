@@ -164,19 +164,7 @@
   tbody tr:hover td, tbody tr:hover th{background:var(--accent-soft);}
 
   .lender-cell{display:flex;align-items:center;flex-wrap:wrap;}
-  .lender-link{
-    display:inline-flex;
-    align-items:center;
-    gap:4px;
-    min-height:44px;
-    min-width:44px;
-    color:inherit;
-    text-decoration:underline;
-    text-decoration-color:var(--line-strong);
-    text-underline-offset:4px;
-  }
-  .lender-link:hover{color:var(--accent);text-decoration-color:var(--accent);}
-  .ext{font-size:12px;color:var(--ink-faint);}
+  .lender-name{display:inline-flex;align-items:center;min-height:44px;}
   .note-btn{
     display:inline-flex;
     align-items:center;
@@ -212,12 +200,15 @@
   .lender-note-text.open{display:block;}
   td.unavailable .rate{color:var(--ink-faint);font-weight:500;}
 
-  /* Each rate is a real button filling its cell. */
+  /* Each rate is a real button filling its cell; the arrow says it opens the rate's details and history here. */
   .rate-btn{
-    display:block;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
     width:100%;
     min-height:64px;
-    padding:12px 16px;
+    padding:12px 12px 12px 16px;
     margin:0;
     border:none;
     background:none;
@@ -226,7 +217,14 @@
     text-align:left;
     cursor:pointer;
   }
+  .rate-text{display:block;}
+  .rate-arrow{flex:none;font:600 22px/1 'Inter',sans-serif;color:var(--accent);}
+  .rate-btn:hover .rate-arrow{transform:translateX(2px);}
   .rate-btn:focus-visible{outline-offset:-4px;}
+  .teaser{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);text-align:center;}
+  .teaser p{margin:0 0 12px;font-size:15px;color:var(--ink-muted);}
+  .teaser-rate{margin:4px 0 0;font-size:15px;color:var(--ink-muted);}
+  .teaser-rate strong{font:600 20px 'IBM Plex Mono',monospace;color:var(--ink);margin-right:4px;}
   .rate-cell.pinned .rate-btn{box-shadow:inset 0 0 0 3px var(--accent);}
   .agent-tag{display:block;margin-top:5px;font:600 13px 'Inter',sans-serif;color:var(--accent);}
 
@@ -473,7 +471,7 @@
     .table-shell tbody td{border:none;white-space:normal;}
     .table-shell tbody td.other-product{display:none;}
     .table-shell tbody td.static{padding:4px 0;text-align:right;}
-    .rate-btn{padding:4px 0;min-height:44px;text-align:right;}
+    .rate-btn{padding:4px 0;min-height:44px;text-align:right;justify-content:flex-end;}
     .table-shell tbody tr:hover :is(td, th){background:none;}
     .rate{font-size:16px;}
     .lender-note-text{max-width:none;}
@@ -1032,11 +1030,9 @@
         tr.inert = true;
         tr.setAttribute("aria-hidden", "true");
       }
+      // Lender names are plain text: people stay on this site, and each rate opens its own details here.
       const name = escapeHtml(lender.name);
-      const href = safeUrl(lender.source_url);
-      const nameHtml = href
-        ? `<a class="lender-link" href="${escapeHtml(href)}" target="_blank" rel="noopener">${name}<span class="ext" aria-hidden="true">↗</span><span class="visually-hidden"> (lender's rates page, opens in a new tab)</span></a>`
-        : `<span>${name}</span>`;
+      const nameHtml = `<span class="lender-name">${name}</span>`;
       const noteId = "note-" + lender.id;
       const noteBtn = lender.note
         ? `<button type="button" class="note-btn" aria-expanded="false" aria-controls="${escapeHtml(noteId)}"><span aria-hidden="true">i</span><span class="visually-hidden">About ${name}'s rates</span></button>`
@@ -1057,24 +1053,22 @@
           return;
         }
         const [rate, apr] = cell;
-        if (!session){
-          // Sneak-peek rows: real figures, but history, repayments and agent rates need an account.
-          rowHtml += `<td role="cell" class="static${other}" ${label}><span class="rate">${fmt(mode === "rate" ? rate : apr)}</span>`
-            + `<span class="apr">${mode === "rate" ? "Comp. rate" : "Rate"} ${fmt(mode === "rate" ? apr : rate)}</span></td>`;
-          return;
-        }
-        const isBest = lender.id === bestByProduct[p.key];
+        // Signed out (sneak peek) there's no BEST badge or agent tag: only part of the market is visible.
+        const isBest = !!session && lender.id === bestByProduct[p.key];
         const shown = mode === "rate" ? rate : apr;
         const secondary = mode === "rate" ? apr : rate;
         const secondaryLabel = mode === "rate" ? "Comp. rate" : "Rate";
-        const tag = agentTagText(agentRatesFor(lender.id, p.key, purpose, repay, lvr));
+        const tag = session ? agentTagText(agentRatesFor(lender.id, p.key, purpose, repay, lvr)) : "";
         rowHtml += `<td role="cell" class="rate-cell${isBest ? " best" : ""}${other}" ${label} data-lender="${escapeHtml(lender.id)}" data-key="${escapeHtml(p.key)}">
             <button type="button" class="rate-btn" aria-haspopup="dialog" aria-expanded="false">
-              <span class="visually-hidden">${name}, ${escapeHtml(p.label)}: </span>
-              <span class="rate">${fmt(shown)}${isBest ? '<span class="best-badge" aria-hidden="true">BEST</span>' : ""}</span>
-              <span class="apr">${secondaryLabel} ${fmt(secondary)}</span>
-              ${tag ? `<span class="agent-tag">${tag}</span>` : ""}
-              <span class="visually-hidden">${isBest ? ". Lowest in this column" : ""}. Show details</span>
+              <span class="rate-text">
+                <span class="visually-hidden">${name}, ${escapeHtml(p.label)}: </span>
+                <span class="rate">${fmt(shown)}${isBest ? '<span class="best-badge" aria-hidden="true">BEST</span>' : ""}</span>
+                <span class="apr">${secondaryLabel} ${fmt(secondary)}</span>
+                ${tag ? `<span class="agent-tag">${tag}</span>` : ""}
+                <span class="visually-hidden">${isBest ? ". Lowest in this column" : ""}. Show details</span>
+              </span>
+              <span class="rate-arrow" aria-hidden="true">›</span>
             </button>
           </td>`;
       });
@@ -1180,14 +1174,29 @@
     const { lender, key } = activeCell.dataset;
     const isBase = purpose === "owner" && repay === "pi" && lvr === "80";
     const cell = RATES[purpose][repay][lvr][key][lender];
-    card.innerHTML = `<h2 class="visually-hidden" id="hcHeading">${escapeHtml(lenderName(lender))} ${escapeHtml(productLabel(key))}, ${escapeHtml(loanTypeLabel(purpose, repay, lvr))}</h2>`
-      + (pinned ? `<button type="button" class="hc-close" data-act="close"><span aria-hidden="true">×</span><span class="visually-hidden">Close rate details</span></button>` : "")
+    const heading = `<h2 class="visually-hidden" id="hcHeading">${escapeHtml(lenderName(lender))} ${escapeHtml(productLabel(key))}, ${escapeHtml(loanTypeLabel(purpose, repay, lvr))}</h2>`
+      + (pinned ? `<button type="button" class="hc-close" data-act="close"><span aria-hidden="true">×</span><span class="visually-hidden">Close rate details</span></button>` : "");
+    card.classList.toggle("pinned", pinned);
+    if (!session){
+      // Signed out: the rate and repayment are free; history and agent rates are the reason to sign up.
+      card.innerHTML = heading
+        + `<p class="hc-title">${escapeHtml(lenderName(lender))} · ${escapeHtml(productLabel(key))}</p>`
+        + `<p class="hc-sub">${escapeHtml(loanTypeLabel(purpose, repay, lvr))}</p>`
+        + `<p class="teaser-rate"><strong>${fmt(cell[0])}</strong> comparison rate ${fmt(cell[1])}</p>`
+        + repayHtml(cell[0])
+        + `<div class="teaser"><p>Create a free account to see how this rate has moved over time, the RBA changes behind it, and agent rates below the lender's.</p>
+            <div class="gate-actions">
+              <button type="button" class="btn-primary" data-auth="register">Create free account</button>
+              <button type="button" class="btn-ghost" data-auth="signin">Sign in</button>
+            </div></div>`;
+      return;
+    }
+    card.innerHTML = heading
       + historyHtml(lender, key, mode === "rate" ? "rate" : "comp", isBase)
       + repayHtml(cell && cell[0])
       + (pinned ? `<div class="card-links"><button type="button" class="link-btn solo" data-act="report">Report a wrong rate</button></div>` : "")
       + agentSectionHtml(lender, key)
       + (pinned ? "" : `<p class="hc-hint">Click the rate for repayments and agent contacts.</p>`);
-    card.classList.toggle("pinned", pinned);
   }
 
   // Desktop: beside the rate so it never covers it. Phones: a sheet from the bottom, with the rate scrolled above it.
@@ -1326,6 +1335,8 @@
   });
 
   $("historyCard").addEventListener("click", async (e) => {
+    const auth = e.target.closest("[data-auth]");
+    if (auth){ hideHistory(false); openAuth(auth.dataset.auth); return; }
     const btn = e.target.closest("[data-act]");
     if (!btn) return;
     const act = btn.dataset.act;
