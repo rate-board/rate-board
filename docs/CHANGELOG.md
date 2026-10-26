@@ -31,6 +31,8 @@ Newest first. Each entry names the release or branch, what changed, and the requ
 - Account items moved into a My account menu in the nav on every page (`FEA-002`); the header sign-in buttons, the
   board's ⋮ menu and the home page's "Start with your money profile" panel are gone. Account details opens the profile
   dialog on the home loans page (`home-loans.html#profile`).
+- One Menu button holds My account, all products and Calculators (`FEA-001`). The home page drops its heading block
+  and the Live, Quotes and Sample badges, and lists every product on one screen in section columns (`FEA-003`).
 - Westpac everyday, savings and business accounts restored after the version-retry fix.
 - Documentation set created: requirements, processes, architecture, flows, designs, configuration, credentials,
   codebase (docs v1.0). Design set 1.1 adds credit cards and the phone card layout.

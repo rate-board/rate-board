@@ -16,32 +16,23 @@
   })();
 </script>
 <link rel="stylesheet" href="common.css?v=6">
-<link rel="stylesheet" href="app.css?v=7">
+<link rel="stylesheet" href="app.css?v=9">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
 <script src="common.js?v=6"></script>
 <script src="app.js?v=7"></script>
 <script src="catalog.js?v=4"></script>
-<script src="nav.js?v=3"></script>
+<script src="nav.js?v=4"></script>
 
 <a class="skip-link" href="#main">Skip to products</a>
 <nav class="site-nav" id="siteNav" aria-label="Main"></nav>
 <div class="wrap">
-  <header class="page">
-    <div class="title-block">
-      <p class="tagline">Boring by design. Better for your money.</p>
-      <h1>Every money product, one place</h1>
-      <p class="lede">Compare 29 products by what they'd cost you, keep everything you hold in <a href="my-money.html">My money</a>, and earn Inflation Points that rise in value with CPI.</p>
-    </div>
-  </header>
   <div class="visually-hidden" id="srStatus" role="status" aria-live="polite"></div>
 
   <main id="main" tabindex="-1">
+    <h1 class="visually-hidden">All products</h1>
     <section class="card" id="myCard" hidden></section>
-    <div class="hub" id="hub" style="margin-top:18px"></div>
-    <p class="small muted" style="margin-top:18px"><span class="badge">Live</span> data refreshed daily or on every search ·
-      <span class="badge quote">Quotes</span> priced from your details by a licensed partner ·
-      <span class="badge sample">Sample</span> placeholder figures until a data source is connected.</p>
+    <div class="hub" id="hub"></div>
   </main>
 
   <footer>
@@ -61,9 +52,7 @@
       <h2 id="h-${s.key}">${escapeHtml(s.title)}</h2>
       <ul>${s.items.map(k => {
         const c = CATEGORIES[k];
-        const href = c.href || `compare.html?c=${k}`;
-        const badgeClass = c.badge === "Live" ? "" : c.badge === "Quotes" ? " quote" : " sample";
-        return `<li><a class="tile" href="${href}">${escapeHtml(c.title)} <span class="badge${badgeClass}">${escapeHtml(c.badge)}</span></a></li>`;
+        return `<li><a href="${c.href || `compare.html?c=${k}`}">${escapeHtml(c.title)}</a></li>`;
       }).join("")}</ul>
     </section>`).join("");
 

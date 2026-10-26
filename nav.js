@@ -1,68 +1,64 @@
-// Site navigation shared by every page, the home loan board included: the brand, a Products menu listing every
-// product by section (from catalog.js), Calculators, and a My account menu (My money, Inflation Points, account
-// details, sign in and out). Loads after common.js and catalog.js.
-
-const SITE_LINKS = [
-  ["calculators.html", "Calculators"],
-];
+// Site navigation shared by every page, the home loan board included: the brand and one Menu button. The menu
+// holds every product by section (from catalog.js), the calculators, and My account (My money, Inflation Points,
+// account details, sign in and out). Loads after common.js and catalog.js.
 
 let navSession = null;
 let navIsAgent = false;
+
+function navHere(){ return location.pathname.split("/").pop() || "index.html"; }
 
 function renderSiteNav(){
   const nav = document.getElementById("siteNav");
   if (!nav || nav.dataset.ready) return;
   nav.dataset.ready = "1";
-  const here = location.pathname.split("/").pop() || "index.html";
+  const here = navHere();
   const current = here === "home-loans.html" ? "home_loans"
     : here === "compare.html" ? new URLSearchParams(location.search).get("c") : null;
+  const mark = (on) => on ? ' aria-current="page"' : "";
 
-  const sections = SECTIONS.map(s => `
+  const products = SECTIONS.map(s => `
     <section aria-labelledby="nav-${s.key}">
       <h2 id="nav-${s.key}">${escapeHtml(s.title)}</h2>
       <ul>${s.items.map(k => {
         const href = CATEGORIES[k].href || `compare.html?c=${k}`;
-        return `<li><a href="${href}"${k === current ? ' aria-current="page"' : ""}>${escapeHtml(CATEGORIES[k].title)}</a></li>`;
+        return `<li><a href="${href}"${mark(k === current)}>${escapeHtml(CATEGORIES[k].title)}</a></li>`;
       }).join("")}</ul>
     </section>`).join("");
 
   nav.innerHTML = `<a class="brand" href="index.html">BeatInflation</a>
-    <button type="button" class="nav-menu-btn${current ? " is-current" : ""}" id="productsBtn" aria-expanded="false" aria-controls="productsMenu">Products <span aria-hidden="true">▾</span></button>
-    ${SITE_LINKS.map(([href, label]) => `<a href="${href}"${href === here ? ' aria-current="page"' : ""}>${label}</a>`).join("")}
-    <button type="button" class="nav-menu-btn${here === "my-money.html" ? " is-current" : ""}" id="accountBtn" aria-expanded="false" aria-controls="accountPanel">My account <span aria-hidden="true">▾</span></button>
-    <div class="products-menu" id="productsMenu" hidden>
-      ${sections}
-      <p class="all"><a href="index.html"${here === "index.html" ? ' aria-current="page"' : ""}>See all products on one page</a></p>
-    </div>
-    <div class="nav-account" id="accountPanel" data-clarity-mask="true" hidden></div>`;
+    <button type="button" class="nav-menu-btn" id="siteMenuBtn" aria-expanded="false" aria-controls="siteMenu">Menu <span aria-hidden="true">▾</span></button>
+    <div class="products-menu" id="siteMenu" hidden>
+      <section class="nav-account" id="navAccount" aria-labelledby="nav-account" data-clarity-mask="true"></section>
+      ${products}
+      <section aria-labelledby="nav-tools">
+        <h2 id="nav-tools">Tools</h2>
+        <ul><li><a href="calculators.html"${mark(here === "calculators.html")}>Calculators</a></li></ul>
+      </section>
+      <p class="all"><a href="index.html"${mark(here === "index.html")}>See all products on one page</a></p>
+    </div>`;
 
-  // Two disclosure menus; opening one closes the other.
-  const menus = [["productsBtn", "productsMenu"], ["accountBtn", "accountPanel"]]
-    .map(([b, p]) => ({ btn: document.getElementById(b), panel: document.getElementById(p) }));
-  const setOpen = (m, open, returnFocus) => {
-    m.panel.hidden = !open;
-    m.btn.setAttribute("aria-expanded", String(open));
-    if (!open && returnFocus) m.btn.focus();
+  const btn = document.getElementById("siteMenuBtn");
+  const menu = document.getElementById("siteMenu");
+  const setOpen = (open, returnFocus) => {
+    menu.hidden = !open;
+    btn.setAttribute("aria-expanded", String(open));
+    if (!open && returnFocus) btn.focus();
   };
-  for (const m of menus){
-    m.btn.addEventListener("click", () => {
-      const open = m.panel.hidden;
-      for (const other of menus) if (other !== m) setOpen(other, false);
-      setOpen(m, open);
-      if (open) m.panel.querySelector("a, button")?.focus();
-    });
-    m.panel.addEventListener("keydown", (e) => { if (e.key === "Escape") setOpen(m, false, true); });
-    m.btn.addEventListener("keydown", (e) => { if (e.key === "Escape" && !m.panel.hidden) setOpen(m, false); });
-  }
-  const closeAll = () => { for (const m of menus) setOpen(m, false); };
-  document.addEventListener("click", (e) => { if (!nav.contains(e.target)) closeAll(); });
-  nav.addEventListener("focusout", (e) => { if (e.relatedTarget && !nav.contains(e.relatedTarget)) closeAll(); });
+  btn.addEventListener("click", () => {
+    const open = menu.hidden;
+    setOpen(open);
+    if (open) menu.querySelector("a, button")?.focus();
+  });
+  menu.addEventListener("keydown", (e) => { if (e.key === "Escape") setOpen(false, true); });
+  btn.addEventListener("keydown", (e) => { if (e.key === "Escape" && !menu.hidden) setOpen(false); });
+  document.addEventListener("click", (e) => { if (!menu.hidden && !nav.contains(e.target)) setOpen(false); });
+  nav.addEventListener("focusout", (e) => { if (!menu.hidden && e.relatedTarget && !nav.contains(e.relatedTarget)) setOpen(false); });
 
   // Account actions use the page's own dialogs: the board has openAuth and openProfile, other pages openSignin.
-  document.getElementById("accountPanel").addEventListener("click", async (e) => {
+  menu.addEventListener("click", async (e) => {
     const act = e.target.closest("button[data-act]")?.dataset.act;
     if (!act) return;
-    closeAll();
+    setOpen(false);
     if (act === "signin"){
       if (typeof openAuth === "function") openAuth("signin");
       else if (typeof openSignin === "function") openSignin();
@@ -77,25 +73,19 @@ function renderSiteNav(){
       await sb.auth.signOut();
     }
   });
-  renderAccountPanel();
+  renderAccountSection();
 }
 
-function renderAccountPanel(){
-  const panel = document.getElementById("accountPanel");
-  if (!panel) return;
-  const here = location.pathname.split("/").pop() || "index.html";
-  const link = (href, label) => `<a href="${href}"${href === here ? ' aria-current="page"' : ""}>${label}</a>`;
-  const act = (name, label) => `<button type="button" data-act="${name}">${label}</button>`;
-  panel.innerHTML = navSession
-    ? `<p class="nav-who">Signed in as <strong>${escapeHtml(navSession.user.email)}</strong></p>
-       ${link("my-money.html", "My money")}
-       ${link("my-money.html#ptsHeading", "Inflation Points")}
-       ${act("profile", "Account details")}
-       ${navIsAgent ? link("agent.html", "Agent portal") : ""}
-       ${act("signout", "Sign out")}`
-    : `${act("signin", "Sign in")}
-       ${act("register", "Create account")}
-       ${link("my-money.html", "My money")}`;
+function renderAccountSection(){
+  const box = document.getElementById("navAccount");
+  if (!box) return;
+  const here = navHere();
+  const link = (href, label) => `<li><a href="${href}"${href === here ? ' aria-current="page"' : ""}>${label}</a></li>`;
+  const act = (name, label) => `<li><button type="button" data-act="${name}">${label}</button></li>`;
+  box.innerHTML = `<h2 id="nav-account">My account</h2>` + (navSession
+    ? `<p class="nav-who">${escapeHtml(navSession.user.email)}</p>
+       <ul>${link("my-money.html", "My money")}${link("my-money.html#ptsHeading", "Inflation Points")}${act("profile", "Account details")}${navIsAgent ? link("agent.html", "Agent portal") : ""}${act("signout", "Sign out")}</ul>`
+    : `<ul>${act("signin", "Sign in")}${act("register", "Create account")}${link("my-money.html", "My money")}</ul>`);
 }
 
 let navUserId;
@@ -112,7 +102,7 @@ sb.auth.onAuthStateChange((_event, session) => {
         navIsAgent = !!data;
       }
     }
-    renderAccountPanel();
+    renderAccountSection();
   }, 0);
 });
 
