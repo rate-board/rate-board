@@ -11,22 +11,26 @@
 <link rel="stylesheet" href="common.css?v=5">
 <style>
   .rates-area{position:relative;}
-  /* Signed out: the first half of the lenders show real rates at full contrast; from the first locked row the
-     table fades out, and the sign-in card sits over the fade. --fade-start is set from the rendered rows. */
-  .rates-area.gated .table-shell{
-    -webkit-mask-image:linear-gradient(to bottom, #000 var(--fade-start, 60%), transparent 100%);
-    mask-image:linear-gradient(to bottom, #000 var(--fade-start, 60%), transparent 100%);
-  }
+  /* Signed out: the first few lenders show real rates at full contrast. Below them a blurred layer covers the
+     rest of the table, and the sign-in card sits at its top, inside the first screen. placeGate() sets the
+     layer's top and height from the rendered rows. */
   .locked-row{filter:blur(4px);user-select:none;}
   .gate-overlay{
-    position:relative;
+    position:absolute;
+    left:0;
+    right:0;
     z-index:3;
     display:flex;
     justify-content:center;
-    margin-top:-230px;
-    padding:0 16px;
+    align-items:flex-start;
+    padding:20px 16px;
+    background:color-mix(in srgb, var(--bg) 40%, transparent);
+    -webkit-backdrop-filter:blur(6px);
+    backdrop-filter:blur(6px);
   }
   .gate-card{
+    position:sticky;
+    top:16px;
     background:var(--surface);
     border:1px solid var(--line-strong);
     border-radius:14px;
@@ -443,7 +447,6 @@
     .rate-btn{padding:4px 0;min-height:44px;text-align:right;justify-content:flex-end;}
     .table-shell tbody tr:hover :is(td, th){background:none;}
     .rate{font-size:16px;}
-    .gate-overlay{margin-top:-260px;}
     .repay-inputs{grid-template-columns:1fr;}
   }
 </style>
@@ -860,7 +863,7 @@
     }
     loadState = "ready";
     showStatus(profile && profile.suspended ? "Your account is suspended, so you can't contact agents. Contact the site if you think this is a mistake." : "");
-    $("gateText").firstChild.textContent = `You're seeing ${previewIds.size} of ${LENDERS.length} lenders. Create a free account to compare `;
+    $("gateText").firstChild.textContent = "Create a free account to compare ";
     $("gateCount").textContent = "all " + LENDERS.length;
     setGated(!session);
     renderLenderNotes();
@@ -879,14 +882,23 @@
     $("gateOverlay").hidden = !gated;
   }
 
-  // The fade starts exactly at the first locked row, so every real rate above it keeps full contrast.
-  function placeFade(){
-    const shell = document.querySelector(".table-shell");
-    const first = $("bodyRows").querySelector(".locked-row");
-    if (!first) return;
-    shell.style.setProperty("--fade-start", Math.max(0, first.getBoundingClientRect().top - shell.getBoundingClientRect().top) + "px");
+  // The blurred layer starts under the first few lenders (fewer on phones, where each lender is a taller card)
+  // and runs to the end of the table, so the sign-in card shows in the first screen.
+  const CLEAR_ROWS = 3, CLEAR_ROWS_PHONE = 2;
+  function placeGate(){
+    const rows = $("bodyRows").children;
+    const clear = matchMedia("(max-width:640px)").matches ? CLEAR_ROWS_PHONE : CLEAR_ROWS;
+    const start = rows[Math.min(clear, rows.length - 1)];
+    if (!start) return;
+    const area = $("ratesArea").getBoundingClientRect();
+    const top = start.getBoundingClientRect().top - area.top;
+    const bottom = document.querySelector(".table-shell").getBoundingClientRect().bottom - area.top;
+    const overlay = $("gateOverlay");
+    overlay.style.top = top + "px";
+    overlay.style.height = Math.max(0, bottom - top) + "px";
   }
-  window.addEventListener("resize", () => { if (!session) placeFade(); });
+  window.addEventListener("resize", () => { if (!session) placeGate(); });
+  document.fonts?.ready.then(() => { if (!session) placeGate(); });
 
   function bestLender(productKey){
     const col = RATES[purpose][repay][lvr][productKey];
@@ -1050,7 +1062,7 @@
       tr.innerHTML = rowHtml;
       body.appendChild(tr);
     });
-    if (!session) placeFade();
+    if (!session) placeGate();
   }
 
   // --- Help popovers next to each toggle ------------------------------------------------------
