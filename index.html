@@ -15,28 +15,60 @@
       location.replace("home-loans.html" + location.search + h);
   })();
 </script>
-<link rel="stylesheet" href="common.css?v=6">
-<link rel="stylesheet" href="app.css?v=9">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="common.css?v=7">
+<link rel="stylesheet" href="app.css?v=10">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
 <script src="common.js?v=6"></script>
 <script src="app.js?v=7"></script>
 <script src="catalog.js?v=4"></script>
-<script src="nav.js?v=4"></script>
+<script src="nav.js?v=5"></script>
 
 <a class="skip-link" href="#main">Skip to products</a>
 <nav class="site-nav" id="siteNav" aria-label="Main"></nav>
+<header class="hero">
+  <div class="hero-inner">
+    <div class="hero-copy">
+      <h1>Is your money keeping up with prices?</h1>
+      <p>Compare 29 money products by what they really cost you. Switch, and earn points that grow with inflation.</p>
+      <form class="hero-search" role="search" id="findForm">
+        <label class="visually-hidden" for="find">Find a product</label>
+        <input id="find" type="search" placeholder="Find a product, like term deposits" autocomplete="off">
+        <button type="submit" class="btn-primary">Find</button>
+      </form>
+    </div>
+    <figure class="beat" id="beat" aria-live="polite">
+      <figcaption>The last 12 months</figcaption>
+      <div class="beat-row">
+        <div class="beat-label"><span>Prices went up</span><b id="beatCpi">…</b></div>
+        <div class="beat-track"><div class="beat-fill" id="beatCpiBar"></div></div>
+      </div>
+      <div class="beat-row">
+        <div class="beat-label"><span>Best savings account pays</span><b id="beatSave">…</b></div>
+        <div class="beat-track"><div class="beat-fill grow" id="beatSaveBar"></div></div>
+      </div>
+      <p class="beat-verdict" id="beatVerdict">Checking today's rates and the latest inflation figures.</p>
+    </figure>
+  </div>
+</header>
 <div class="wrap">
   <div class="visually-hidden" id="srStatus" role="status" aria-live="polite"></div>
 
   <main id="main" tabindex="-1">
-    <h1 class="visually-hidden">All products</h1>
     <section class="card" id="myCard" hidden></section>
-    <div class="hub" id="hub"></div>
+    <h2 class="section-title" id="hubTitle">Everything we compare</h2>
+    <div class="hub" id="hub" aria-labelledby="hubTitle"></div>
+    <section class="points-band" id="pointsBand" aria-labelledby="pointsTitle">
+      <div>
+        <h2 id="pointsTitle"><span class="coin" aria-hidden="true"></span>Earn Inflation Points</h2>
+        <p>Get points when you join, add what you own and switch to a better deal. Each point is worth 1 cent today and rises every quarter with inflation, so it never loses value.</p>
+      </div>
+      <a class="btn-primary" href="home-loans.html#register">Join free and get 500 points</a>
+    </section>
   </main>
 
   <footer>
-    <span>BeatInflation · Boring by design · general information, not advice.</span>
+    <span>BeatInflation. General information, not advice.</span>
     <nav aria-label="Site">
       <a href="agent.html">For mortgage agents</a>
       <a href="privacy.html">Privacy</a>
@@ -47,17 +79,64 @@
 </div>
 
 <script>
-  $("hub").innerHTML = SECTIONS.map(s => `
-    <section aria-labelledby="h-${s.key}">
-      <h2 id="h-${s.key}">${escapeHtml(s.title)}</h2>
-      <ul>${s.items.map(k => {
-        const c = CATEGORIES[k];
-        return `<li><a href="${c.href || `compare.html?c=${k}`}">${escapeHtml(c.title)}</a></li>`;
-      }).join("")}</ul>
-    </section>`).join("");
+  const productHref = (k) => CATEGORIES[k].href || `compare.html?c=${k}`;
+
+  // The product panel, filtered by the hero's search box as the visitor types.
+  function renderHub(query = ""){
+    const q = query.trim().toLowerCase();
+    const sections = SECTIONS.map(s => ({ ...s, items: s.items.filter(k => !q || CATEGORIES[k].title.toLowerCase().includes(q) || s.title.toLowerCase().includes(q)) }))
+      .filter(s => s.items.length);
+    $("hub").innerHTML = sections.length ? sections.map(s => `
+      <section aria-labelledby="h-${s.key}">
+        <h2 id="h-${s.key}">${escapeHtml(s.title)}</h2>
+        <ul>${s.items.map(k => `<li><a href="${productHref(k)}">${escapeHtml(CATEGORIES[k].title)}</a></li>`).join("")}</ul>
+      </section>`).join("")
+      : `<p class="hub-empty">Nothing matches "${escapeHtml(query.trim())}". Try a broader word, like loan, insurance or energy.</p>`;
+    return sections.flatMap(s => s.items);
+  }
+  renderHub();
+  $("find").addEventListener("input", (e) => renderHub(e.target.value));
+  // Find goes straight to the product when exactly one matches; otherwise the filtered panel is the answer.
+  $("findForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const matches = renderHub($("find").value);
+    if (matches.length === 1) location.href = productHref(matches[0]);
+    else $("hubTitle").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  });
+
+  // The beat line: annual inflation from the ABS quarterly index, against the best ongoing savings rate (bonus
+  // conditions met) in the catalogue. Bars share one scale so their lengths compare honestly.
+  (async () => {
+    const [cpi, save] = await Promise.all([
+      sb.from("cpi_quarters").select("quarter,index_value").order("quarter", { ascending: false }).limit(5),
+      sb.from("catalog_items").select("provider,name,attrs").eq("category", "savings").eq("active", true),
+    ]);
+    const q = cpi.data || [];
+    const inflation = q.length === 5 ? (Number(q[0].index_value) / Number(q[4].index_value) - 1) * 100 : null;
+    const best = (save.data || []).map(it => ({ it, rate: ongoingSavingsRate(it, { conditions: true }) }))
+      .sort((a, b) => b.rate - a.rate)[0];
+    if (inflation === null || !best){
+      $("beatVerdict").textContent = "Live figures aren't available right now. Compare savings accounts to see today's rates.";
+      return;
+    }
+    const scale = Math.max(inflation, best.rate) * 1.15;
+    $("beatCpi").textContent = pct(inflation, 1);
+    $("beatSave").textContent = pct(best.rate);
+    requestAnimationFrame(() => {
+      $("beatCpiBar").style.width = (inflation / scale * 100) + "%";
+      $("beatSaveBar").style.width = (best.rate / scale * 100) + "%";
+    });
+    const gap = best.rate - inflation;
+    $("beatVerdict").innerHTML = (gap >= 0
+      ? `${escapeHtml(best.it.provider)} ${escapeHtml(best.it.name)} beats inflation by ${gap.toFixed(1)} points. `
+      : `Even the best savings rate trails inflation by ${(-gap).toFixed(1)} points. `)
+      + `<a href="compare.html?c=savings">Compare savings accounts</a>`;
+    $("beatCpi").closest(".beat-row").querySelector("span").textContent = `Prices went up (to ${q[0].quarter.replace("-", " ")})`;
+  })();
 
   window.onSession = async (session) => {
     const card = $("myCard");
+    $("pointsBand").hidden = !!session;
     // Signing in and creating an account live in the My account menu; the card only welcomes a signed-in customer.
     if (!session){
       card.hidden = true;

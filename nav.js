@@ -25,7 +25,7 @@ function renderSiteNav(){
       }).join("")}</ul>
     </section>`).join("");
 
-  nav.innerHTML = `<a class="brand" href="index.html">BeatInflation</a>
+  nav.innerHTML = `<a class="brand" href="index.html"><svg class="brand-mark" width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="8" fill="var(--grow)"/><path d="M7 18l5-5 4 4 5-7" fill="none" stroke="var(--navy)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>BeatInflation</a>
     <button type="button" class="nav-menu-btn" id="siteMenuBtn" aria-expanded="false" aria-controls="siteMenu">Menu <span aria-hidden="true">▾</span></button>
     <div class="products-menu" id="siteMenu" hidden>
       <section class="nav-account" id="navAccount" aria-labelledby="nav-account" data-clarity-mask="true"></section>

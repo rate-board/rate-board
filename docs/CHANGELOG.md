@@ -4,6 +4,10 @@ Newest first. Each entry names the release or branch, what changed, and the requ
 
 ## Unreleased: `super-app` branch, on the test site (26 Oct 2026)
 
+- Fresh look (`FEA-005`, 9 Nov 2026): replaces "boring by design" with a bolder style. Home page gets a navy hero
+  with a live beat line (inflation against the best savings rate), product search that filters the panel, and an
+  Inflation Points band for signed-out visitors. The "Boring by design" tagline is removed from footers.
+
 - Added the product hub, one comparison page for 23 categories, My money, Inflation Points and calculators
   (`PRD-002`–`PRD-005`, `PRD-102`–`PRD-503`).
 - Added nightly catalogue sync from Open Banking, the energy regulator and the ABS (`CAP-03`, `CAP-04`, `CAP-11`),

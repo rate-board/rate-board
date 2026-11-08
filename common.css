@@ -1,27 +1,33 @@
-/* Shared by every page. "Boring by design": one typeface, flat panels, small corners and a loud focus ring,
-   after the plain patterns of government design systems. Colours meet WCAG 2.2 AAA: 7:1 for text, 3:1 for
-   control borders, on every background they are used on. */
+/* Shared by every page. One typeface (Plus Jakarta Sans), a ledger-navy band for the menu and hero, deep green
+   for actions, a bright green only for "money up" graphics and amber only for points. Text colours meet WCAG 2.2
+   AAA (7:1) on the backgrounds they are used on; control borders 3:1. */
 :root{
-  --bg:#F6F7F9;
+  --bg:#EEF2F6;
   --surface:#FFFFFF;
   --surface-raised:#FFFFFF;
-  --ink:#1B2430;
-  --ink-muted:#434C58;
-  --ink-faint:#465060;
-  --line:#E3E7EC;          /* decorative dividers only */
-  --line-strong:#7D8794;   /* control borders: 3.4:1 or more */
-  --accent:#165440;
-  --accent-soft:#E6F0EC;
+  --ink:#14213D;
+  --ink-muted:#435064;
+  --ink-faint:#435064;
+  --line:#DDE3EA;          /* decorative dividers only */
+  --line-strong:#7A8699;   /* control borders: 3:1 or more */
+  --accent:#0A5F30;
+  --accent-soft:#E3F4EA;
   --on-accent:#FFFFFF;
-  --gold:#5A440C;
-  --gold-soft:#F6EFDD;
+  --gold:#6E4200;
+  --gold-soft:#FFF1D6;
   --danger:#8C1D17;
   --danger-soft:#FBEBEA;
   --focus:#FFDD00;         /* focus ring: yellow with a near-black halo, visible on any background */
   --focus-halo:#0B0C0C;
-  --accent-deep:#0B2F23;   /* the edge under primary buttons */
-  --font:'Inter',system-ui,-apple-system,"Segoe UI",sans-serif;
-  --radius:4px;
+  --accent-deep:#063D1F;   /* the edge under primary buttons */
+  --navy:#0F2340;          /* menu bar and hero band, both themes */
+  --on-navy:#FFFFFF;
+  --navy-muted:#C3CEDD;
+  --grow:#22C55E;          /* fills only: bars and marks that show money going up */
+  --coin:#F2A93B;          /* fills only: Inflation Points */
+  --font:'Plus Jakarta Sans',system-ui,-apple-system,"Segoe UI",sans-serif;
+  --radius:12px;           /* controls and small panels */
+  --radius-lg:20px;        /* cards and sections */
   --shadow:none;
 }
 @media (prefers-color-scheme: dark){
@@ -82,7 +88,7 @@ body{
 }
 .wrap{max-width:980px;margin:0 auto;}
 
-h1,h2{font-family:var(--font);font-weight:700;line-height:1.25;letter-spacing:0;}
+h1,h2{font-family:var(--font);font-weight:800;line-height:1.2;letter-spacing:-0.02em;}
 
 /* One focus style everywhere: a 3 px yellow ring inside a near-black halo, so it shows on light, dark and coloured
    backgrounds alike. */
@@ -326,12 +332,12 @@ dialog.modal h3{margin:6px 0 0;font:600 15px var(--font);}
 .link-btn.solo{display:inline-flex;align-items:center;min-height:44px;font-weight:600;}
 .dialog-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:4px;flex-wrap:wrap;}
 .btn-ghost, .btn-primary, .btn-danger{
-  font:14px var(--font);
-  font-weight:600;
-  border-radius:var(--radius);
+  font:15px var(--font);
+  font-weight:700;
+  border-radius:999px;            /* pills: every button, so a button never looks like a field or a card */
   min-height:44px;
   min-width:44px;
-  padding:8px 16px;
+  padding:8px 20px;
   cursor:pointer;
   text-decoration:none;
   display:inline-flex;
